@@ -1,0 +1,72 @@
+# Minimal risk template - Ultra-safe learning configuration
+# Perfect for beginners and testing new strategies
+
+data:
+  data_pool_dir: "data/pools"
+  timeframe_folders:
+    1minute: "1minute"
+    5minute: "5minute"  
+    15minute: "15minute"
+    1hour: "1hour"
+    1day: "1day"
+  default_timeframe: "1minute"
+
+strategy:
+  name: "mse"
+  risk_profile: "minimal"
+  initial_capital: 100000
+  parameters:
+    lookback_period: 20
+    threshold: 0.015
+    volatility_adjustment: true
+    
+risk:
+  # Ultra-conservative settings for learning
+  enabled: true
+  max_position_size: 0.05        # Only 5% max position
+  max_daily_loss: 0.01           # 1% daily loss limit  
+  stop_loss_pct: 0.02            # 2% stop loss
+  take_profit_pct: 0.04          # 4% take profit
+  max_drawdown: 0.03             # 3% max drawdown
+  max_concentration: 0.05        # 5% max concentration per ticker
+  enable_stop_loss: true
+  enable_take_profit: true
+
+transaction:
+  enabled: true
+  brokerage_rate: 0.0003         # 0.03% brokerage
+  slippage_rate: 0.0001          # 0.01% slippage
+  market_impact_factor: 0.0001   # 0.01% market impact
+
+validation:
+  enabled: true
+  strict_mode: true              # Strict validation for safety
+  data_quality_check: true
+  min_data_points: 100
+  lookahead_bias_check: true
+  survivorship_bias_check: true
+
+output:
+  save_trades: true
+  save_metrics: true
+  save_plots: true
+  output_dir: "outputs"
+
+# Ultra-safe execution settings  
+execution:
+  parallel_processing: false        # Single-threaded for stability
+  max_workers: 1
+  cache_enabled: true
+
+# Comprehensive logging for learning
+logging:
+  level: "INFO"
+  console_enabled: true
+  file_enabled: true
+
+# No advanced features for minimal template
+options:
+  enabled: false
+  
+optimization:
+  enabled: false

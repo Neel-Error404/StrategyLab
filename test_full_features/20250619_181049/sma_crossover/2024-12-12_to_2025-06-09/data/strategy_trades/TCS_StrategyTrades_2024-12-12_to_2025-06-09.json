@@ -1,0 +1,17 @@
+{
+  "file_type": "strategy_trades",
+  "ticker": "TCS",
+  "date_range": "2024-12-12_to_2025-06-09",
+  "total_trades": 1390,
+  "strategy_metadata": {},
+  "created_at": "2025-06-19T18:11:29.352157",
+  "trade_summary": {
+    "total_trades": 1390,
+    "profitable_trades": 439,
+    "losing_trades": 951,
+    "avg_profit_pct": -0.006947083460091846,
+    "max_profit_pct": 3.6211699164345403,
+    "min_profit_pct": -1.919781004522724,
+    "win_rate": 0.3158273381294964
+  }
+}

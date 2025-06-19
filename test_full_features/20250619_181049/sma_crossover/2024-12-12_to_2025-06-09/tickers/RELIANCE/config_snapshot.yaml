@@ -1,0 +1,21 @@
+data_config:
+  adjustments: split_dividend
+  data_source: default
+  frequency: daily
+date_range: 2024-12-12_to_2025-06-09
+execution_config:
+  backtest_mode: modular
+  risk_management: enabled
+  strategy_name: sma_crossover
+  transaction_costs: enabled
+generated_at: '2025-06-19T18:10:58.080289'
+output_config:
+  analytics: true
+  three_file_system: true
+  visualizations: true
+risk_config:
+  max_position_size: 1000
+  position_limit: 10
+  stop_loss_pct: 5.0
+strategy: sma_crossover
+ticker: RELIANCE

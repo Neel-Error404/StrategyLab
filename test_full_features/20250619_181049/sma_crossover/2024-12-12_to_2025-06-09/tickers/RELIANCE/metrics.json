@@ -1,0 +1,21 @@
+{
+  "ticker": "RELIANCE",
+  "date_range": "2024-12-12_to_2025-06-09",
+  "generated_at": "2025-06-19T18:10:58.078797",
+  "trade_metrics": {
+    "total_trades": 1459,
+    "winning_trades": 0,
+    "losing_trades": 1459,
+    "win_rate_pct": 0.0,
+    "total_pnl": 0,
+    "average_pnl": 0.0
+  },
+  "data_metrics": {
+    "base_data_points": 45375,
+    "signals_generated": 0
+  },
+  "performance_summary": {
+    "profitable": false,
+    "status": "breakeven"
+  }
+}

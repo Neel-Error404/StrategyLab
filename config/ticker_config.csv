@@ -1,0 +1,2 @@
+ticker,allocation_percentage,trade_kind,order_type,partial_allowed,partial_percent_entry,partial_percent_exit,latency
+INFY,50,INTRADAY,MARKET,TRUE,50,50,

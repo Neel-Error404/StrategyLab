@@ -1,0 +1,267 @@
+{
+  "manifest_version": "1.0",
+  "created_at": "2025-06-19T18:11:27.216097",
+  "processing_results_summary": {
+    "three_file_outputs_count": 2,
+    "visualizations_count": 4,
+    "analytics_count": 3,
+    "reports_count": 5
+  },
+  "output_structure": {
+    "strategy_run_dir": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09",
+    "three_file_outputs": {
+      "RELIANCE": {
+        "base_file": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\data\\base_data\\RELIANCE_Base_2024-12-12_to_2025-06-09.csv",
+        "strategy_trades_file": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\data\\strategy_trades\\RELIANCE_StrategyTrades_2024-12-12_to_2025-06-09.csv",
+        "risk_approved_file": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\data\\risk_approved_trades\\RELIANCE_RiskApprovedTrades_2024-12-12_to_2025-06-09.csv"
+      },
+      "TCS": {
+        "base_file": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\data\\base_data\\TCS_Base_2024-12-12_to_2025-06-09.csv",
+        "strategy_trades_file": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\data\\strategy_trades\\TCS_StrategyTrades_2024-12-12_to_2025-06-09.csv",
+        "risk_approved_file": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\data\\risk_approved_trades\\TCS_RiskApprovedTrades_2024-12-12_to_2025-06-09.csv"
+      }
+    },
+    "visualizations": {
+      "portfolio_level": {
+        "performance_dashboard": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\portfolio\\portfolio_performance_dashboard_2024-12-12_to_2025-06-09.png",
+        "risk_dashboard": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\portfolio\\portfolio_risk_dashboard_2024-12-12_to_2025-06-09.png",
+        "trade_analysis_dashboard": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\portfolio\\portfolio_trade_analysis_2024-12-12_to_2025-06-09.png",
+        "signal_analysis_dashboard": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\portfolio\\portfolio_signal_analysis_2024-12-12_to_2025-06-09.png",
+        "three_file_comparison_dashboard": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\portfolio\\three_file_comparison_dashboard_2024-12-12_to_2025-06-09.png",
+        "educational_insights_dashboard": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\portfolio\\portfolio_educational_insights_2024-12-12_to_2025-06-09.png",
+        "master_dashboard": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\portfolio\\portfolio_master_dashboard_2024-12-12_to_2025-06-09.png"
+      },
+      "individual_tickers": {
+        "RELIANCE": {
+          "performance_summary": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\individual\\RELIANCE\\RELIANCE_performance_summary_2024-12-12_to_2025-06-09.png",
+          "trade_distribution": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\individual\\RELIANCE\\RELIANCE_trade_distribution_2024-12-12_to_2025-06-09.png",
+          "trade_timeline": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\individual\\RELIANCE\\RELIANCE_trade_timeline_2024-12-12_to_2025-06-09.png"
+        },
+        "TCS": {
+          "performance_summary": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\individual\\TCS\\TCS_performance_summary_2024-12-12_to_2025-06-09.png",
+          "trade_distribution": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\individual\\TCS\\TCS_trade_distribution_2024-12-12_to_2025-06-09.png",
+          "trade_timeline": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\individual\\TCS\\TCS_trade_timeline_2024-12-12_to_2025-06-09.png"
+        }
+      },
+      "strategy_analysis": {},
+      "risk_analysis": {
+        "risk_analysis": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\visualizations\\risk\\risk_analysis_2024-12-12_to_2025-06-09.png"
+      }
+    },
+    "analytics": {
+      "RELIANCE": {
+        "comprehensive_analysis": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\analysis_reports\\individual\\RELIANCE_Analysis_2024-12-12_to_2025-06-09.json",
+        "summary_report": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\reports\\RELIANCE_ThreeFileReport_2024-12-12_to_2025-06-09.txt"
+      },
+      "TCS": {
+        "comprehensive_analysis": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\analysis_reports\\individual\\TCS_Analysis_2024-12-12_to_2025-06-09.json",
+        "summary_report": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\reports\\TCS_ThreeFileReport_2024-12-12_to_2025-06-09.txt"
+      },
+      "portfolio": {
+        "analysis_type": "portfolio_three_file_analysis",
+        "date_range": "2024-12-12_to_2025-06-09",
+        "tickers": [
+          "RELIANCE",
+          "TCS"
+        ],
+        "analysis_timestamp": "2025-06-19T18:10:58.055309",
+        "portfolio_summary": {
+          "total_tickers": 2,
+          "total_base_data_points": 90750,
+          "total_strategy_trades": 2849,
+          "total_risk_approved_trades": 2849,
+          "portfolio_approval_rate": 1.0,
+          "avg_trades_per_ticker": 1424.5
+        },
+        "ticker_breakdowns": {
+          "RELIANCE": {
+            "ticker": "RELIANCE",
+            "date_range": "2024-12-12_to_2025-06-09",
+            "analysis_timestamp": "2025-06-19T18:10:57.870046",
+            "data_summary": {
+              "base_data_points": 45375,
+              "strategy_trades_generated": 1459,
+              "risk_approved_trades": 1459,
+              "risk_rejection_count": 0,
+              "risk_approval_rate": 1.0
+            },
+            "signal_analysis": {
+              "total_data_points": 45375,
+              "signal_counts": {
+                "entry_signal_buy": 1460,
+                "entry_signal_sell": 1464,
+                "exit_signal_buy": 1464,
+                "exit_signal_sell": 1460
+              },
+              "signal_frequency": {
+                "entry_signal_buy": 0.0322,
+                "entry_signal_sell": 0.0323,
+                "exit_signal_buy": 0.0323,
+                "exit_signal_sell": 0.0322
+              }
+            },
+            "strategy_performance": {
+              "total_strategy_trades": 1459,
+              "trade_types": {
+                "Sell": 804,
+                "Buy": 655
+              },
+              "performance_metrics": {
+                "total_trades": 1459,
+                "profitable_trades": 455,
+                "losing_trades": 1004,
+                "avg_profit_pct": -0.0036925478748567153,
+                "max_profit_pct": 2.6779366458645915,
+                "min_profit_pct": -1.9208690276428508,
+                "win_rate": 0.31185743660041126
+              }
+            },
+            "risk_impact": {
+              "trades_generated_by_strategy": 1459,
+              "trades_approved_by_risk": 1459,
+              "trades_rejected_by_risk": 0,
+              "approval_rate": 1.0,
+              "rejection_rate": 0.0,
+              "risk_efficiency": "High"
+            },
+            "recommendations": [
+              "Very high trade approval rate - consider tightening risk parameters"
+            ]
+          },
+          "TCS": {
+            "ticker": "TCS",
+            "date_range": "2024-12-12_to_2025-06-09",
+            "analysis_timestamp": "2025-06-19T18:10:58.040386",
+            "data_summary": {
+              "base_data_points": 45375,
+              "strategy_trades_generated": 1390,
+              "risk_approved_trades": 1390,
+              "risk_rejection_count": 0,
+              "risk_approval_rate": 1.0
+            },
+            "signal_analysis": {
+              "total_data_points": 45375,
+              "signal_counts": {
+                "entry_signal_buy": 1414,
+                "entry_signal_sell": 1414,
+                "exit_signal_buy": 1414,
+                "exit_signal_sell": 1414
+              },
+              "signal_frequency": {
+                "entry_signal_buy": 0.0312,
+                "entry_signal_sell": 0.0312,
+                "exit_signal_buy": 0.0312,
+                "exit_signal_sell": 0.0312
+              }
+            },
+            "strategy_performance": {
+              "total_strategy_trades": 1390,
+              "trade_types": {
+                "Buy": 743,
+                "Sell": 647
+              },
+              "performance_metrics": {
+                "total_trades": 1390,
+                "profitable_trades": 439,
+                "losing_trades": 951,
+                "avg_profit_pct": -0.006947083460091829,
+                "max_profit_pct": 3.62116991643454,
+                "min_profit_pct": -1.919781004522724,
+                "win_rate": 0.3158273381294964
+              }
+            },
+            "risk_impact": {
+              "trades_generated_by_strategy": 1390,
+              "trades_approved_by_risk": 1390,
+              "trades_rejected_by_risk": 0,
+              "approval_rate": 1.0,
+              "rejection_rate": 0.0,
+              "risk_efficiency": "High"
+            },
+            "recommendations": [
+              "Very high trade approval rate - consider tightening risk parameters"
+            ]
+          }
+        },
+        "cross_ticker_analysis": {
+          "most_active_ticker": "RELIANCE",
+          "highest_approval_rate_ticker": "RELIANCE"
+        }
+      }
+    },
+    "reports": {
+      "executive_summary": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\reports\\executive_summary_2024-12-12_to_2025-06-09.json",
+      "risk_management": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\reports\\risk_management_report_2024-12-12_to_2025-06-09.json",
+      "portfolio_performance": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\reports\\portfolio_performance_2024-12-12_to_2025-06-09.json",
+      "signal_analysis": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\reports\\signal_analysis_2024-12-12_to_2025-06-09.json",
+      "recommendations": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\reports\\recommendations_2024-12-12_to_2025-06-09.json"
+    },
+    "summary": {
+      "strategy_name": "sma_crossover",
+      "date_range": "2024-12-12_to_2025-06-09",
+      "processing_timestamp": "2025-06-19T18:11:27.216081",
+      "summary": {
+        "total_tickers_processed": 2,
+        "three_file_system_status": "Complete",
+        "visualization_count": 4,
+        "analytics_generated": 3,
+        "reports_created": 5
+      },
+      "output_structure": {
+        "base_data_files": "2 files generated",
+        "strategy_trades_files": "2 files generated",
+        "risk_approved_files": "2 files generated",
+        "visualization_categories": [
+          "portfolio_level",
+          "individual_tickers",
+          "strategy_analysis",
+          "risk_analysis"
+        ],
+        "analytics_available": [
+          "RELIANCE",
+          "TCS",
+          "portfolio"
+        ],
+        "reports_available": [
+          "executive_summary",
+          "risk_management",
+          "portfolio_performance",
+          "signal_analysis",
+          "recommendations"
+        ]
+      },
+      "next_steps": [
+        "Review portfolio dashboard for high-level insights",
+        "Examine individual ticker analysis for detailed performance",
+        "Analyze risk management effectiveness",
+        "Review recommendations for strategy optimization"
+      ]
+    },
+    "ticker_reports": {
+      "RELIANCE": {
+        "metrics": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\RELIANCE\\metrics.json",
+        "bias_report": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\RELIANCE\\bias_report.json",
+        "risk_report": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\RELIANCE\\risk_report.json",
+        "config_snapshot": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\RELIANCE\\config_snapshot.yaml"
+      },
+      "TCS": {
+        "metrics": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\TCS\\metrics.json",
+        "bias_report": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\TCS\\bias_report.json",
+        "risk_report": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\TCS\\risk_report.json",
+        "config_snapshot": "D:\\Balcony\\backtester\\test_full_features\\20250619_181049\\sma_crossover\\2024-12-12_to_2025-06-09\\tickers\\TCS\\config_snapshot.yaml"
+      }
+    }
+  },
+  "file_inventory": {
+    "csv_files": [],
+    "visualization_files": [],
+    "analytics_files": [],
+    "report_files": []
+  },
+  "usage_guide": {
+    "start_here": "Open the portfolio master dashboard for overview",
+    "detailed_analysis": "Review individual ticker dashboards",
+    "risk_analysis": "Examine risk management reports",
+    "three_file_system": "Compare base, strategy, and risk-approved CSV files"
+  }
+}

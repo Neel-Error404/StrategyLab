@@ -1,0 +1,104 @@
+# Options trading configuration template
+data:
+  data_pool_dir: "data/pools"
+  timeframe_folders:
+    1minute: "1minute"
+    5minute: "5minute"
+    15minute: "15minute"
+    1hour: "1hour"
+    1day: "1day"
+  default_timeframe: "5minute"  # Options typically use longer timeframes
+  required_columns:
+    - "timestamp"
+    - "open"
+    - "high"
+    - "low"
+    - "close"
+    - "volume"
+  date_format: "%Y-%m-%d"
+  timezone: "Asia/Kolkata"
+
+strategy:
+  name: "mse"
+  parameters:
+    lookback_period: 20
+    volatility_adjustment: true
+  enabled: true
+  description: "MSE strategy optimized for options trading"
+  risk_profile: "moderate"
+
+risk:
+  enabled: true
+  max_position_size: 0.15    # 15% max position
+  max_daily_loss: 0.03       # 3% daily loss limit
+  max_drawdown: 0.18         # 18% maximum drawdown
+  max_concentration: 0.35    # 35% max concentration per ticker
+  stop_loss_pct: 0.06        # 6% stop loss
+  take_profit_pct: 0.12      # 12% take profit
+  position_timeout_minutes: 360  # 6 hours
+  enable_stop_loss: true
+  enable_take_profit: true
+  enable_timeout: true
+
+transaction:
+  enabled: true
+  model_type: "advanced"
+  brokerage_rate: 0.0005     # Higher for options
+  fixed_cost: 1.0           # Fixed cost per trade
+  slippage_rate: 0.0002     # Higher slippage for options
+  market_impact_factor: 0.2  # Higher impact
+  enable_market_impact: true
+
+options:
+  enabled: true
+  synthetic_enabled: true
+  volatility_model: "black_scholes"
+  interest_rate: 0.06
+  dividend_yield: 0.015
+  days_to_expiry: 30
+  strike_range: 0.20        # 20% around current price
+  greeks_calculation: true
+  
+validation:
+  enabled: true
+  lookahead_bias_check: true
+  survivorship_bias_check: true
+  data_quality_check: true
+  min_data_points: 100
+  max_missing_data_pct: 0.05
+  price_outlier_threshold: 3.0
+
+optimization:
+  enabled: true
+  method: "bayesian"
+  max_iterations: 100
+  cv_folds: 5
+  test_size: 0.25
+  random_state: 42
+
+output:
+  save_trades: true
+  save_metrics: true
+  save_plots: true
+  save_base_data: true
+  output_dir: "outputs"
+  trade_file_format: "csv"
+  base_file_format: "csv"
+  metrics_file_format: "json"
+  plot_format: "png"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  file_enabled: true
+  console_enabled: true
+  log_dir: "logs"
+  max_file_size: "15MB"
+  backup_count: 7
+
+# Global settings
+execution:
+  parallel_processing: true
+  max_workers: 3
+  cache_enabled: true
+  cache_dir: "cache"

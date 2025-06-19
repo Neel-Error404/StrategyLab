@@ -1,0 +1,105 @@
+# Aggressive trading configuration template
+data:
+  data_pool_dir: "data/pools"
+  timeframe_folders:
+    1minute: "1minute"
+    5minute: "5minute"
+    15minute: "15minute"
+    1hour: "1hour"
+    1day: "1day"
+  default_timeframe: "1minute"
+  required_columns:
+    - "timestamp"
+    - "open"
+    - "high"
+    - "low"
+    - "close"
+    - "volume"
+  date_format: "%Y-%m-%d"
+  timezone: "Asia/Kolkata"
+
+strategy:
+  name: "mse"
+  parameters:
+    lookback_period: 10
+    threshold: 0.02
+  enabled: true
+  description: "Aggressive MSE strategy with higher risk tolerance"
+  risk_profile: "aggressive"
+
+risk:
+  enabled: true
+  max_position_size: 0.20    # 20% max position
+  max_daily_loss: 0.05       # 5% daily loss limit
+  max_drawdown: 0.25         # 25% maximum drawdown
+  max_concentration: 0.50    # 50% max concentration per ticker
+  stop_loss_pct: 0.08        # 8% stop loss
+  take_profit_pct: 0.15      # 15% take profit
+  position_timeout_minutes: 480  # 8 hours
+  enable_stop_loss: true
+  enable_take_profit: true
+  enable_timeout: true
+
+transaction:
+  enabled: true
+  model_type: "advanced"
+  brokerage_rate: 0.0003
+  fixed_cost: 0.0
+  slippage_rate: 0.0001
+  market_impact_factor: 0.15  # Higher impact for larger positions
+  enable_market_impact: true
+
+options:
+  enabled: false
+  synthetic_enabled: false
+  volatility_model: "black_scholes"
+  interest_rate: 0.05
+  dividend_yield: 0.0
+  days_to_expiry: 30
+  strike_range: 0.15  # Wider strike range
+  greeks_calculation: false
+
+validation:
+  enabled: true
+  lookahead_bias_check: true
+  survivorship_bias_check: true
+  data_quality_check: true
+  min_data_points: 50  # Lower requirement for faster execution
+  max_missing_data_pct: 0.05  # 5% max missing data
+  price_outlier_threshold: 3.0  # 3 standard deviations
+
+optimization:
+  enabled: true
+  method: "random_search"
+  max_iterations: 200
+  cv_folds: 5
+  test_size: 0.2
+  random_state: 42
+
+output:
+  save_trades: true
+  save_metrics: true
+  save_plots: true
+  save_base_data: true
+  output_dir: "outputs"
+  trade_file_format: "parquet"  # More efficient for large datasets
+  base_file_format: "csv"
+  metrics_file_format: "json"
+  plot_format: "png"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  file_enabled: true
+  console_enabled: true
+  log_dir: "logs"
+  max_file_size: "20MB"
+  backup_count: 10
+
+# Global settings
+execution:
+  parallel_processing: true
+  max_workers: 4
+  cache_enabled: true
+cache_enabled: true
+cache_dir: "cache"

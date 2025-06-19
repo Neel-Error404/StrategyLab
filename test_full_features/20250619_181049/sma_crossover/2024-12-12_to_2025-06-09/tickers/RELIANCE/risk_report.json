@@ -1,0 +1,26 @@
+{
+  "ticker": "RELIANCE",
+  "generated_at": "2025-06-19T18:10:58.079649",
+  "risk_management": {
+    "total_strategy_trades": 1459,
+    "risk_approved_trades": 1459,
+    "rejected_trades": 0,
+    "approval_rate_pct": 100.0
+  },
+  "position_sizing": {
+    "max_position_size": 0,
+    "avg_position_size": 0.0,
+    "position_limits_respected": true
+  },
+  "drawdown_analysis": {
+    "max_drawdown_pct": 0,
+    "current_drawdown_pct": 0,
+    "recovery_time_days": 0
+  },
+  "risk_status": "within_limits",
+  "recommendations": [
+    "Monitor position sizes relative to portfolio",
+    "Review stop-loss effectiveness",
+    "Consider correlation with other positions"
+  ]
+}
