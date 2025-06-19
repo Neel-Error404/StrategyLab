@@ -16,7 +16,7 @@ A **production-ready, modular backtesting system** for algorithmic trading strat
 I'm setting up an algorithmic trading backtester. Please help me configure it based on my requirements.
 
 SYSTEM INFO:
-- Repository: https://github.com/yourusername/backtester
+- Repository: https://github.com/yourusername/StrategyLab  (→ Fork before use)
 - Language: Python 3.9+
 - Supported Brokers: Zerodha Kite API, Upstox API
 - Architecture: Modular, production-ready with real-time data
