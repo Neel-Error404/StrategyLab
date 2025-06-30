@@ -1,4 +1,4 @@
-# 🚀 Algorithmic Trading Backtester
+# 🚀 Strategy Lab - Trading Backtester
 
 A **production-ready, modular backtesting system** for algorithmic trading strategies with real broker integration, comprehensive analysis, and AI-assisted configuration.
 
