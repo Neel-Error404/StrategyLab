@@ -223,7 +223,7 @@ StrategyLab is released under the MIT License – see the [LICENSE](./LICENSE) f
 
 ## 🚀 **Ready to Start?**
 
-1. **🔥 Try the 30-second setup above**
+1. **🔥 Try the 5-minute setup above**
 2. **🤖 Use the AI prompt for personalized help**
 3. **📚 Browse the documentation**
 4. **💬 Join our community for support**
