@@ -217,7 +217,7 @@ Use the prompt at the top with any AI model for personalized help.
 
 ## 📄 **License**
 
-MIT License - See `LICENSE` file for details.
+StrategyLab is released under the MIT License – see the [LICENSE](./LICENSE) file for details.
 
 ---
 
