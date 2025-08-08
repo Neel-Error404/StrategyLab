@@ -4,7 +4,7 @@ A **production-ready, modular backtesting system** for algorithmic trading strat
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Brokers](https://img.shields.io/badge/Brokers-Zerodha%20%7C%20Upstox-orange.svg)](docs/BROKER_SETUP.md)
+[![Brokers](https://img.shields.io/badge/Brokers-Zerodha%20%7C%20Upstox%20%7C%20Binance-orange.svg)](docs/BROKER_SETUP.md)
 
 ---
 
@@ -18,7 +18,7 @@ I'm setting up an algorithmic trading backtester. Please help me configure it ba
 SYSTEM INFO:
 - Repository: https://github.com/yourusername/backtester
 - Language: Python 3.9+
-- Supported Brokers: Zerodha Kite API, Upstox API
+- Supported Brokers: Zerodha Kite API, Upstox API, Binance API
 - Architecture: Modular, production-ready with real-time data
 
 MY REQUIREMENTS:
@@ -44,10 +44,35 @@ Please provide step-by-step setup instructions, recommend appropriate templates,
 
 ---
 
+## 🆕 **Recent Updates & Improvements**
+
+### **System Optimization (Latest)**
+- **Cleaned Architecture**: Removed redundant files and streamlined codebase
+- **Dual Configuration System**: 
+  - `config/config.py` - Broker connections and data provider settings
+  - `config/unified_config.py` - Strategy parameters and risk management
+- **Enhanced Data Providers**: Added Binance support for cryptocurrency data
+- **Improved Documentation**: Comprehensive guides and troubleshooting
+
+### **Configuration Architecture**
+The system uses a **dual configuration approach** for optimal separation of concerns:
+
+```
+📋 config/config.py          # Broker API credentials, data connections
+📋 config/unified_config.py   # Trading strategies, risk parameters
+📁 config/templates/          # Pre-built risk management templates
+```
+
+This design allows independent management of:
+- **Infrastructure** (brokers, authentication, data sources)
+- **Trading Logic** (strategies, risk rules, portfolio settings)
+
+---
+
 ## 🎯 **Core Features**
 
 ### **📊 Trading System**
-- **Real Broker Integration**: Zerodha Kite & Upstox APIs
+- **Real Broker Integration**: Zerodha Kite, Upstox, & Binance APIs
 - **Multi-Timeframe Support**: 1min to monthly data
 - **Live Data Fetching**: Real-time and historical data
 - **Strategy Framework**: Modular, extensible strategy system
@@ -153,22 +178,37 @@ python src/runners/unified_runner.py \
 
 ---
 
-## 🏗️ **Project Structure**
+## 🏗️ **Project Structure** (Optimized & Clean)
 
 ```
 backtester/
-├── 📁 src/                     # Core system
-│   ├── strategies/             # Trading strategies (MSE, SMA, etc.)
-│   ├── core/                   # Analysis, risk, data processing
-│   └── runners/                # Execution engines
-├── 📁 config/                  # Configuration system
+├── 📁 src/                     # Core modular system
+│   ├── strategies/             # Trading strategies (MSE, SMA, Bollinger, etc.)
+│   ├── core/                   # Analysis, risk, ETL, data processing
+│   │   ├── etl/                # Data fetching and provider management
+│   │   ├── risk/               # Risk management engine
+│   │   ├── analysis/           # Performance analysis and visualization
+│   │   └── output/             # Three-file output system
+│   └── runners/                # Execution engines and CLI handlers
+├── 📁 config/                  # Dual configuration system
+│   ├── config.py               # Broker connections & data providers
+│   ├── unified_config.py       # Strategy & risk parameters
 │   ├── templates/              # Pre-built risk templates
-│   └── access_tokens/          # Broker API credentials
+│   └── access_tokens/          # Broker API credentials (user-created)
 ├── 📁 docs/                    # Comprehensive documentation
 ├── 📁 data/pools/              # Market data storage (auto-created)
 ├── 📁 outputs/                 # Results and reports (auto-created)
-└── 📋 requirements.txt         # Dependencies
+├── 📋 CLAUDE.md                # Claude Code integration guide
+├── 📋 comprehensive_data_puller.py  # Historical data utility (1996-2025)
+├── 📋 mse_data_puller.py       # MSE strategy data utility
+└── 📋 requirements.txt         # Python dependencies
 ```
+
+### **Key Architecture Improvements**
+- **Clean Modular Design**: Separated ETL, risk, analysis, and output systems
+- **Dual Configuration**: Infrastructure vs trading logic separation
+- **Specialized Data Pullers**: Different tools for different data requirements
+- **Removed Legacy Files**: Cleaned ~14 empty/redundant files for optimal maintainability
 
 ---
 

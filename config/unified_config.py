@@ -343,6 +343,13 @@ class ConfigBuilder:
             if hasattr(self.config.options, key):
                 setattr(self.config.options, key, value)
         return self
+    
+    def with_validation_config(self, **kwargs) -> 'ConfigBuilder':
+        """Configure validation settings."""
+        for key, value in kwargs.items():
+            if hasattr(self.config.validation, key):
+                setattr(self.config.validation, key, value)
+        return self
         
     def build(self) -> BacktestConfig:
         """Build and return the final configuration."""
@@ -351,7 +358,8 @@ class ConfigBuilder:
 # Predefined configuration templates
 def get_minimal_config() -> BacktestConfig:
     """Get a minimal risk configuration for learning and testing."""
-    return (ConfigBuilder()            .with_strategy_config(name="mse", risk_profile="minimal")
+    return (ConfigBuilder()
+            .with_strategy_config(name="mse", risk_profile="minimal")
             .with_risk_config(
                 max_position_size=0.05,      # 5% max position
                 max_daily_loss=0.01,         # 1% daily loss limit
@@ -359,6 +367,7 @@ def get_minimal_config() -> BacktestConfig:
                 take_profit_pct=0.04,        # 4% take profit
                 max_concurrent_positions=2   # Very limited positions
             )
+            .with_validation_config(enabled=True, strict_mode=True)
             .build())
 
 def get_conservative_config() -> BacktestConfig:

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "https://upstox.com/developer/api-documentation/",
+      "WebFetch(domain:upstox.com)",
+      "Bash(python:*)",
+      "Bash(find:*)",
+      "Bash(py:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

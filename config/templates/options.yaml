@@ -28,11 +28,9 @@ strategy:
   risk_profile: "moderate"
 
 risk:
-  enabled: true
   max_position_size: 0.15    # 15% max position
   max_daily_loss: 0.03       # 3% daily loss limit
   max_drawdown: 0.18         # 18% maximum drawdown
-  max_concentration: 0.35    # 35% max concentration per ticker
   stop_loss_pct: 0.06        # 6% stop loss
   take_profit_pct: 0.12      # 12% take profit
   position_timeout_minutes: 360  # 6 hours
@@ -41,7 +39,6 @@ risk:
   enable_timeout: true
 
 transaction:
-  enabled: true
   model_type: "advanced"
   brokerage_rate: 0.0005     # Higher for options
   fixed_cost: 1.0           # Fixed cost per trade
@@ -97,8 +94,7 @@ logging:
   backup_count: 7
 
 # Global settings
-execution:
-  parallel_processing: true
-  max_workers: 3
-  cache_enabled: true
-  cache_dir: "cache"
+parallel_processing: true
+max_workers: 3
+cache_enabled: true
+cache_dir: "cache"

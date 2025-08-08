@@ -93,6 +93,13 @@ Examples:
     )
     
     parser.add_argument(
+        '--timeframes',
+        nargs='+',
+        default=['1m'],
+        help="List of timeframes for data fetching (e.g., '1m', '5m', '15m', '30m', '1h', 'day') (default: ['1m'])"
+    )
+    
+    parser.add_argument(
         '--parallel',
         action='store_true',
         help="Enable parallel processing"    )
@@ -208,7 +215,15 @@ def load_config_from_args(args) -> BacktestConfig:
         config.strategy.date_ranges = normalized_dates
     
     if args.tickers:
-        config.strategy.tickers = args.tickers
+        # Handle both space-separated and comma-separated tickers
+        processed_tickers = []
+        for ticker_arg in args.tickers:
+            if ',' in ticker_arg:
+                # Split comma-separated tickers
+                processed_tickers.extend([t.strip() for t in ticker_arg.split(',') if t.strip()])
+            else:
+                processed_tickers.append(ticker_arg.strip())
+        config.strategy.tickers = processed_tickers
     
     if args.strategies:
         config.strategy.names = args.strategies
@@ -230,6 +245,10 @@ def load_config_from_args(args) -> BacktestConfig:
     
     if args.trade_source:
         config.output.visualization_trade_source = args.trade_source
+    
+    if args.timeframes:
+        # Store timeframes in config for fetch mode
+        config.timeframes = args.timeframes
     
     return config
 

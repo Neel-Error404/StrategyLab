@@ -20,12 +20,12 @@
 
 ```bash
 # Use pre-built template
-python src/runners/unified_runner.py --mode backtest --template conservative --date-ranges 2024-12-12_to_2025-06-09
+python src/runners/unified_runner.py --mode backtest --template conservative --dates 2024-01-01
 
 # Customize template
 cp config/templates/conservative.yaml my_custom.yaml
 # Edit my_custom.yaml...
-python src/runners/unified_runner.py --mode backtest --config my_custom.yaml --date-ranges 2024-12-12_to_2025-06-09
+python src/runners/unified_runner.py --mode backtest --config my_custom.yaml --dates 2024-01-01
 ```
 
 ---
@@ -75,7 +75,7 @@ parallel_processing: false
 python src/runners/unified_runner.py \
   --mode backtest \
   --template minimal \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --dates 2024-01-01 \
   --tickers RELIANCE \
   --log-level INFO
 ```
@@ -125,7 +125,7 @@ max_workers: 2
 python src/runners/unified_runner.py \
   --mode backtest \
   --template conservative \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --date-ranges 2024-01-01_to_2024-12-31 \
   --tickers RELIANCE TCS INFY \
   --parallel
 ```
@@ -178,7 +178,7 @@ optimization:
 python src/runners/unified_runner.py \
   --mode backtest \
   --template aggressive \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --date-ranges 2024-01-01_to_2024-12-31 \
   --tickers RELIANCE TCS INFY ZOMATO ADANIENT \
   --parallel \
   --max-workers 4
@@ -235,7 +235,7 @@ validation:
 python src/runners/unified_runner.py \
   --mode backtest \
   --template options \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --dates 2024-01-01 \
   --tickers NIFTY BANKNIFTY
 ```
 
@@ -288,7 +288,7 @@ analysis:
 python src/runners/unified_runner.py \
   --mode backtest \
   --template portfolio_diversified \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --date-ranges 2024-01-01_to_2024-12-31 \
   --tickers RELIANCE TCS INFY ZOMATO ADANIENT TATAMOTORS
 ```
 
@@ -328,7 +328,7 @@ risk:
 python src/runners/unified_runner.py \
   --mode backtest \
   --config config/templates/my_custom.yaml \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --dates 2024-01-01 \
   --tickers RELIANCE
 ```
 
@@ -470,7 +470,7 @@ logging:
 python src/runners/unified_runner.py \
   --mode validate \
   --config config/templates/my_custom.yaml \
-  --date-ranges 2024-12-12_to_2025-06-09
+  --dates 2024-01-01
 ```
 
 #### **2. Quick Test**
@@ -479,7 +479,7 @@ python src/runners/unified_runner.py \
 python src/runners/unified_runner.py \
   --mode backtest \
   --config config/templates/my_custom.yaml \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --dates 2024-01-01 \
   --tickers RELIANCE
 ```
 
@@ -489,7 +489,7 @@ python src/runners/unified_runner.py \
 python src/runners/unified_runner.py \
   --mode backtest \
   --config config/templates/my_custom.yaml \
-  --date-ranges 2025-06-06_to_2025-06-07 \
+  --date-ranges 2024-01-01_to_2024-01-31 \
   --tickers RELIANCE TCS
 ```
 
@@ -499,7 +499,7 @@ python src/runners/unified_runner.py \
 python src/runners/unified_runner.py \
   --mode backtest \
   --config config/templates/my_custom.yaml \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --date-ranges 2024-01-01_to_2024-12-31 \
   --tickers RELIANCE TCS INFY \
   --parallel
 ```
@@ -508,12 +508,12 @@ python src/runners/unified_runner.py \
 
 ```bash
 # Compare templates on same data
-python src/runners/unified_runner.py --mode backtest --template minimal --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE
-python src/runners/unified_runner.py --mode backtest --template conservative --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE
-python src/runners/unified_runner.py --mode backtest --template aggressive --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE
+python src/runners/unified_runner.py --mode backtest --template minimal --date-ranges 2024-01-01_to_2024-03-31 --tickers RELIANCE
+python src/runners/unified_runner.py --mode backtest --template conservative --date-ranges 2024-01-01_to_2024-03-31 --tickers RELIANCE
+python src/runners/unified_runner.py --mode backtest --template aggressive --date-ranges 2024-01-01_to_2024-03-31 --tickers RELIANCE
 
 # Then analyze results
-python src/runners/unified_runner.py --mode analyze --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE
+python src/runners/unified_runner.py --mode analyze --date-ranges 2024-01-01_to_2024-03-31 --tickers RELIANCE
 ```
 
 ---
@@ -735,7 +735,7 @@ Base the configuration on similar existing templates but customize for my specif
 # Generate performance comparison report
 python utils/template_comparison.py \
   --templates minimal conservative aggressive \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --date-ranges 2024-01-01_to_2024-12-31 \
   --tickers RELIANCE TCS INFY \
   --output performance_comparison.html
 ```

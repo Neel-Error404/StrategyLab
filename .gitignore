@@ -1,0 +1,298 @@
+# Algorithmic Trading Backtester - Comprehensive .gitignore
+
+# ==========================================
+# SENSITIVE INFORMATION (CRITICAL)
+# ==========================================
+
+# API Keys and Authentication Tokens
+config/access_tokens/
+*.token
+*.key
+*.secret
+*_credentials.json
+*_auth.json
+
+# Environment Configuration
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# Personal Trading Data
+personal_trades.csv
+live_trades.json
+account_*.json
+portfolio_*.json
+
+# ==========================================
+# PYTHON SPECIFIC
+# ==========================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+trading_env/
+backtester_env/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# TRADING SYSTEM SPECIFIC
+# ==========================================
+
+# Generated Data Files
+data/pools/
+data/cache/
+data/temp/
+data/*.zip
+data/**/*.zip
+
+# Output and Results
+outputs/
+results/
+backtests/
+*.png
+*.jpg
+*.pdf
+reports/
+analysis/
+
+# Logs and Monitoring
+logs/
+*.log
+*.log.*
+log_*
+monitoring/
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+*.temp
+scratch/
+sandbox/
+
+# Strategy Development Files
+strategy_*.py.bak
+test_strategy_*.py
+experimental_*.py
+draft_*.py
+
+# Database Files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration Backups
+config/*.bak
+config/*.backup
+*.yaml.bak
+*.json.bak
+
+# Performance and Profiling
+*.prof
+profile_*
+benchmark_*
+performance_*
+
+# ==========================================
+# SYSTEM SPECIFIC
+# ==========================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==========================================
+# DEVELOPMENT AND TESTING
+# ==========================================
+
+# Test outputs
+test_outputs/
+test_results/
+test_*.csv
+test_*.json
+*_test_data/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Documentation builds
+docs/_build/
+docs/build/
+site/
+
+# ==========================================
+# OPTIMIZATION AND ANALYSIS
+# ==========================================
+
+# Optimization results
+optimization_results/
+param_sweeps/
+genetic_algorithm_results/
+hyperparameter_tuning/
+
+# Machine Learning models (if any)
+models/
+*.pkl
+*.model
+*.h5
+*.pt
+*.pth
+
+# Data Analysis artifacts
+correlation_matrices/
+feature_importance/
+model_performance/
+
+# ==========================================
+# ALLOWED ESSENTIAL FILES
+# ==========================================
+
+# Keep these files (explicitly not ignored)
+!README.md
+!CLAUDE.md
+!requirements.txt
+!config/config.py
+!config/unified_config.py
+!config/templates/
+!config/templates/*.yaml
+!docs/
+!docs/*.md
+!src/
+!comprehensive_data_puller.py
+!mse_data_puller.py
+!mse_data_utils.py
+
+# Keep small sample data files for testing (if needed)
+!data/samples/
+!data/examples/
+
+# Keep configuration templates
+!config/templates/
+
+# ==========================================
+# CLAUDE CODE INTEGRATION
+# ==========================================
+
+# Keep Claude Code configuration
+!.claude/
+!.claude/**
+
+# ==========================================
+# GITHUB INTEGRATION
+# ==========================================
+
+# Keep GitHub workflows and templates
+!.github/
+!.github/**
+
+# ==========================================
+# NOTES
+# ==========================================
+
+# This .gitignore is designed for an algorithmic trading backtester
+# It protects sensitive trading data, API keys, and credentials
+# while preserving the core system architecture and documentation
+# 
+# Key priorities:
+# 1. Security: Prevent accidental exposure of API keys and tokens
+# 2. Clean repository: Exclude generated outputs and temporary files
+# 3. Development: Allow essential files while ignoring build artifacts
+# 4. Flexibility: Easy to modify for specific deployment needs

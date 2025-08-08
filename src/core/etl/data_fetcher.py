@@ -196,13 +196,13 @@ def main(provider=None, timeframe=None, days=None, force_token_refresh=False):
     
     # Use the passed provider if provided; otherwise, prompt for input.
     if provider is None:
-        provider_name = input("Which data provider would you like to use? (upstox/zerodha, default: upstox): ").strip().lower()
+        provider_name = input("Which data provider would you like to use? (upstox/zerodha/binance, default: upstox): ").strip().lower()
         if not provider_name:
             provider_name = 'upstox'
     else:
         provider_name = provider
 
-    if provider_name not in ['upstox', 'zerodha']:
+    if provider_name not in ['upstox', 'zerodha', 'binance']:
         logger.error(f"Unsupported provider: {provider_name}. Using upstox instead.")
         provider_name = 'upstox'
     

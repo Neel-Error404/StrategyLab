@@ -75,19 +75,42 @@ SYSTEM_INFO = {
 # === Upstox Configuration ===
 UPSTOX_CONFIG = {
     # API credentials - MUST be set via environment variables
-    'CLIENT_ID': os.getenv('UPSTOX_CLIENT_ID'),
-    'CLIENT_SECRET': os.getenv('UPSTOX_CLIENT_SECRET'),
+    'CLIENT_ID': os.getenv('UPSTOX_CLIENT_ID',"1696a0cd-5732-413f-85df-10ee95a49d5a"),
+    'CLIENT_SECRET': os.getenv('UPSTOX_CLIENT_SECRET',"v0wqj2ox2i"),
     'REDIRECT_URI': os.getenv('UPSTOX_REDIRECT_URI', "https://127.0.0.1:5000/"),
      'INSTRUMENTS_CSV': BASE_DIR / 'config' / 'complete.csv',
-    # API endpoints
+    
+    # API endpoints (V2 for auth, V3 for historical data)
     'AUTH_URL': "https://api.upstox.com/v2/login/authorization/dialog",
     'TOKEN_URL': "https://api.upstox.com/v2/login/authorization/token",
+    'HISTORICAL_API_BASE': "https://api.upstox.com/v3/historical-candle",
+    'EXPIRY_API_URL': "https://api.upstox.com/v2/expired-instruments/expiries",  # Base URL - instrument_key appended as path parameter
     
-    # Data fetching parameters
+    # Data fetching parameters for V3 API
     'MAX_DAYS_PER_REQUEST': 200,
+    'API_VERSION': 'v3',  # Historical data API version
     
-    # Supported timeframes
-    'SUPPORTED_TIMEFRAMES': ['1minute', '30minute', 'day', 'week', 'month'],
+    # V3 API unit and interval mappings
+    'TIMEFRAME_MAPPINGS': {
+        '1m': {'unit': 'minutes', 'interval': '1'},
+        '2m': {'unit': 'minutes', 'interval': '2'},
+        '3m': {'unit': 'minutes', 'interval': '3'},
+        '5m': {'unit': 'minutes', 'interval': '5'},
+        '10m': {'unit': 'minutes', 'interval': '10'},
+        '15m': {'unit': 'minutes', 'interval': '15'},
+        '30m': {'unit': 'minutes', 'interval': '30'},
+        '1h': {'unit': 'hours', 'interval': '1'},
+        '2h': {'unit': 'hours', 'interval': '2'},
+        'day': {'unit': 'days', 'interval': '1'},
+        'week': {'unit': 'weeks', 'interval': '1'},
+        'month': {'unit': 'months', 'interval': '1'},
+        # Legacy mappings for backward compatibility
+        '1minute': {'unit': 'minutes', 'interval': '1'},
+        '30minute': {'unit': 'minutes', 'interval': '30'}
+    },
+    
+    # Supported timeframes for V3 API
+    'SUPPORTED_TIMEFRAMES': ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', 'day', 'week', 'month'],
     
     # Token storage
     'ACCESS_TOKEN_DIR': BASE_DIR / 'config' / 'access_tokens' / 'upstox',

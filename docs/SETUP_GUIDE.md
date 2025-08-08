@@ -16,10 +16,10 @@ cd backtester
 pip install -r requirements.txt
 
 # 4. Verify installation
-python src/runners/unified_runner.py --mode validate --date-ranges 2024-12-12_to_2025-06-09
+python src/runners/unified_runner.py --mode validate --dates 2024-01-01
 
 # 5. Run sample backtest
-python src/runners/unified_runner.py --mode backtest --template conservative --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE
+python src/runners/unified_runner.py --mode backtest --template conservative --dates 2024-01-01 --tickers RELIANCE
 ```
 
 **✅ If no errors, you're ready to trade!**
@@ -123,21 +123,13 @@ python src/core/etl/data_fetcher.py
 
 ```
 data/pools/
-├── 2024-12-12_to_2025-06-09/  ← Primary dataset (6 months)
+├── 2024-01-01_to_2024-01-31/
 │   ├── 1minute/
-│   │   ├──   RELIANCE_2024-12-12_to_2025-06-09.csv
-│   │   ├── TCS_2024-12-12_to_2025-06-09.csv
-│   │   ├── INFY_2024-12-12_to_2025-06-09.csv
-│   │   ├── HDFCBANK_2024-12-12_to_2025-06-09.csv
-│   │   ├── ICICIBANK_2024-12-12_to_2025-06-09.csv
-│   │   └── ITC_2024-12-12_to_2025-06-09.csv
-│   ├── 5minute/    ← Auto-generated
-│   └── 15minute/   ← Auto-generated
-├── 2024-12-18_to_2025-06-15/
-├── 2025-05-31_to_2025-06-07/
-├── 2025-06-06_to_2025-06-07/  ← Short test period
-├── 2025-06-08_to_2025-06-10/
-└── 2025-06-09_to_2025-06-10/
+│   │   ├── RELIANCE_1minute.csv
+│   │   └── TCS_1minute.csv
+│   ├── 5minute/
+│   └── 1day/
+└── 2024-02-01_to_2024-02-28/
 ```
 
 ---
@@ -189,7 +181,7 @@ python src/runners/unified_runner.py --config my_config.yaml
 
 ### **Test 1: System Health**
 ```bash
-python src/runners/unified_runner.py --mode validate --date-ranges 2024-12-12_to_2025-06-09
+python src/runners/unified_runner.py --mode validate --dates 2024-01-01
 ```
 
 **Expected Output:**
@@ -205,7 +197,7 @@ python src/runners/unified_runner.py --mode validate --date-ranges 2024-12-12_to
 python src/runners/unified_runner.py \
   --mode backtest \
   --template conservative \
-  --date-ranges 2024-12-12_to_2025-06-09 \
+  --dates 2024-01-01 \
   --tickers RELIANCE
 ```
 
@@ -222,7 +214,7 @@ python src/runners/unified_runner.py \
 # Test all templates
 for template in minimal conservative aggressive options; do
   echo "Testing $template..."
-  python src/runners/unified_runner.py --template $template --mode validate --date-ranges 2024-12-12_to_2025-06-09
+  python src/runners/unified_runner.py --template $template --mode validate --dates 2024-01-01
 done
 ```
 
@@ -244,8 +236,6 @@ LOG_LEVEL=INFO
 DATA_PROVIDER=upstox
 TRADING_ENV=development
 ```
-
-⚠️ **Important**: If you plan to use live broker data, you **MUST** set the appropriate API credentials. The system will display clear error messages if credentials are missing, directing you to `docs/BROKER_SETUP.md` for setup instructions.
 
 ---
 

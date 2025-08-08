@@ -84,12 +84,31 @@ class UnifiedBacktesterRunner:
         if not register_all_strategies():
             self.logger.error("Failed to register strategies")
             raise RuntimeError("Strategy registration failed")
-          # Set clean directory structure following monolith pattern
+        
+        # Store config for later use
+        self.config = config
+        
+        # Initialize components only when needed (will be done in run() method based on mode)
+        self.workflow_manager = None
+        self.task_executor = None  
+        self.analysis_engine = None
+        self.visualization_engine = None
+        
+        # Register signal handlers for graceful shutdown
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+    
+    def _init_modular_components(self):
+        """Initialize modular components only when needed (not for fetch/validate modes)."""
+        if self.workflow_manager is not None:
+            return  # Already initialized
+            
+        # Set clean directory structure following monolith pattern
         # Format: {timestamp}/{strategy}/{date_range}
         from src.runners.utils.naming import create_monolith_directory_structure
         
-        strategies = self.config.strategy.names if hasattr(self.config.strategy, 'names') else ['mse']
-        date_ranges = self.config.strategy.date_ranges if hasattr(self.config.strategy, 'date_ranges') else ['2025-06-06_to_2025-06-07']
+        strategies = getattr(self.config.strategy, 'names', [self.config.strategy.name]) if hasattr(self.config.strategy, 'names') else [self.config.strategy.name]
+        date_ranges = getattr(self.config.strategy, 'date_ranges', ['2025-06-06_to_2025-06-07']) if hasattr(self.config.strategy, 'date_ranges') else ['2025-06-06_to_2025-06-07']
         
         # Use first strategy and first date range for directory structure
         strategy_name = strategies[0] if strategies else 'mse'
@@ -106,22 +125,19 @@ class UnifiedBacktesterRunner:
         
         # Set the clean directory as our run_id for consistency
         self.config.run_id = f"{timestamp}/{strategy_name}/{date_range}"
-        self.config.strategy_run_dir = strategy_run_dir  # Store full path for components to use
+        setattr(self.config, 'strategy_run_dir', strategy_run_dir)  # Store full path for components to use
         
         self.logger.info(f"Using clean output directory structure: {strategy_run_dir}")
         
         # Initialize modular components
-        self.workflow_manager = WorkflowManager(config, self.logger)
-        self.task_executor = TaskExecutor(config, self.logger)
-        self.analysis_engine = AnalysisEngine(config, self.logger)
-        self.visualization_engine = VisualizationEngine(config, self.logger)
+        self.workflow_manager = WorkflowManager(self.config, self.logger)
+        self.task_executor = TaskExecutor(self.config, self.logger)
+        self.analysis_engine = AnalysisEngine(self.config, self.logger)
+        self.visualization_engine = VisualizationEngine(self.config, self.logger)
         
-        # Register signal handlers for graceful shutdown
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
-        
-        self.logger.info(f"UnifiedBacktesterRunner initialized with {config.strategy.risk_profile} profile")
-        self.logger.info("All modular components loaded successfully")    
+        self.logger.info(f"UnifiedBacktesterRunner initialized with {self.config.strategy.risk_profile} profile")
+        self.logger.info("All modular components loaded successfully")
+        signal.signal(signal.SIGTERM, self._signal_handler)    
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals gracefully."""
         self.logger.info(f"Received signal {signum}. Shutting down gracefully...")
@@ -160,16 +176,16 @@ class UnifiedBacktesterRunner:
             List of (ticker, date_range, strategy_name, optimization_params) tuples
         """
         tasks = []
-        strategies = self.config.strategy.names if hasattr(self.config.strategy, 'names') else ['mse']
-        date_ranges = self.config.strategy.date_ranges if hasattr(self.config.strategy, 'date_ranges') else []
-        tickers = self.config.strategy.tickers if hasattr(self.config.strategy, 'tickers') else []        # Auto-discovery for all modes when no tickers provided
+        strategies = getattr(self.config.strategy, 'names', [self.config.strategy.name]) if hasattr(self.config.strategy, 'names') else [self.config.strategy.name]
+        date_ranges = getattr(self.config.strategy, 'date_ranges', []) if hasattr(self.config.strategy, 'date_ranges') else []
+        tickers = getattr(self.config.strategy, 'tickers', []) if hasattr(self.config.strategy, 'tickers') else []        # Auto-discovery for all modes when no tickers provided
         mode = getattr(self.config, 'mode', 'backtest')
         if not tickers and date_ranges:
             tickers = self._auto_discover_tickers(date_ranges)
             if tickers:
                 self.logger.info(f"Auto-discovered {len(tickers)} tickers for {mode} mode: {tickers}")
                 # Update the config with discovered tickers
-                self.config.strategy.tickers = tickers
+                setattr(self.config.strategy, 'tickers', tickers)
             else:
                 self.logger.warning(f"No tickers found for {mode} mode in date ranges: {date_ranges}")
                 return tasks
@@ -195,58 +211,73 @@ class UnifiedBacktesterRunner:
         try:
             self.logger.info("Starting unified backtester execution...")
             
-            # Generate tasks from configuration
-            tasks = self._generate_tasks_from_config()
-            
-            if not tasks:
-                raise RuntimeError("No tasks generated from configuration")
-              # Execute the workflow based on mode
+            # Handle special modes that don't require task generation
             mode = getattr(self.config, 'mode', 'backtest')
             
-            if mode == 'backtest':
-                # Full workflow
-                results = self.workflow_manager.execute_full_workflow(
-                    tasks=tasks,
-                    use_parallel=True,
-                    skip_visualization=False
-                )
-            elif mode == 'analyze':
-                # Analysis workflow
-                results = self.workflow_manager.execute_analysis_workflow(
-                    tasks=tasks,
-                    use_parallel=True
-                )
-            elif mode == 'visualize':
-                # Visualization workflow
-                results = self.workflow_manager.execute_visualization_workflow(
-                    tasks=tasks,
-                    use_parallel=True
-                )           
+            if mode == 'fetch':
+                # Data fetching mode - can run interactively with zero arguments
+                # NO modular components needed for fetch mode
+                date_ranges = getattr(self.config.strategy, 'date_ranges', []) if hasattr(self.config, 'strategy') else []
+                tickers = getattr(self.config.strategy, 'tickers', []) if hasattr(self.config, 'strategy') else []
+                
+                # If no arguments provided, launch interactive mode
+                if not date_ranges and not tickers:
+                    self.logger.info("No arguments provided for fetch mode - launching interactive interface")
+                    from src.core.etl.data_fetcher import main as data_fetcher_main
+                    
+                    # Call the interactive main function directly - no workflow needed
+                    try:
+                        data_fetcher_main()
+                        results = {'status': 'success', 'mode': 'fetch', 'message': 'Interactive fetch completed'}
+                    except Exception as e:
+                        results = {'status': 'error', 'mode': 'fetch', 'error': str(e)}
+                else:
+                    # Initialize workflow manager only when needed for non-interactive fetch
+                    self._init_modular_components()
+                    assert self.workflow_manager is not None, "Workflow manager should be initialized"
+                    results = self.workflow_manager.execute_fetch_workflow(date_ranges, tickers)
             elif mode == 'validate':
-                # Validation only
-                date_ranges = self.config.strategy.date_ranges if hasattr(self.config.strategy, 'date_ranges') else []
-                tickers = self.config.strategy.tickers if hasattr(self.config.strategy, 'tickers') else []
+                # Validation only - no modular components needed
+                date_ranges = getattr(self.config.strategy, 'date_ranges', []) if hasattr(self.config, 'strategy') else []
+                tickers = getattr(self.config.strategy, 'tickers', []) if hasattr(self.config, 'strategy') else []
                 validation_passed = self.validate_data(date_ranges, tickers)
                 results = {
                     'status': 'success' if validation_passed else 'error',
                     'validation_passed': validation_passed
                 }
-            elif mode == 'fetch':
-                # Data fetching mode - can run interactively with zero arguments
-                date_ranges = self.config.strategy.date_ranges if hasattr(self.config.strategy, 'date_ranges') else []
-                tickers = self.config.strategy.tickers if hasattr(self.config.strategy, 'tickers') else []
-                
-                # If no arguments provided, launch interactive mode
-                if not date_ranges and not tickers:
-                    self.logger.info("No arguments provided for fetch mode - launching interactive interface")
-                    from src.core.etl.data_fetcher import DataFetcher
-                    fetcher = DataFetcher()
-                    results = fetcher.interactive_fetch()
-                else:
-                    # Use existing workflow with provided arguments
-                    results = self.workflow_manager.execute_fetch_workflow(date_ranges, tickers)
             else:
-                raise ValueError(f"Unknown mode: {mode}")
+                # Standard modes that require full modular components initialization
+                self._init_modular_components()
+                assert self.workflow_manager is not None, "Workflow manager should be initialized"
+                
+                # Standard modes that require task generation
+                tasks = self._generate_tasks_from_config()
+                
+                if not tasks:
+                    raise RuntimeError("No tasks generated from configuration")
+                
+                # Execute the workflow based on mode
+                if mode == 'backtest':
+                    # Full workflow
+                    results = self.workflow_manager.execute_full_workflow(
+                        tasks=tasks,
+                        use_parallel=True,
+                        skip_visualization=False
+                    )
+                elif mode == 'analyze':
+                    # Analysis workflow
+                    results = self.workflow_manager.execute_analysis_workflow(
+                        tasks=tasks,
+                        use_parallel=True
+                    )
+                elif mode == 'visualize':
+                    # Visualization workflow
+                    results = self.workflow_manager.execute_visualization_workflow(
+                        tasks=tasks,
+                        use_parallel=True
+                    )
+                else:
+                    raise ValueError(f"Unknown mode: {mode}")
             
             # Validate execution was successful
             if not results or 'status' not in results:
@@ -313,6 +344,13 @@ class UnifiedBacktesterRunner:
         # Execute workflow based on current mode
         mode = getattr(self.config, 'mode', 'backtest')
         
+        # Ensure components are initialized for workflow modes
+        if self.workflow_manager is None:
+            self._init_modular_components()
+        
+        # Assert components are available (help static analysis)
+        assert self.workflow_manager is not None, "Workflow manager should be initialized"
+        
         if mode == 'backtest':
             # Full workflow
             return self.workflow_manager.execute_full_workflow(
@@ -343,6 +381,13 @@ class UnifiedBacktesterRunner:
         Comprehensive data validation with bias detection.
         This maintains API compatibility with the original monolithic runner.
         """
+        # For simple validation, we can use a lightweight validator without full components
+        if self.task_executor is None:
+            # Simple validation without full components initialization for validate mode
+            from src.runners.components.validator import DataValidator
+            validator = DataValidator()
+            return validator.validate_data(dates, tickers)
+        
         return self.task_executor.data_validator.validate_data(dates, tickers)
     
     def run_backtest_task(self, args_tuple) -> Dict[str, Any]:
@@ -350,6 +395,13 @@ class UnifiedBacktesterRunner:
         Execute individual backtest task.
         This maintains API compatibility with the original monolithic runner.
         """
+        # Ensure components are initialized for backtest tasks
+        if self.task_executor is None:
+            self._init_modular_components()
+        
+        # Assert components are available (help static analysis)
+        assert self.task_executor is not None, "Task executor should be initialized"
+            
         return self.task_executor.run_backtest_task(args_tuple)
 
 

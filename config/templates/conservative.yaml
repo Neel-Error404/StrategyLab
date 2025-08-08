@@ -26,7 +26,6 @@ strategy:
   risk_profile: "conservative"
 
 risk:
-  enabled: true
   max_position_size: 0.15    # 15% max position (allows portfolio diversification)
   max_daily_loss: 0.02       # 2% daily loss limit
   max_drawdown: 0.20         # 20% maximum drawdown
@@ -39,7 +38,6 @@ risk:
   enable_timeout: true
 
 transaction:
-  enabled: true
   model_type: "advanced"
   brokerage_rate: 0.0003
   fixed_cost: 0.0
@@ -95,8 +93,7 @@ logging:
   backup_count: 5
 
 # Global settings
-execution:
-  parallel_processing: false  # Conservative - single threaded
-  max_workers: 1
-  cache_enabled: true
-  cache_dir: "cache"
+parallel_processing: false  # Conservative - single threaded
+max_workers: 1
+cache_enabled: true
+cache_dir: "cache"

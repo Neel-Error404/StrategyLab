@@ -5,6 +5,7 @@ import logging
 from .base_provider import DataProvider
 from .upstox_provider import UpstoxDataProvider
 from .zerodha_provider import ZerodhaDataProvider
+from .binance_provider import BinanceDataProvider
 from ..token_manager import get_token_manager, detect_available_provider
 
 
@@ -13,7 +14,8 @@ class DataProviderFactory:
     
     _providers = {
         'upstox': UpstoxDataProvider,
-        'zerodha': ZerodhaDataProvider
+        'zerodha': ZerodhaDataProvider,
+        'binance': BinanceDataProvider
     }
     
     @classmethod
@@ -60,15 +62,18 @@ class DataProviderFactory:
             from config import UPSTOX_CONFIG, ZERODHA_CONFIG
             config_map = {
                 'upstox': UPSTOX_CONFIG,
-                'zerodha': ZERODHA_CONFIG
+                'zerodha': ZERODHA_CONFIG,
+                'binance': {}  # No config needed for Binance historical data
             }
             config = config_map.get(provider_name, {})
 
         try:
             provider = provider_class(config)
             
-            # Validate token availability
-            if not token_manager.validate_token(provider_name):
+            # Validate token availability (skip for Binance since it doesn't require tokens)
+            if provider_name == 'binance':
+                logger.info(f"Binance provider initialized (no authentication required for historical data)")
+            elif not token_manager.validate_token(provider_name):
                 logger.warning(f"No valid token found for {provider_name}. "
                              f"Authentication will be required during first use.")
             else:

@@ -4,6 +4,36 @@
 
 ---
 
+## 🆕 **Recent System Changes** 
+
+### **Cleanup & Optimization (Latest Update)**
+The system has been recently optimized with the following changes:
+
+#### **Files Removed**
+- **Empty test files**: 11 test_*.py files with no content
+- **Unused utilities**: 5 empty utility scripts
+- **Legacy components**: Redundant visualization and naming files
+
+#### **Configuration System**
+- **Dual config approach**: `config.py` (brokers) + `unified_config.py` (strategies)
+- **Both files needed**: Don't remove either configuration file
+- **Template system**: All risk templates preserved and functional
+
+#### **If you encounter "File not found" errors after cleanup:**
+```bash
+# These files were intentionally removed (don't recreate them)
+test_*.py               # Empty test files
+demo_improvement.py     # Empty demo file
+validate_cleanup.py     # Empty validation script
+
+# These files are still present and functional
+src/runners/unified_runner.py     # Main entry point
+config/config.py                  # Broker configurations  
+config/unified_config.py          # Strategy configurations
+```
+
+---
+
 ## 🚨 **Quick Fixes**
 
 ### **🔥 Most Common Issues**

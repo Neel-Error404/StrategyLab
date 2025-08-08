@@ -36,6 +36,15 @@ from config.config import (
     UPSTOX_CONFIG, ZERODHA_CONFIG, BASE_DIR
 )
 
+# Dummy functions for Binance (no token management needed)
+def save_binance_access_token(*args, **kwargs):
+    """Dummy function - Binance doesn't require token storage for historical data."""
+    return True
+
+def load_binance_access_token(*args, **kwargs):
+    """Dummy function - Binance doesn't require token loading for historical data."""
+    return "no_token_required"
+
 
 class ProviderTokenManager:
     """
@@ -50,18 +59,21 @@ class ProviderTokenManager:
         # Provider configurations mapping
         self.provider_configs = {
             'upstox': UPSTOX_CONFIG,
-            'zerodha': ZERODHA_CONFIG
+            'zerodha': ZERODHA_CONFIG,
+            'binance': {}  # No config needed for Binance
         }
         
         # Provider-specific token functions
         self.token_savers = {
             'upstox': save_upstox_access_token,
-            'zerodha': save_zerodha_access_token
+            'zerodha': save_zerodha_access_token,
+            'binance': save_binance_access_token
         }
         
         self.token_loaders = {
             'upstox': load_upstox_access_token,
-            'zerodha': load_zerodha_access_token
+            'zerodha': load_zerodha_access_token,
+            'binance': load_binance_access_token
         }
         
         self._ensure_token_directories()
@@ -71,6 +83,11 @@ class ProviderTokenManager:
         with self._lock:
             try:
                 for provider, config in self.provider_configs.items():
+                    # Skip providers that don't need token directories
+                    if not config or 'ACCESS_TOKEN_DIR' not in config:
+                        self.logger.debug(f"Skipping token directory creation for {provider} (no token directory needed)")
+                        continue
+                        
                     token_dir = Path(config.get('ACCESS_TOKEN_DIR'))
                     token_dir.mkdir(parents=True, exist_ok=True)
                     self.logger.debug(f"Ensured token directory exists: {token_dir}")
@@ -177,7 +194,7 @@ class ProviderTokenManager:
         Clear/delete authentication token for the specified provider.
         
         Args:
-            provider: Provider name ('upstox', 'zerodha')
+            provider: Provider name ('upstox', 'zerodha', 'binance')
         
         Returns:
             True if successful, False otherwise
@@ -188,9 +205,20 @@ class ProviderTokenManager:
             self.logger.error(f"Unsupported provider: {provider}")
             return False
         
+        # Binance doesn't have tokens to clear
+        if provider == 'binance':
+            self.logger.info(f"No tokens to clear for {provider} (none required)")
+            return True
+        
         with self._lock:
             try:
                 config = self.provider_configs[provider]
+                
+                # Skip if no token directory configured
+                if not config or 'ACCESS_TOKEN_DIR' not in config:
+                    self.logger.info(f"No token directory configured for {provider}")
+                    return True
+                    
                 token_dir = Path(config.get('ACCESS_TOKEN_DIR'))
                 
                 # Remove all token files for the provider
@@ -226,11 +254,15 @@ class ProviderTokenManager:
         Validate if the current token for the provider is valid and not expired.
         
         Args:
-            provider: Provider name ('upstox', 'zerodha')
+            provider: Provider name ('upstox', 'zerodha', 'binance')
         
         Returns:
             True if token is valid, False otherwise
         """
+        # Binance doesn't require tokens for historical data
+        if provider.lower() == 'binance':
+            return True
+            
         token = self.load_token(provider)
         return token is not None
     
@@ -245,6 +277,12 @@ class ProviderTokenManager:
         
         for provider, config in self.provider_configs.items():
             token_files = []
+            
+            # Skip providers that don't use token files
+            if not config or 'ACCESS_TOKEN_DIR' not in config:
+                result[provider] = ["No token files (none required)"]
+                continue
+            
             token_dir = Path(config.get('ACCESS_TOKEN_DIR'))
             
             if token_dir.exists():
@@ -254,9 +292,11 @@ class ProviderTokenManager:
                 
                 # Find legacy CSV files (mainly for Zerodha)
                 if provider == 'zerodha':
-                    csv_file = Path(config.get('KEY_CSV_LOCATION'))
-                    if csv_file.exists():
-                        token_files.append(str(csv_file))
+                    csv_file_path = config.get('KEY_CSV_LOCATION')
+                    if csv_file_path:
+                        csv_file = Path(csv_file_path)
+                        if csv_file.exists():
+                            token_files.append(str(csv_file))
             
             result[provider] = token_files
         

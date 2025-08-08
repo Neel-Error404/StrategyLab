@@ -471,10 +471,13 @@ class FetchModeHandler(ModeHandler):
                     
                     # Initialize data fetcher with auto-detect provider
                     fetcher = DataFetcher()
-                      # Fetch data for all tickers in this date range
+                      # Get timeframes from config or use default
+                    timeframes = getattr(self.config, 'timeframes', ['1m'])
+                    
+                    # Fetch data for all tickers in this date range
                     result = fetcher.fetch_historical_data(
                         tickers=tickers,
-                        timeframes=['1m'],  # Default to 1-minute data
+                        timeframes=timeframes,
                         start_date=start_date,
                         end_date=end_date
                     )
@@ -503,6 +506,7 @@ class FetchModeHandler(ModeHandler):
             
             return {
                 'mode': 'fetch',
+                'status': 'success',
                 'summary': {
                     'total_date_ranges': len(dates),
                     'successful_ranges': total_success,
