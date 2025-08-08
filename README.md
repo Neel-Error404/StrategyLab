@@ -1,4 +1,4 @@
-# 🚀 Algorithmic Trading Backtester
+# 🚀 Strategy Lab - Trading Backtester
 
 A **production-ready, modular backtesting system** for algorithmic trading strategies with real broker integration, comprehensive analysis, and AI-assisted configuration.
 
@@ -16,7 +16,7 @@ A **production-ready, modular backtesting system** for algorithmic trading strat
 I'm setting up an algorithmic trading backtester. Please help me configure it based on my requirements.
 
 SYSTEM INFO:
-- Repository: https://github.com/yourusername/backtester
+- Repository: https://github.com/yourusername/StrategyLab  (→ Fork before use)
 - Language: Python 3.9+
 - Supported Brokers: Zerodha Kite API, Upstox API, Binance API
 - Architecture: Modular, production-ready with real-time data
@@ -257,13 +257,13 @@ Use the prompt at the top with any AI model for personalized help.
 
 ## 📄 **License**
 
-MIT License - See `LICENSE` file for details.
+StrategyLab is released under the MIT License – see the [LICENSE](./LICENSE) file for details.
 
 ---
 
 ## 🚀 **Ready to Start?**
 
-1. **🔥 Try the 30-second setup above**
+1. **🔥 Try the 5-minute setup above**
 2. **🤖 Use the AI prompt for personalized help**
 3. **📚 Browse the documentation**
 4. **💬 Join our community for support**
