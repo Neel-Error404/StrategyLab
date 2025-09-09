@@ -200,6 +200,22 @@ Temporary Items
 .nfs*
 
 # ==========================================
+# IMPORT STAGING & ARCHIVES
+# ==========================================
+# Isolated import workspace for backups; never commit
+_import/
+
+# Top-level archives
+*.zip
+
+# ==========================================
+# PRIVATE STRATEGY VARIANTS (do not commit)
+# ==========================================
+# Keep newly imported private strategies local only
+src/strategies/mse_*.py
+src/strategies/mse_strategy_live*.py
+
+# ==========================================
 # DEVELOPMENT AND TESTING
 # ==========================================
 

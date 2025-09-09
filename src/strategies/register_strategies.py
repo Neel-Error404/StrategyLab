@@ -3,6 +3,29 @@ from .strategy_factory import StrategyFactory
 from .strategy_sma_crossover import SMAcrossoverStrategy
 from .strategy_bollinger_bands import BollingerBandsStrategy
 
+# Extended MSE strategy variants (from live backup)
+try:
+    from .strategy_mse import MSEStrategy  # base MSE
+    from .mse_20pct_with_cascade import MSEStrategy as MSE20WithCascade
+    from .mse_20pct_no_cascade import MSEStrategy as MSE20NoCascade
+    from .mse_80pct_with_cascade import MSEStrategy as MSE80WithCascade
+    from .mse_80pct_no_cascade import MSEStrategy as MSE80NoCascade
+    from .mse_20pct_no_cascade_with_macd_exit import MSEStrategy as MSE20NoCascadeWithMACDExit
+    from .mse_80pct_no_cascade_with_macd_exit import MSEStrategy as MSE80NoCascadeWithMACDExit
+    from .mse_80pct_no_cascade_live_matching import MSEStrategy as MSE80NoCascadeLiveMatching
+    from .mse_5min_validation import MSEStrategy as MSE5MinValidation
+except Exception:
+    # Keep registration resilient if some optional strategies are missing
+    MSEStrategy = None
+    MSE20WithCascade = None
+    MSE20NoCascade = None
+    MSE80WithCascade = None
+    MSE80NoCascade = None
+    MSE20NoCascadeWithMACDExit = None
+    MSE80NoCascadeWithMACDExit = None
+    MSE80NoCascadeLiveMatching = None
+    MSE5MinValidation = None
+
 def register_all_strategies():
     """
     Register all available strategies with the factory.
@@ -11,6 +34,26 @@ def register_all_strategies():
         # Register template strategies for public use
         StrategyFactory.register_strategy('sma_crossover', SMAcrossoverStrategy)
         StrategyFactory.register_strategy('bollinger_bands', BollingerBandsStrategy)
+
+        # Register MSE base and variations when available
+        if MSEStrategy:
+            StrategyFactory.register_strategy('mse', MSEStrategy)
+        if MSE20WithCascade:
+            StrategyFactory.register_strategy('mse_20pct_with_cascade', MSE20WithCascade)
+        if MSE20NoCascade:
+            StrategyFactory.register_strategy('mse_20pct_no_cascade', MSE20NoCascade)
+        if MSE80WithCascade:
+            StrategyFactory.register_strategy('mse_80pct_with_cascade', MSE80WithCascade)
+        if MSE80NoCascade:
+            StrategyFactory.register_strategy('mse_80pct_no_cascade', MSE80NoCascade)
+        if MSE20NoCascadeWithMACDExit:
+            StrategyFactory.register_strategy('mse_20pct_no_cascade_with_macd_exit', MSE20NoCascadeWithMACDExit)
+        if MSE80NoCascadeWithMACDExit:
+            StrategyFactory.register_strategy('mse_80pct_no_cascade_with_macd_exit', MSE80NoCascadeWithMACDExit)
+        if MSE80NoCascadeLiveMatching:
+            StrategyFactory.register_strategy('mse_80pct_no_cascade_live_matching', MSE80NoCascadeLiveMatching)
+        if MSE5MinValidation:
+            StrategyFactory.register_strategy('mse_5min_validation', MSE5MinValidation)
         
         # Note: Add your custom strategies here
         # StrategyFactory.register_strategy('your_strategy', YourStrategyClass)

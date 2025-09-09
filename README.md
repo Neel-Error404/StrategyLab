@@ -173,10 +173,20 @@ python src/runners/unified_runner.py \
   --mode backtest \
   --config my_custom_config.yaml \
   --date-ranges 2024-01-01_to_2024-12-31 \
-  --parallel
+  --parallel --max-workers 6 --skip-validation
 ```
 
 ---
+
+## Utilities
+
+- `src/scripts/compare_broker_vs_strategy.py`
+  - Compares broker order CSVs to strategy trades from a run directory with entry/exit tolerances; writes audit JSONs.
+  - Example:
+    - `python -m src.scripts.compare_broker_vs_strategy --orders broker_orders.csv --run-dir outputs/<RUN>/<STRAT>/<RANGE> --start 2025-08-26 --end 2025-09-04 --entry-tol 20 --exit-tol 20 --exit-enforce true`
+
+- `src/scripts/monitor_progress.py`
+  - Monitors a `historical_data/progress.json` file for long-running data jobs; prints live progress.
 
 ## 🏗️ **Project Structure** (Optimized & Clean)
 

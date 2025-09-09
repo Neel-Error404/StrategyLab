@@ -103,11 +103,23 @@ Examples:
         '--parallel',
         action='store_true',
         help="Enable parallel processing"    )
+
+    parser.add_argument(
+        '--max-workers',
+        type=int,
+        help="Maximum number of parallel workers (default: 4, max recommended: CPU_COUNT * 2)"
+    )
     
     parser.add_argument(
         '--skip-visualization',
         action='store_true',
         help="Skip visualization generation"
+    )
+
+    parser.add_argument(
+        '--skip-validation',
+        action='store_true',
+        help="Skip data validation"
     )
     
     parser.add_argument(
@@ -236,6 +248,12 @@ def load_config_from_args(args) -> BacktestConfig:
     
     if args.log_level:
         config.logging.level = args.log_level
+
+    # Execution overrides
+    if hasattr(args, 'parallel') and args.parallel:
+        config.execution.parallel_processing = True
+    if hasattr(args, 'max_workers') and args.max_workers:
+        config.execution.max_workers = int(args.max_workers)
     
     if args.optimization_params:
         try:
@@ -245,11 +263,15 @@ def load_config_from_args(args) -> BacktestConfig:
     
     if args.trade_source:
         config.output.visualization_trade_source = args.trade_source
-    
+
     if args.timeframes:
         # Store timeframes in config for fetch mode
         config.timeframes = args.timeframes
-    
+
+    # Validation toggle
+    if hasattr(args, 'skip_validation') and args.skip_validation:
+        config.validation.enabled = False
+
     return config
 
 
