@@ -171,9 +171,9 @@ python src/runners/unified_runner.py \
 ### **Execution Control**
 ```bash
 --parallel                    # Enable parallel processing
---max-workers 4              # Number of CPU cores to use  
---no-validation              # Skip data validation
---skip-visualization         # Skip chart generation
+--max-workers 4               # Number of workers to use (default: 4)
+--skip-validation             # Skip data validation checks
+--skip-visualization          # Skip chart generation
 ```
 
 ### **Data Management**

@@ -118,6 +118,8 @@ backtests/
 *.pdf
 reports/
 analysis/
+# Allow source analysis modules
+!src/analysis/**
 
 # Logs and Monitoring
 logs/
@@ -200,6 +202,22 @@ Temporary Items
 .nfs*
 
 # ==========================================
+# IMPORT STAGING & ARCHIVES
+# ==========================================
+# Isolated import workspace for backups; never commit
+_import/
+
+# Top-level archives
+*.zip
+
+# ==========================================
+# PRIVATE STRATEGY VARIANTS (do not commit)
+# ==========================================
+# Keep newly imported private strategies local only
+src/strategies/mse_*.py
+src/strategies/mse_strategy_live*.py
+
+# ==========================================
 # DEVELOPMENT AND TESTING
 # ==========================================
 
@@ -255,6 +273,8 @@ model_performance/
 !config/templates/*.yaml
 !docs/
 !docs/*.md
+docs/CRITICAL_STRATEGY_IMPLEMENTATION_GUIDE.md
+docs/TASKS.md
 !src/
 !comprehensive_data_puller.py
 !mse_data_puller.py
