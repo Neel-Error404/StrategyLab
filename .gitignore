@@ -118,6 +118,8 @@ backtests/
 *.pdf
 reports/
 analysis/
+# Allow source analysis modules
+!src/analysis/**
 
 # Logs and Monitoring
 logs/
@@ -271,6 +273,8 @@ model_performance/
 !config/templates/*.yaml
 !docs/
 !docs/*.md
+docs/CRITICAL_STRATEGY_IMPLEMENTATION_GUIDE.md
+docs/TASKS.md
 !src/
 !comprehensive_data_puller.py
 !mse_data_puller.py
