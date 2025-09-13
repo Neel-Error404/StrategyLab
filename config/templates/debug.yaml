@@ -1,0 +1,142 @@
+# Debug template - Pure strategy testing with NO risk management interference
+# Perfect for testing raw entry/exit signals without any filters
+# WARNING: This will generate unrealistic P&L - FOR TESTING ONLY
+
+data:
+  data_pool_dir: "data/pools"
+  timeframe_folders:
+    1minute: "1minute"
+    5minute: "5minute"  
+    15minute: "15minute"
+    1hour: "1hour"
+    1day: "1day"
+  default_timeframe: "1minute"
+  required_columns:
+    - "timestamp"
+    - "open"
+    - "high"
+    - "low"
+    - "close"
+    - "volume"
+  date_format: "%Y-%m-%d"
+  timezone: "Asia/Kolkata"
+
+strategy:
+  name: "mse"
+  parameters: {}
+  enabled: true
+  description: "DEBUG MODE - Raw strategy signals with no risk management"
+  risk_profile: "debug"
+  initial_capital: 1000000.0  # 10 lakh for testing
+
+risk:
+  enabled: false               # ← DISABLED - No risk management
+  bypass_mode: true           # ← BYPASS ALL CHECKS
+  max_position_size: 1.0      # ← 100% position allowed (no limit)
+  max_daily_loss: 1.0         # ← 100% daily loss allowed (no limit)
+  max_drawdown: 1.0           # ← 100% drawdown allowed (no limit)
+  max_concentration: 1.0      # ← 100% concentration allowed (no limit)
+  stop_loss_pct: 0.0          # ← NO STOP LOSS
+  take_profit_pct: 0.0        # ← NO TAKE PROFIT  
+  position_timeout_minutes: 0 # ← NO TIMEOUT
+  enable_stop_loss: false     # ← DISABLED
+  enable_take_profit: false   # ← DISABLED
+  enable_timeout: false       # ← DISABLED
+
+transaction:
+  enabled: false              # ← NO TRANSACTION COSTS
+  model_type: "basic"
+  brokerage_rate: 0.0         # ← ZERO COSTS
+  fixed_cost: 0.0
+  slippage_rate: 0.0          # ← NO SLIPPAGE
+  market_impact_factor: 0.0   # ← NO MARKET IMPACT
+  enable_market_impact: false
+
+options:
+  enabled: false
+  synthetic_enabled: false
+  volatility_model: "black_scholes"
+  interest_rate: 0.05
+  dividend_yield: 0.0
+  days_to_expiry: 30
+  strike_range: 0.1
+  greeks_calculation: false
+
+validation:
+  enabled: false              # ← MINIMAL VALIDATION
+  lookahead_bias_check: false # ← DISABLED FOR SPEED
+  survivorship_bias_check: false
+  data_quality_check: true    # ← Keep basic data checks only
+  min_data_points: 50
+  max_missing_data_pct: 0.10  # ← More lenient
+  price_outlier_threshold: 5.0 # ← More lenient
+  strict_mode: false
+
+optimization:
+  enabled: false
+  method: "grid_search"
+  max_iterations: 10
+  cv_folds: 3
+  test_size: 0.3
+  random_state: 42
+
+output:
+  save_trades: true
+  save_metrics: true
+  save_plots: false           # ← Skip plots for speed
+  save_base_data: false       # ← Skip base data for speed
+  output_dir: "outputs"
+  trade_file_format: "csv"
+  base_file_format: "csv"
+  metrics_file_format: "json"
+  plot_format: "png"
+  visualization_trade_source: "strategy_trades"  # ← Raw strategy output
+
+logging:
+  level: "WARNING"            # ← Less verbose for speed
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  file_enabled: false         # ← Disable file logging for speed
+  console_enabled: true
+  log_dir: "logs"
+  max_file_size: "10MB"
+  backup_count: 5
+
+# Infrastructure configuration
+broker:
+  default_provider: "upstox"
+  available_providers: ["upstox", "zerodha", "binance"]
+  token_refresh_enabled: false
+  auto_refresh_minutes: 60
+
+# Audit compliance - DISABLED FOR DEBUG (strategy handles its own logic)
+compliance:
+  warmup_minutes: 0           # ← NO WARMUP for debugging (strategy enforces its own)
+  use_previous_bar: false     # ← Allow current bar for debugging signals
+  enable_two_bar_rule: false  # ← Allow same-bar execution for debugging
+  cascade_prevention: false   # ← Disabled for debug
+  default_exit_threshold: 0.0 # ← No template exit logic (strategy handles this)
+  enforce_compliance: false   # ← DISABLE all template compliance
+
+# Execution configuration
+execution:
+  parallel_processing: false  # ← Single-threaded for debugging
+  max_workers: 1
+  cache_enabled: false        # ← Disable cache for fresh runs
+  cache_dir: "cache"
+  timeout_seconds: 3600
+
+# Global settings
+base_dir: "."
+run_id: ""  # Will be auto-generated
+
+# DEBUG MODE WARNINGS
+# This template is designed for TESTING STRATEGY LOGIC ONLY
+# Results will show:
+# 1. Pure entry/exit signals from your strategy
+# 2. No position sizing limits
+# 3. No stop losses or take profits
+# 4. No transaction costs
+# 5. No risk management filters
+# 
+# Use this to answer: "Does my strategy generate the right signals?"
+# Then use conservative/aggressive templates for realistic backtests

@@ -11,11 +11,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
+import signal
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 
 # Core system imports
-from src.core.etl.loader import load_base_data
+from src.core.etl.loader import load_base_data, load_multi_timeframe_data
 from src.core.strat_stats.strategy_executor import extract_trades
 from src.core.strat_stats.statistics import (
     calculate_metrics,
@@ -31,6 +32,15 @@ from src.core.options.options_engine import OptionsBacktester
 
 # Import modular validation component
 from src.runners.components.validator import DataValidator
+
+
+def init_worker_process():
+    """Initialize worker process with proper signal handling and strategy registration."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore SIGINT in workers
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)  # Default SIGTERM handling
+    
+    # Register strategies once per worker process (not per task)
+    register_all_strategies()
 
 
 class TaskExecutor:
@@ -113,8 +123,14 @@ class TaskExecutor:
             pool_size = min(cpu_count(), len(tasks), self.config.execution.max_workers if hasattr(self.config.execution, 'max_workers') else 4)
             self.logger.info(f"🔄 Starting multiprocessing pool with {pool_size} processes")
             
-            with Pool(processes=pool_size) as pool:
-                results_list = pool.map(self.run_backtest_task, tasks)
+            try:
+                with Pool(processes=pool_size, initializer=init_worker_process) as pool:
+                    results_list = pool.map(self.run_backtest_task, tasks)
+            except KeyboardInterrupt:
+                self.logger.warning("🛑 KeyboardInterrupt received - terminating all worker processes")
+                pool.terminate()
+                pool.join()
+                raise KeyboardInterrupt("Backtesting interrupted by user")
         else:
             reason = "portfolio coordination" if is_portfolio_mode else "sequential mode"
             self.logger.info(f"🔄 Running tasks sequentially ({reason})")
@@ -147,37 +163,57 @@ class TaskExecutor:
         """
         Execute a single backtest task.
         """
-        # Register strategies in this worker process
-        if not register_all_strategies():
-            return {"error": "Failed to register strategies in worker process"}
-        
         ticker, date_range, strategy_name, optimization_params = args_tuple
         
         self.logger.info(f"Processing {ticker} with {strategy_name} for {date_range}")
         
         try:
-            # Load base data
-            base_df = load_base_data(date_range, ticker)
-            if base_df is None or base_df.empty:
-                self.logger.warning(f"No data found for {ticker} in {date_range}")
-                return {}
-            
-            # Validate market data using modular validator
-            validation_result = self.data_validator.validate_market_data(base_df)
-            if not validation_result['is_valid']:
-                self.logger.error(f"Data validation failed for {ticker} in {date_range}: {validation_result['issues']}")
-                return {}
-            
-            # Log validation warnings if any
-            if validation_result['warnings']:
-                for warning in validation_result['warnings']:
-                    self.logger.warning(f"Data validation warning for {ticker}: {warning}")
-            
-            # Get strategy instance
+            # Get strategy instance first to check timeframe requirements
             strategy = StrategyFactory.get_strategy(strategy_name)
             if strategy is None:
                 self.logger.error(f"Strategy '{strategy_name}' not found")
                 return {}
+            
+            # Load data based on strategy requirements
+            if hasattr(strategy, 'required_timeframes') and len(strategy.required_timeframes) > 1:
+                # Multi-timeframe strategy - use new loader
+                self.logger.info(f"Loading multi-timeframe data for {strategy_name}: {strategy.required_timeframes}")
+                data = load_multi_timeframe_data(date_range, ticker, strategy.required_timeframes)
+                if not data:
+                    self.logger.warning(f"No multi-timeframe data found for {ticker} in {date_range}")
+                    return {}
+                base_df = data  # Keep as dict for multi-timeframe strategies
+            else:
+                # Single timeframe strategy - use legacy loader
+                base_df = load_base_data(date_range, ticker)
+                if base_df is None or base_df.empty:
+                    self.logger.warning(f"No data found for {ticker} in {date_range}")
+                    return {}
+            
+            # Validate market data using modular validator
+            if isinstance(base_df, dict):
+                # Multi-timeframe data - validate each timeframe
+                for timeframe, df in base_df.items():
+                    validation_result = self.data_validator.validate_market_data(df)
+                    if not validation_result['is_valid']:
+                        self.logger.error(f"Data validation failed for {ticker} {timeframe} in {date_range}: {validation_result['issues']}")
+                        return {}
+                    
+                    # Log validation warnings if any
+                    if validation_result['warnings']:
+                        for warning in validation_result['warnings']:
+                            self.logger.warning(f"Data validation warning for {ticker} {timeframe}: {warning}")
+            else:
+                # Single timeframe data
+                validation_result = self.data_validator.validate_market_data(base_df)
+                if not validation_result['is_valid']:
+                    self.logger.error(f"Data validation failed for {ticker} in {date_range}: {validation_result['issues']}")
+                    return {}
+                
+                # Log validation warnings if any
+                if validation_result['warnings']:
+                    for warning in validation_result['warnings']:
+                        self.logger.warning(f"Data validation warning for {ticker}: {warning}")
             
             # Execute strategy
             final_df = strategy.execute(base_df, ticker, date_range)

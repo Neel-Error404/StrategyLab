@@ -31,11 +31,13 @@ Usage:
 
 import signal
 import sys
+import os
 import traceback
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+import json
 
 # Fix import paths
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -75,29 +77,170 @@ class UnifiedBacktesterRunner:
     def __init__(self, config: BacktestConfig):
         self.config = config
         self.start_time = datetime.now()
-        
+
         # Initialize CLI handler and setup logging
         self.cli_handler = CLIHandler()
         self.logger = configure_logging()
-        
+
+        # Initialize comprehensive logging system
+        self.execution_log = {
+            'session_id': datetime.now().strftime("%Y%m%d_%H%M%S"),
+            'start_time': self.start_time.isoformat(),
+            'config_snapshot': {},
+            'tasks_generated': [],
+            'files_created': [],
+            'files_failed': [],
+            'execution_phases': [],
+            'errors': [],
+            'warnings': [],
+            'performance_metrics': {}
+        }
+
         # Register all available strategies
         if not register_all_strategies():
             self.logger.error("Failed to register strategies")
             raise RuntimeError("Strategy registration failed")
-        
+
         # Store config for later use
         self.config = config
-        
+
         # Initialize components only when needed (will be done in run() method based on mode)
         self.workflow_manager = None
-        self.task_executor = None  
+        self.task_executor = None
         self.analysis_engine = None
         self.visualization_engine = None
-        
+
         # Register signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
-    
+
+        # Log initialization
+        self._log_execution_phase("initialization", "UnifiedBacktesterRunner initialized")
+
+    def _log_execution_phase(self, phase: str, message: str, details: Dict[str, Any] = None):
+        """Log execution phase with timestamp and details."""
+        phase_entry = {
+            'phase': phase,
+            'timestamp': datetime.now().isoformat(),
+            'message': message,
+            'details': details or {}
+        }
+        self.execution_log['execution_phases'].append(phase_entry)
+        self.logger.info(f"[{phase.upper()}] {message}")
+        if details:
+            self.logger.debug(f"[{phase.upper()}] Details: {details}")
+
+    def _log_file_creation(self, file_path: str, file_type: str, status: str = "success",
+                          error_msg: str = None, metadata: Dict[str, Any] = None):
+        """Log file creation attempts with detailed information."""
+        file_entry = {
+            'file_path': str(file_path),
+            'file_type': file_type,
+            'status': status,
+            'timestamp': datetime.now().isoformat(),
+            'error_message': error_msg,
+            'metadata': metadata or {}
+        }
+
+        if status == "success":
+            self.execution_log['files_created'].append(file_entry)
+            self.logger.info(f"✅ File created: {file_path} ({file_type})")
+        else:
+            self.execution_log['files_failed'].append(file_entry)
+            self.logger.error(f"❌ File creation failed: {file_path} ({file_type}) - {error_msg}")
+
+    def _log_task_generation(self, tasks: List, discovery_info: Dict[str, Any] = None):
+        """Log task generation with comprehensive details."""
+        task_info = {
+            'total_tasks': len(tasks),
+            'timestamp': datetime.now().isoformat(),
+            'discovery_info': discovery_info or {},
+            'task_breakdown': {}
+        }
+
+        # Analyze task composition
+        strategies = set()
+        tickers = set()
+        date_ranges = set()
+
+        for task in tasks:
+            if len(task) >= 3:
+                ticker, date_range, strategy = task[:3]
+                tickers.add(ticker)
+                date_ranges.add(date_range)
+                strategies.add(strategy)
+
+        task_info['task_breakdown'] = {
+            'unique_strategies': list(strategies),
+            'unique_tickers': list(tickers),
+            'unique_date_ranges': list(date_ranges),
+            'combinations': len(tasks)
+        }
+
+        self.execution_log['tasks_generated'] = task_info
+
+        self.logger.info(f"📋 Generated {len(tasks)} tasks:")
+        self.logger.info(f"   - Strategies: {len(strategies)} ({list(strategies)})")
+        self.logger.info(f"   - Tickers: {len(tickers)} ({list(tickers)})")
+        self.logger.info(f"   - Date Ranges: {len(date_ranges)} ({list(date_ranges)})")
+
+        if discovery_info:
+            self.logger.info(f"   - Discovery: {discovery_info}")
+
+    def _log_performance_metrics(self, metrics: Dict[str, Any]):
+        """Log performance metrics throughout execution."""
+        self.execution_log['performance_metrics'].update(metrics)
+        self.logger.info(f"⏱️  Performance: {metrics}")
+
+    def _save_execution_log(self, output_dir: str = None):
+        """Save comprehensive execution log to file."""
+        try:
+            # Finalize execution log
+            self.execution_log['end_time'] = datetime.now().isoformat()
+            self.execution_log['total_execution_time'] = (
+                datetime.now() - self.start_time
+            ).total_seconds()
+
+            # Determine output directory
+            if output_dir:
+                log_dir = Path(output_dir)
+            else:
+                log_dir = Path("logs")
+
+            log_dir.mkdir(parents=True, exist_ok=True)
+
+            # Create detailed log file
+            log_file = log_dir / f"execution_log_{self.execution_log['session_id']}.json"
+
+            with open(log_file, 'w') as f:
+                json.dump(self.execution_log, f, indent=2, default=str)
+
+            # Create summary log file
+            summary = {
+                'session_id': self.execution_log['session_id'],
+                'execution_time_seconds': self.execution_log['total_execution_time'],
+                'total_tasks': len(self.execution_log.get('tasks_generated', {}).get('task_breakdown', {}).get('combinations', [])),
+                'files_created_count': len(self.execution_log['files_created']),
+                'files_failed_count': len(self.execution_log['files_failed']),
+                'errors_count': len(self.execution_log['errors']),
+                'warnings_count': len(self.execution_log['warnings']),
+                'status': 'success' if len(self.execution_log['errors']) == 0 else 'completed_with_errors'
+            }
+
+            summary_file = log_dir / f"execution_summary_{self.execution_log['session_id']}.json"
+            with open(summary_file, 'w') as f:
+                json.dump(summary, f, indent=2)
+
+            self.logger.info(f"📊 Execution logs saved:")
+            self.logger.info(f"   - Detailed log: {log_file}")
+            self.logger.info(f"   - Summary: {summary_file}")
+
+            return str(log_file)
+
+        except Exception as e:
+            self.logger.error(f"Failed to save execution log: {e}")
+            return None
+
     def _init_modular_components(self):
         """Initialize modular components only when needed (not for fetch/validate modes)."""
         if self.workflow_manager is not None:
@@ -137,11 +280,16 @@ class UnifiedBacktesterRunner:
         
         self.logger.info(f"UnifiedBacktesterRunner initialized with {self.config.strategy.risk_profile} profile")
         self.logger.info("All modular components loaded successfully")
-        signal.signal(signal.SIGTERM, self._signal_handler)    
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals gracefully."""
-        self.logger.info(f"Received signal {signum}. Shutting down gracefully...")
-        sys.exit(0)
+        if signum == signal.SIGINT:
+            self.logger.warning("🛑 Ctrl+C received - shutting down immediately...")
+            print("\n🛑 Backtesting interrupted by user")
+        else:
+            self.logger.info(f"Received signal {signum}. Shutting down gracefully...")
+        
+        # Force immediate exit without cleanup to prevent fallback behavior
+        os._exit(1)
     
     def _auto_discover_tickers(self, date_ranges: List[str]) -> List[str]:
         """
@@ -156,17 +304,21 @@ class UnifiedBacktesterRunner:
         discovered_tickers = set()
         
         for date_range in date_ranges:
-            data_pool_path = Path(f"data/pools/{date_range}/1minute")
-            if data_pool_path.exists():
-                # Look for CSV files with ticker names
-                for csv_file in data_pool_path.glob("*.csv"):
-                    # Extract ticker from filename (format: TICKER_DATERANGE.csv)
-                    filename = csv_file.stem  # Remove .csv extension
-                    if '_' in filename:
-                        ticker = filename.split('_')[0]  # Take everything before first underscore
-                        discovered_tickers.add(ticker)
+            date_pool_path = Path(f"data/pools/{date_range}")
+            if date_pool_path.exists():
+                # New ticker-first structure: each ticker is a directory
+                for ticker_dir in date_pool_path.iterdir():
+                    if ticker_dir.is_dir() and not ticker_dir.name.startswith('.'):
+                        # Check if the directory contains data files (parquet or CSV)
+                        has_data = any(
+                            file.suffix in ['.parquet', '.csv'] 
+                            for file in ticker_dir.iterdir() 
+                            if file.is_file()
+                        )
+                        if has_data:
+                            discovered_tickers.add(ticker_dir.name)
         
-        return list(discovered_tickers)
+        return sorted(list(discovered_tickers))
 
     def _generate_tasks_from_config(self) -> List:
         """
@@ -180,8 +332,16 @@ class UnifiedBacktesterRunner:
         date_ranges = getattr(self.config.strategy, 'date_ranges', []) if hasattr(self.config.strategy, 'date_ranges') else []
         tickers = getattr(self.config.strategy, 'tickers', []) if hasattr(self.config.strategy, 'tickers') else []        # Auto-discovery for all modes when no tickers provided
         mode = getattr(self.config, 'mode', 'backtest')
+        discovery_info = {}
+
         if not tickers and date_ranges:
             tickers = self._auto_discover_tickers(date_ranges)
+            discovery_info = {
+                'auto_discovery_used': True,
+                'date_ranges_searched': date_ranges,
+                'tickers_discovered': len(tickers)
+            }
+
             if tickers:
                 self.logger.info(f"Auto-discovered {len(tickers)} tickers for {mode} mode: {tickers}")
                 # Update the config with discovered tickers
@@ -189,6 +349,12 @@ class UnifiedBacktesterRunner:
             else:
                 self.logger.warning(f"No tickers found for {mode} mode in date ranges: {date_ranges}")
                 return tasks
+        else:
+            discovery_info = {
+                'auto_discovery_used': False,
+                'tickers_provided': len(tickers),
+                'date_ranges_provided': len(date_ranges)
+            }
         
         # Generate tasks for all combinations
         for strategy in strategies:
@@ -196,8 +362,10 @@ class UnifiedBacktesterRunner:
                 for ticker in tickers:
                     optimization_params = {}  # TODO: Extract from config if needed
                     tasks.append((ticker, date_range, strategy, optimization_params))
-        
-        self.logger.info(f"Generated {len(tasks)} tasks from configuration")
+
+        # Log comprehensive task generation details
+        self._log_task_generation(tasks, discovery_info)
+
         return tasks
     
     def run(self) -> Dict[str, Any]:
@@ -209,8 +377,16 @@ class UnifiedBacktesterRunner:
         """
         
         try:
-            self.logger.info("Starting unified backtester execution...")
-            
+            self._log_execution_phase("startup", "Starting unified backtester execution")
+
+            # Capture config snapshot for logging
+            self.execution_log['config_snapshot'] = {
+                'mode': getattr(self.config, 'mode', 'backtest'),
+                'strategy_name': getattr(self.config.strategy, 'name', 'unknown'),
+                'risk_profile': getattr(self.config.strategy, 'risk_profile', 'unknown'),
+                'timestamp': datetime.now().isoformat()
+            }
+
             # Handle special modes that don't require task generation
             mode = getattr(self.config, 'mode', 'backtest')
             
@@ -286,20 +462,42 @@ class UnifiedBacktesterRunner:
             if results['status'] != 'success':
                 raise RuntimeError(f"Workflow execution failed: {results.get('error', 'Unknown error')}")
             
-            # Log execution summary
+            # Log execution summary and save logs
             execution_time = datetime.now() - self.start_time
-            self.logger.info(f"Unified backtester completed successfully in {execution_time}")
-            self.logger.info(f"Output directory: {results.get('output_dir', 'Not specified')}")
-            
+            self._log_execution_phase("completion", f"Unified backtester completed successfully in {execution_time}")
+            self._log_performance_metrics({
+                'total_execution_time_seconds': execution_time.total_seconds(),
+                'output_directory': results.get('output_dir', 'Not specified')
+            })
+
+            # Save comprehensive execution log
+            log_file = self._save_execution_log(results.get('output_dir'))
+            if log_file:
+                results['execution_log_file'] = log_file
+
             return results
             
         except Exception as e:
-            self.logger.error(f"Unified backtester execution failed: {e}")
+            # Log error and save execution log even on failure
+            error_msg = f"Unified backtester execution failed: {e}"
+            self.execution_log['errors'].append({
+                'timestamp': datetime.now().isoformat(),
+                'error_message': str(e),
+                'traceback': traceback.format_exc()
+            })
+
+            self._log_execution_phase("error", error_msg)
+            self.logger.error(error_msg)
             self.logger.error(f"Traceback: {traceback.format_exc()}")
+
+            # Save execution log even on failure
+            self._save_execution_log()
+
             return {
                 'status': 'error',
                 'error': str(e),
-                'execution_time': datetime.now() - self.start_time
+                'execution_time': datetime.now() - self.start_time,
+                'execution_log': self.execution_log
             }
     
     def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str], 
@@ -433,6 +631,10 @@ def main():
             sys.exit(0)
         else:
             sys.exit(1)
+    
+    except KeyboardInterrupt:
+        print("\n🛑 Backtesting interrupted by user (Ctrl+C)")
+        sys.exit(1)
             
     except Exception as e:
         print(f"Failed to start unified backtester: {e}")

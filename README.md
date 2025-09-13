@@ -209,8 +209,6 @@ backtester/
 ├── 📁 data/pools/              # Market data storage (auto-created)
 ├── 📁 outputs/                 # Results and reports (auto-created)
 ├── 📋 CLAUDE.md                # Claude Code integration guide
-├── 📋 comprehensive_data_puller.py  # Historical data utility (1996-2025)
-├── 📋 mse_data_puller.py       # MSE strategy data utility
 └── 📋 requirements.txt         # Python dependencies
 ```
 

@@ -18,7 +18,7 @@ from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 
 from config.unified_config import BacktestConfig
-from src.core.etl.loader import load_base_data
+from src.core.etl.loader import load_base_data, load_multi_timeframe_data
 from src.core.strat_stats.strategy_executor import extract_trades
 from src.core.strat_stats.statistics import (
     calculate_metrics,
@@ -52,20 +52,30 @@ class ExecutionEngine:
         
         self.logger.info(f"Processing {ticker} with {strategy_name} for {date_range}")
         try:
-            # Load and validate base data
-            base_df = load_base_data(date_range, ticker)
-            if base_df is None or base_df.empty:
-                self.logger.warning(f"No data found for {ticker} in {date_range}")
-                return {}
-            
-            # Parse date range for metadata
-            date_range_meta = self._parse_date_range_metadata(date_range)
-            
-            # Get and prepare strategy instance
+            # Get strategy instance first to check timeframe requirements
             strategy = StrategyFactory.get_strategy(strategy_name)
             if strategy is None:
                 self.logger.error(f"Strategy '{strategy_name}' not found")
                 return {}
+            
+            # Load data based on strategy requirements
+            if hasattr(strategy, 'required_timeframes') and len(strategy.required_timeframes) > 1:
+                # Multi-timeframe strategy - use new loader
+                self.logger.info(f"Loading multi-timeframe data for {strategy_name}: {strategy.required_timeframes}")
+                data = load_multi_timeframe_data(date_range, ticker, strategy.required_timeframes)
+                if not data:
+                    self.logger.warning(f"No multi-timeframe data found for {ticker} in {date_range}")
+                    return {}
+                base_df = data  # Keep as dict for multi-timeframe strategies
+            else:
+                # Single timeframe strategy - use legacy loader
+                base_df = load_base_data(date_range, ticker)
+                if base_df is None or base_df.empty:
+                    self.logger.warning(f"No data found for {ticker} in {date_range}")
+                    return {}
+            
+            # Parse date range for metadata
+            date_range_meta = self._parse_date_range_metadata(date_range)
             
             # Strategy optimization if requested
             if optimization_params:
