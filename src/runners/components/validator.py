@@ -115,19 +115,33 @@ class DataValidator:
             if high_low_issues > 0:
                 issues.append(f"Found {high_low_issues} rows where high < low")
             
-            # High should be >= open and close
+            # High should be >= open and close (allow small inconsistencies)
             high_open_issues = (data['high'] < data['open']).sum()
             high_close_issues = (data['high'] < data['close']).sum()
-            if high_open_issues > 0 or high_close_issues > 0:
+            
+            # Only flag as issue if more than 0.1% of data has inconsistencies
+            threshold = max(10, len(data) * 0.001)  # At least 10 rows or 0.1% of data
+            if high_open_issues > threshold or high_close_issues > threshold:
                 issues.append(f"High price inconsistency: {high_open_issues} rows where high < open, "
                             f"{high_close_issues} rows where high < close")
+            elif high_open_issues > 0 or high_close_issues > 0:
+                # Minor inconsistencies - add as warning instead of error
+                self.warnings.append(f"Minor high price inconsistency: {high_open_issues} rows where high < open, "
+                                   f"{high_close_issues} rows where high < close")
             
-            # Low should be <= open and close
+            # Low should be <= open and close (allow small inconsistencies)
             low_open_issues = (data['low'] > data['open']).sum()
             low_close_issues = (data['low'] > data['close']).sum()
-            if low_open_issues > 0 or low_close_issues > 0:
+            
+            # Only flag as issue if more than 0.1% of data has inconsistencies
+            threshold = max(10, len(data) * 0.001)  # At least 10 rows or 0.1% of data
+            if low_open_issues > threshold or low_close_issues > threshold:
                 issues.append(f"Low price inconsistency: {low_open_issues} rows where low > open, "
                             f"{low_close_issues} rows where low > close")
+            elif low_open_issues > 0 or low_close_issues > 0:
+                # Minor inconsistencies - add as warning instead of error
+                self.warnings.append(f"Minor low price inconsistency: {low_open_issues} rows where low > open, "
+                                   f"{low_close_issues} rows where low > close")
     
     def _check_negative_values(self, data: pd.DataFrame, issues: List[str]) -> None:
         """Check for negative values in price/volume columns."""

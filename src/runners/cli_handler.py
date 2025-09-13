@@ -18,7 +18,8 @@ from config.unified_config import (
     get_conservative_config,
     get_aggressive_config,
     get_options_config,
-    get_minimal_config
+    get_minimal_config,
+    get_debug_config
 )
 
 
@@ -31,7 +32,7 @@ def create_argument_parser():
         description="Unified Backtester with Smart Workflow Management",
         formatter_class=argparse.RawDescriptionHelpFormatter,        epilog="""
 Examples:
-  # Minimal usage - auto-discover tickers from date range data pools
+  # Minimal usage - defaults to debug template for pure strategy testing
   python unified_runner.py --mode backtest --date-ranges 2024-12-12_to_2025-06-09
   python unified_runner.py --mode analyze --date-ranges 2024-12-12_to_2025-06-09
   python unified_runner.py --mode visualize --date-ranges 2024-12-12_to_2025-06-09
@@ -40,11 +41,11 @@ Examples:
   # Interactive fetch mode (no arguments required)
   python unified_runner.py --mode fetch
   
-  # Specific tickers (overrides auto-discovery)
+  # Specific tickers (overrides auto-discovery) - still uses debug template
   python unified_runner.py --mode backtest --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE TCS
   
-  # Full control with advanced features
-  python unified_runner.py --mode backtest --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE TCS --strategies sma_crossover --template aggressive --parallel
+  # Production backtesting with risk management
+  python unified_runner.py --mode backtest --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE TCS --template conservative --parallel
   
   # Explicit fetch with parameters
   python unified_runner.py --mode fetch --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE TCS
@@ -64,8 +65,8 @@ Examples:
     )
     parser.add_argument(
         '--template',
-        choices=['conservative', 'aggressive', 'options', 'minimal'],
-        help="Use a predefined configuration template"
+        choices=['conservative', 'aggressive', 'options', 'minimal', 'debug'],
+        help="Use a predefined configuration template (default: debug - for strategy testing)"
     )
     
     parser.add_argument(
@@ -88,8 +89,7 @@ Examples:
     parser.add_argument(
         '--strategies',
         nargs='+',
-        default=['sma_crossover'],
-        help="List of strategy names (default: ['sma_crossover'])"
+        help="List of strategy names (required)"
     )
     
     parser.add_argument(
@@ -213,11 +213,13 @@ def load_config_from_args(args) -> BacktestConfig:
             config = get_options_config()
         elif args.template == 'minimal':
             config = get_minimal_config()
+        elif args.template == 'debug':
+            config = get_debug_config()
         else:
             raise ValueError(f"Unknown template: {args.template}")
     else:
-        # Use default conservative configuration
-        config = get_conservative_config()
+        # Use default debug configuration for strategy testing
+        config = get_debug_config()
       # Override configuration with CLI arguments
     if args.dates:
         normalized_dates = parse_dates(args.dates)
@@ -329,6 +331,11 @@ class CLIHandler:
         if args.mode in ['backtest', 'analyze', 'visualize', 'validate']:
             if not args.dates and not args.date_ranges:
                 print("Error: Date ranges must be specified using --dates or --date-ranges")
+                return False
+            
+            # Backtest mode requires strategies
+            if args.mode == 'backtest' and not args.strategies:
+                print("Error: Strategies must be specified using --strategies for backtest mode")
                 return False
         
         # Fetch mode with partial arguments still needs date-ranges

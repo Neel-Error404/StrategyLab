@@ -57,6 +57,9 @@ class StrategyBase(ABC):
         self.required_columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
         self.warmup_period = self.parameters.get('warmup_period', 50)
         
+        # Multi-timeframe support
+        self._required_timeframes = None
+        
         # Performance tracking
         self.last_execution_time = None
         self.total_signals_generated = 0
@@ -66,42 +69,77 @@ class StrategyBase(ABC):
         self._indicator_cache = {}
         
         self.logger.info(f"Strategy {name} initialized with {self.risk_profile} risk profile")
+        self.logger.info(f"Strategy requires timeframes: {self.required_timeframes}")
+    
+    @property
+    def required_timeframes(self) -> List[str]:
+        """
+        Declare the timeframes required by this strategy.
+        
+        This property allows strategies to specify exactly which timeframes they need.
+        The data loader will provide only these timeframes to the strategy.
+        
+        Returns:
+            List of timeframe strings (e.g., ['1m', '5m', '15m'])
+            
+        Example:
+            For a strategy that needs 5-minute and 15-minute data:
+            return ['5m', '15m']
+        """
+        if self._required_timeframes is None:
+            # Default to single 1-minute timeframe for backward compatibility
+            return ['1m']
+        return self._required_timeframes
+    
+    @required_timeframes.setter
+    def required_timeframes(self, timeframes: List[str]) -> None:
+        """
+        Set the required timeframes for this strategy.
+        
+        Args:
+            timeframes: List of timeframe strings
+        """
+        self._required_timeframes = timeframes
+        self.logger.info(f"Strategy {self.name} timeframe requirements updated: {timeframes}")
     
     @abstractmethod
-    def prepare_data(self, df: pd.DataFrame, ticker: str, pull_date: str) -> pd.DataFrame:
+    def prepare_data(self, data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], ticker: str, pull_date: str) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """
         Prepare data for the strategy. This includes calculating indicators,
         applying warmup periods, and any other data preparation steps.
         
         Args:
-            df: DataFrame with OHLCV data
+            data: Single DataFrame (legacy) or Dict of timeframe DataFrames (multi-timeframe)
+                  e.g., {'1m': df1, '5m': df5, '15m': df15}
             ticker: Ticker symbol
             pull_date: Date for which the data is being prepared
             
         Returns:
-            DataFrame with prepared data including indicators
+            Single DataFrame (legacy) or Dict of prepared DataFrames (multi-timeframe)
         """
         pass
     
     @abstractmethod
-    def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+    def generate_signals(self, data: Union[pd.DataFrame, Dict[str, pd.DataFrame]]) -> pd.DataFrame:
         """
         Generate entry and exit signals based on the prepared data.
         
         Args:
-            df: DataFrame with prepared data and indicators
+            data: Single DataFrame (legacy) or Dict of prepared timeframe DataFrames
+                  e.g., {'1m': prepared_df1, '5m': prepared_df5}
             
         Returns:
             DataFrame with entry and exit signals
         """
         pass
     
-    def execute(self, df: pd.DataFrame, ticker: str, pull_date: str) -> pd.DataFrame:
+    def execute(self, data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], ticker: str, pull_date: str) -> pd.DataFrame:
         """
         Execute the strategy on the provided data.
         
         Args:
-            df: DataFrame with OHLCV data
+            data: Single DataFrame (legacy) or Dict of timeframe DataFrames (multi-timeframe)
+                  e.g., {'1m': df1, '5m': df5, '15m': df15}
             ticker: Ticker symbol
             pull_date: Date for which the strategy is being executed
             
@@ -110,15 +148,37 @@ class StrategyBase(ABC):
         """
         self.logger.info(f"Executing strategy {self.name} for {ticker} on {pull_date}")
         
-        # Prepare data (calculate indicators, etc.)
-        prepared_df = self.prepare_data(df.copy(), ticker, pull_date)
-        
-        if prepared_df is None or prepared_df.empty:
-            self.logger.warning(f"No data available after preparation for {ticker} on {pull_date}")
-            return pd.DataFrame()
+        # Handle both legacy single DataFrame and new multi-timeframe Dict
+        if isinstance(data, pd.DataFrame):
+            # Legacy single DataFrame mode
+            self.logger.debug(f"Strategy {self.name} executing in legacy single-timeframe mode")
+            prepared_data = self.prepare_data(data.copy(), ticker, pull_date)
             
-        # Generate signals
-        with_signals = self.generate_signals(prepared_df)
+            if prepared_data is None or (isinstance(prepared_data, pd.DataFrame) and prepared_data.empty):
+                self.logger.warning(f"No data available after preparation for {ticker} on {pull_date}")
+                return pd.DataFrame()
+                
+            # Generate signals
+            with_signals = self.generate_signals(prepared_data)
+            
+        else:
+            # Multi-timeframe mode
+            timeframes = list(data.keys())
+            self.logger.info(f"Strategy {self.name} executing in multi-timeframe mode with: {timeframes}")
+            
+            # Validate that provided timeframes match strategy requirements
+            if not self._validate_timeframes(timeframes):
+                raise ValueError(f"Provided timeframes {timeframes} don't match strategy requirements {self.required_timeframes}")
+            
+            # Prepare multi-timeframe data
+            prepared_data = self.prepare_data(data, ticker, pull_date)
+            
+            if prepared_data is None:
+                self.logger.warning(f"No data available after preparation for {ticker} on {pull_date}")
+                return pd.DataFrame()
+                
+            # Generate signals from multi-timeframe data
+            with_signals = self.generate_signals(prepared_data)
         
         self.logger.info(f"Strategy execution completed for {ticker} on {pull_date}")
         return with_signals

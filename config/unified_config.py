@@ -142,6 +142,82 @@ class LoggingConfig:
     log_dir: str = "logs"
     max_file_size: str = "10MB"
     backup_count: int = 5
+
+@dataclass
+class BrokerConfig:
+    """Configuration for broker connections and data providers."""
+    # Data Provider Settings
+    default_provider: str = "upstox"
+    available_providers: List[str] = field(default_factory=lambda: ["upstox", "zerodha", "binance"])
+    
+    # Broker API Configuration
+    upstox: Dict[str, str] = field(default_factory=lambda: {
+        "api_url": "https://api.upstox.com/v2",
+        "auth_url": "https://api.upstox.com/v2/login/authorization/dialog",
+        "token_url": "https://api.upstox.com/v2/login/authorization/token",
+        "client_id": "",  # Set via environment
+        "client_secret": "",  # Set via environment
+        "redirect_uri": "http://localhost:8080/callback"
+    })
+    
+    zerodha: Dict[str, str] = field(default_factory=lambda: {
+        "api_key": "",  # Set via environment
+        "api_secret": "",  # Set via environment
+        "request_token": "",
+        "access_token": ""
+    })
+    
+    binance: Dict[str, str] = field(default_factory=lambda: {
+        "api_key": "",  # Public data doesn't require auth
+        "api_secret": "",
+        "testnet": True
+    })
+    
+    # Timeframe mappings for different providers
+    timeframe_mapping: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
+        "upstox": {"1m": "1minute", "5m": "5minute", "15m": "15minute", "1h": "60minute", "1d": "day"},
+        "zerodha": {"1m": "minute", "5m": "5minute", "15m": "15minute", "1h": "60minute", "1d": "day"},
+        "binance": {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "1d": "1d"}
+    })
+    
+    # Token management
+    token_dir: str = "config/access_tokens"
+    token_refresh_enabled: bool = True
+    auto_refresh_minutes: int = 60
+
+@dataclass
+class AuditComplianceConfig:
+    """Configuration for audit compliance requirements."""
+    # From analysis report - enforce audit requirements
+    warmup_minutes: int = 525  # Always 525 min (35×15-min bars)
+    use_previous_bar: bool = True  # Always previous bar
+    enable_two_bar_rule: bool = True  # Always two-bar rule
+    cascade_prevention: bool = True  # Default enabled
+    
+    # Exit thresholds (can be overridden by strategy params)
+    default_exit_threshold: float = 0.8  # 80% by default
+    
+    # Validation requirements
+    enforce_compliance: bool = True  # Enforce all audit requirements
+    compliance_checks: List[str] = field(default_factory=lambda: [
+        "warmup_duration", "previous_bar_usage", "two_bar_execution", 
+        "cascade_prevention", "parameter_parity"
+    ])
+    
+    def validate_audit_compliance(self) -> List[str]:
+        """Validate configuration meets audit requirements."""
+        errors = []
+        
+        if self.warmup_minutes < 525:
+            errors.append("Warmup period must be at least 525 minutes (audit requirement)")
+        
+        if not self.use_previous_bar:
+            errors.append("Must use previous bar indicators (audit requirement)")
+            
+        if not self.enable_two_bar_rule:
+            errors.append("Two-bar execution rule must be enabled (audit requirement)")
+        
+        return errors
     
 @dataclass
 class BacktestConfig:
@@ -157,6 +233,12 @@ class BacktestConfig:
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    
+    # Infrastructure configurations (absorbed from config.py)
+    broker: BrokerConfig = field(default_factory=BrokerConfig)
+    
+    # Audit compliance configurations (from analysis report)
+    compliance: AuditComplianceConfig = field(default_factory=AuditComplianceConfig)
     
     # Global settings
     base_dir: str = str(Path(__file__).resolve().parent.parent)
@@ -207,9 +289,29 @@ class BacktestConfig:
             errors.append("min_data_points must be positive")
         if not 0 <= self.validation.max_missing_data_pct <= 1:
             errors.append("max_missing_data_pct must be between 0 and 1")
+        
+        # Validate audit compliance (from analysis report requirements)
+        if self.compliance.enforce_compliance:
+            compliance_errors = self.compliance.validate_audit_compliance()
+            errors.extend(compliance_errors)
             
         if errors:
             raise ValueError(f"Configuration validation failed: {'; '.join(errors)}")
+            
+    def ensure_audit_compliance(self):
+        """Enforce audit report requirements - override any non-compliant settings."""
+        if self.compliance.enforce_compliance:
+            # Force audit-compliant settings
+            self.compliance.warmup_minutes = max(self.compliance.warmup_minutes, 525)
+            self.compliance.use_previous_bar = True
+            self.compliance.enable_two_bar_rule = True
+            
+            # Update any related strategy parameters
+            if hasattr(self.strategy, 'parameters'):
+                if 'warmup_minutes' in self.strategy.parameters:
+                    self.strategy.parameters['warmup_minutes'] = max(
+                        self.strategy.parameters.get('warmup_minutes', 525), 525
+                    )
             
     def setup_paths(self):
         """Set up required directory paths."""
@@ -275,10 +377,15 @@ class BacktestConfig:
             config_kwargs['output'] = OutputConfig(**data['output'])
         if 'logging' in data:
             config_kwargs['logging'] = LoggingConfig(**data['logging'])
+        if 'broker' in data:
+            config_kwargs['broker'] = BrokerConfig(**data['broker'])
+        if 'compliance' in data:
+            config_kwargs['compliance'] = AuditComplianceConfig(**data['compliance'])
             
         # Add any remaining top-level keys
         for key, value in data.items():
-            if key not in config_kwargs:
+            if key not in ['data', 'strategy', 'risk', 'transaction', 'options', 'validation', 
+                          'optimization', 'execution', 'output', 'logging', 'broker', 'compliance']:
                 config_kwargs[key] = value
                 
         return cls(**config_kwargs)
@@ -382,6 +489,30 @@ def get_options_config() -> BacktestConfig:
     """Get a configuration with options trading enabled."""
     return (ConfigBuilder()
             .with_options_enabled(synthetic_enabled=True, greeks_calculation=True)
+            .build())
+
+def get_debug_config() -> BacktestConfig:
+    """Get a debug configuration for pure strategy testing - NO RISK MANAGEMENT."""
+    return (ConfigBuilder()
+            .with_strategy_config(name="mse", risk_profile="debug") 
+            .with_risk_config(
+                enabled=False,
+                bypass_mode=True,
+                max_position_size=1.0,
+                max_daily_loss=1.0,
+                max_drawdown=1.0,
+                stop_loss_pct=0.0,
+                take_profit_pct=0.0,
+                enable_stop_loss=False,
+                enable_take_profit=False,
+                enable_timeout=False
+            )
+            .with_validation_config(
+                enabled=False,
+                lookahead_bias_check=False,
+                survivorship_bias_check=False,
+                strict_mode=False
+            )
             .build())
 
 # Standard calculation definitions for market consistency

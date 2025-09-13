@@ -92,8 +92,30 @@ logging:
   max_file_size: "10MB"
   backup_count: 5
 
+# Infrastructure configuration (absorbed from config.py)
+broker:
+  default_provider: "upstox"
+  available_providers: ["upstox", "zerodha", "binance"]
+  token_refresh_enabled: true
+  auto_refresh_minutes: 60
+
+# Audit compliance configuration (from analysis report)
+compliance:
+  warmup_minutes: 525        # Always 525 min (audit requirement)
+  use_previous_bar: true     # Always previous bar (audit requirement)  
+  enable_two_bar_rule: true  # Always two-bar rule (audit requirement)
+  cascade_prevention: true   # Default enabled
+  default_exit_threshold: 0.8  # 80% by default
+  enforce_compliance: true   # Enforce all audit requirements
+
+# Execution configuration
+execution:
+  parallel_processing: false  # Conservative - single threaded
+  max_workers: 1
+  cache_enabled: true
+  cache_dir: "cache"
+  timeout_seconds: 3600
+
 # Global settings
-parallel_processing: false  # Conservative - single threaded
-max_workers: 1
-cache_enabled: true
-cache_dir: "cache"
+base_dir: "."
+run_id: ""  # Will be auto-generated

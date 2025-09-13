@@ -11,6 +11,13 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
+# Optional parquet support
+try:
+    import pyarrow
+    PARQUET_AVAILABLE = True
+except ImportError:
+    PARQUET_AVAILABLE = False
+
 from config.config import BACKTESTER_CONFIG
 from .data_provider.provider_factory import DataProviderFactory
 
@@ -72,9 +79,10 @@ class DataFetcher:
                              timeframes: List[str], 
                              start_date: Union[str, datetime], 
                              end_date: Union[str, datetime], 
-                             output_dir: Optional[Path] = None) -> Dict[str, Dict[str, Path]]:
+                             output_dir: Optional[Path] = None,
+                             use_ticker_first_storage: bool = True) -> Dict[str, Dict[str, Path]]:
         """
-        Fetch historical data for multiple tickers and timeframes.
+        Fetch historical data for multiple tickers and timeframes with enhanced storage options.
         
         Args:
             tickers: List of ticker symbols
@@ -82,6 +90,7 @@ class DataFetcher:
             start_date: Start date for the data
             end_date: End date for the data
             output_dir: Output directory (defaults to DATA_POOL_DIR/current_date)
+            use_ticker_first_storage: Use ticker-first directory structure with parquet files
             
         Returns:
             Dictionary mapping tickers to timeframes to saved file paths
@@ -97,7 +106,18 @@ class DataFetcher:
             data_pool_dir = Path(self.config.get('DATA_POOL_DIR'))
             output_dir = data_pool_dir / date_range
         
+        # Check parquet support
+        use_parquet = use_ticker_first_storage and PARQUET_AVAILABLE
+        if use_ticker_first_storage and not PARQUET_AVAILABLE:
+            self.logger.warning("pyarrow not available, falling back to CSV format")
+        
         result = {}
+        total_combinations = len(tickers) * len(timeframes)
+        current_progress = 0
+        failed_combinations = []
+        
+        self.logger.info(f"Starting enhanced data fetch: {len(tickers)} tickers × {len(timeframes)} timeframes = {total_combinations} combinations")
+        self.logger.info(f"Storage mode: {'Ticker-first with ' + ('Parquet' if use_parquet else 'CSV') if use_ticker_first_storage else 'Timeframe-first CSV'}")
         
         # Process each ticker
         for ticker in tickers:
@@ -105,34 +125,78 @@ class DataFetcher:
             
             # Process each timeframe
             for timeframe in timeframes:
-                # Create timeframe directory
-                timeframe_folder = self.config.get('TIMEFRAME_FOLDERS', {}).get(timeframe, timeframe)
-                timeframe_dir = output_dir / timeframe_folder
-                timeframe_dir.mkdir(parents=True, exist_ok=True)
+                current_progress += 1
+                # Create appropriate directory structure
+                if use_ticker_first_storage:
+                    # Ticker-first: data/pools/date_range/TICKER/
+                    ticker_dir = output_dir / ticker
+                    ticker_dir.mkdir(parents=True, exist_ok=True)
+                    target_dir = ticker_dir
+                else:
+                    # Timeframe-first: data/pools/date_range/timeframe/
+                    timeframe_folder = self.config.get('TIMEFRAME_FOLDERS', {}).get(timeframe, timeframe)
+                    timeframe_dir = output_dir / timeframe_folder
+                    timeframe_dir.mkdir(parents=True, exist_ok=True)
+                    target_dir = timeframe_dir
                 
-                # Fetch data
-                self.logger.info(f"Fetching {timeframe} data for {ticker} from {start_date.date()} to {end_date.date()}")
+                # Enhanced progress logging
+                progress_pct = (current_progress / total_combinations) * 100
+                self.logger.info(f"[{current_progress}/{total_combinations}] ({progress_pct:.1f}%) Fetching {timeframe} data for {ticker} from {start_date.date()} to {end_date.date()}")
                 
                 try:
                     df = self.provider.fetch_historical_data(ticker, start_date, end_date, timeframe)
                     
                     if df.empty:
                         self.logger.warning(f"No data returned for {ticker} at {timeframe} timeframe")
+                        failed_combinations.append(f"{ticker}_{timeframe}_no_data")
                         continue
                     
-                    # Create filename
-                    filename = f"{ticker}_{start_date.strftime('%Y-%m-%d')}_to_{end_date.strftime('%Y-%m-%d')}.csv"
-                    file_path = timeframe_dir / filename
+                    # Create filename based on storage mode
+                    if use_ticker_first_storage:
+                        filename = f"{timeframe}.{'parquet' if use_parquet else 'csv'}"
+                        file_path = target_dir / filename
+                    else:
+                        filename = f"{ticker}_{start_date.strftime('%Y-%m-%d')}_to_{end_date.strftime('%Y-%m-%d')}.csv"
+                        file_path = target_dir / filename
                     
-                    # Save data
-                    df.to_csv(file_path, index=False)
+                    # Save data with appropriate format
+                    if use_ticker_first_storage and use_parquet:
+                        df.to_parquet(file_path, index=False)
+                        format_info = "parquet"
+                    else:
+                        df.to_csv(file_path, index=False)
+                        format_info = "CSV"
                     
-                    self.logger.info(f"Saved {len(df)} records for {ticker} at {timeframe} timeframe to {file_path}")
+                    self.logger.info(f"✅ Saved {len(df)} records for {ticker}@{timeframe} as {format_info} to {file_path}")
                     
                     result[ticker][timeframe] = file_path
                     
+                    # Memory cleanup
+                    del df
+                    
                 except Exception as e:
-                    self.logger.error(f"Error fetching data for {ticker} at {timeframe} timeframe: {e}")
+                    error_msg = f"{ticker}_{timeframe}_{str(e)[:50]}"
+                    failed_combinations.append(error_msg)
+                    self.logger.error(f"❌ Error fetching data for {ticker} at {timeframe} timeframe: {e}")
+        
+        # Final summary report
+        successful_combinations = total_combinations - len(failed_combinations)
+        success_rate = (successful_combinations / total_combinations * 100) if total_combinations > 0 else 0
+        
+        self.logger.info(f"\n{'='*60}")
+        self.logger.info(f"📊 ENHANCED DATA FETCH SUMMARY")
+        self.logger.info(f"{'='*60}")
+        self.logger.info(f"Total combinations: {total_combinations}")
+        self.logger.info(f"Successful: {successful_combinations} ({success_rate:.1f}%)")
+        self.logger.info(f"Failed: {len(failed_combinations)}")
+        
+        if failed_combinations:
+            self.logger.warning(f"Failed combinations: {failed_combinations[:5]}{'...' if len(failed_combinations) > 5 else ''}")
+        
+        storage_mode = "Ticker-first " + ("Parquet" if use_parquet else "CSV") if use_ticker_first_storage else "Timeframe-first CSV"
+        self.logger.info(f"Storage format: {storage_mode}")
+        self.logger.info(f"Output directory: {output_dir}")
+        self.logger.info(f"{'='*60}")
             
         return result
     

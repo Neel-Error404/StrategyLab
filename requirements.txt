@@ -21,6 +21,7 @@ Pillow>=10.0.0
 # Configuration & Data Handling
 PyYAML>=6.0
 python-dotenv>=1.0.0
+pyarrow>=14.0.0              # Parquet file support for enhanced data storage
 
 # Time & Date Utilities
 pytz>=2023.3
