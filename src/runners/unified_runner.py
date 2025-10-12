@@ -41,6 +41,10 @@ import json
 
 # Fix import paths
 project_root = Path(__file__).resolve().parent.parent.parent
+core_root = project_root.parent / 'trading-unified-core'
+if core_root.exists() and str(core_root) not in sys.path:
+    sys.path.insert(0, str(core_root))
+
 sys.path.insert(0, str(project_root))
 
 # Import new modular components
@@ -421,6 +425,12 @@ class UnifiedBacktesterRunner:
                     'status': 'success' if validation_passed else 'error',
                     'validation_passed': validation_passed
                 }
+            elif mode == 'replay':
+                manifest = getattr(self.config, 'replay_manifest', None)
+                if not manifest:
+                    raise ValueError('Replay mode requires --manifest (config.replay_manifest)')
+                output_dir = getattr(self.config.output, 'output_dir', 'outputs/parity') if hasattr(self.config, 'output') else 'outputs/parity'
+                results = self._execute_replay_mode(manifest, output_dir)
             else:
                 # Standard modes that require full modular components initialization
                 self._init_modular_components()
@@ -500,6 +510,26 @@ class UnifiedBacktesterRunner:
                 'execution_log': self.execution_log
             }
     
+def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str, Any]:
+    """Execute replay mode using BacktesterAdapter."""
+    try:
+        from adapters.backtester.backtester_adapter import BacktesterAdapter
+    except ImportError as exc:
+        raise RuntimeError(f"BacktesterAdapter unavailable: {exc}")
+
+    adapter = BacktesterAdapter()
+    replay_result = adapter.run_replay_from_manifest(manifest_path, None, output_dir)
+    output_dir_path = Path(output_dir).resolve()
+    replay_result.setdefault('output_dir', str(output_dir_path))
+
+    return {
+        'status': 'success',
+        'mode': 'replay',
+        'replay': replay_result,
+        'output_dir': str(output_dir_path)
+    }
+
+
     def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str], 
                      optimization_params: Optional[Dict] = None, use_parallel: bool = True,
                      skip_visualization: bool = False) -> Dict[str, Any]:

@@ -54,7 +54,7 @@ Examples:
     
     parser.add_argument(
         '--mode',
-        choices=['validate', 'backtest', 'analyze', 'visualize', 'fetch'],
+        choices=['validate', 'backtest', 'analyze', 'visualize', 'fetch', 'replay'],
         required=True,
         help="Mode to run: 'backtest' (full workflow), 'analyze' (analysis only), 'visualize' (visualization only), 'validate' (data validation), 'fetch' (download market data)"
     )
@@ -62,6 +62,11 @@ Examples:
     parser.add_argument(
         '--config',        type=str,
         help="Path to YAML configuration file"
+    )
+    parser.add_argument(
+        '--manifest',
+        type=str,
+        help="Path to session manifest for replay mode"
     )
     parser.add_argument(
         '--template',
@@ -244,6 +249,9 @@ def load_config_from_args(args) -> BacktestConfig:
     
     if args.mode:
         config.mode = args.mode
+    if getattr(args, 'manifest', None):
+        config.replay_manifest = args.manifest
+
     
     if args.output_dir:
         config.output.output_dir = args.output_dir
@@ -324,6 +332,12 @@ class CLIHandler:
             bool: True if arguments are valid
         """
         # Fetch mode can run with zero arguments (interactive mode)
+        if args.mode == 'replay':
+            if not args.manifest:
+                print("Error: Replay mode requires --manifest")
+                return False
+            return True
+
         if args.mode == 'fetch' and not args.dates and not args.date_ranges and not args.tickers:
             return True
             
