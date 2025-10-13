@@ -1,0 +1,568 @@
+{
+  "run_id": "20251012_122349_phase3_replay_mvp",
+  "config_hash": "e5b730b9d68947912a0b994da24115dc1b94ae652e1518990d9ff438cf1e04da",
+  "inputs": {
+    "equity_trades_path": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/codex/code/Users/StrategyLab-master/outputs/phase4_backtest/equity_trades_full.csv",
+    "equity_data_root": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/codex/code/Users/StrategyLab-master/data/pools",
+    "options_data_root": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/codex/code/Users/StrategyLab-master/data/pools/options",
+    "date_ranges": [
+      "2025-04-01_to_2025-10-08"
+    ]
+  },
+  "tickers": {
+    "selection_mode": "manual",
+    "requested": [
+      "RELIANCE",
+      "TCS",
+      "INFY",
+      "NIFTY",
+      "BANKNIFTY"
+    ],
+    "processed": [
+      "BANKNIFTY",
+      "INFY",
+      "NIFTY",
+      "RELIANCE",
+      "TCS"
+    ]
+  },
+  "parallel": {
+    "enabled": false,
+    "max_workers": 3,
+    "workers_used": 1
+  },
+  "outputs": {
+    "options_trades.csv": "2a9d900770f8387877893709857ca66c72aa2779f61ca99e95cad5fa69b0b3d3",
+    "options_positions.csv": "784abf6bb37a15a6e46837b63ee66a511cd5b73594223f0043610ae274640257",
+    "options_metrics.json": "9626bae5e0d0d0d1b455f82deda6311bd434c5a8ecad6fd5beacc9c5303a417b"
+  },
+  "skipped_trades": [
+    {
+      "trade_id": "BANKNIFTY_2025-04-22T10:15:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-04-22T14:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-04-25T10:30:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-04-28T12:30:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-02T12:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "NIFTY_2025-05-02T13:30:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-09T09:15:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-09T13:45:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-13T10:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-13T13:45:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-15T10:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "NIFTY_2025-05-19T10:15:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-19T10:30:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-20T13:15:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "NIFTY_2025-05-21T13:15:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-22T11:15:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-23T11:30:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-28T10:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-05-29T15:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-06-02T11:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-06-11T13:00:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "NIFTY_2025-06-16T15:00:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-06-19T11:45:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "NIFTY_2025-06-19T14:30:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "risk_rejection",
+      "details": [
+        "max_position_size_per_trade"
+      ]
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-09-26T09:15:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-09-26T09:15:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-09-26T09:30:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-09-26T09:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-09-26T11:30:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-09-26T11:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "TCS_2025-09-26T12:45:00+05:30_phase4_full_backtest",
+      "ticker": "TCS",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade TCS_2025-09-26T12:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "RELIANCE_2025-09-26T13:30:00+05:30_phase4_full_backtest",
+      "ticker": "RELIANCE",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade RELIANCE_2025-09-26T13:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-09-26T14:45:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-09-26T14:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "RELIANCE_2025-09-29T13:45:00+05:30_phase4_full_backtest",
+      "ticker": "RELIANCE",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade RELIANCE_2025-09-29T13:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-09-29T14:45:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-09-29T14:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-09-30T10:15:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-09-30T10:15:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "TCS_2025-09-30T10:45:00+05:30_phase4_full_backtest",
+      "ticker": "TCS",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade TCS_2025-09-30T10:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "RELIANCE_2025-09-30T12:45:00+05:30_phase4_full_backtest",
+      "ticker": "RELIANCE",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade RELIANCE_2025-09-30T12:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-09-30T13:15:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-09-30T13:15:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-09-30T14:45:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-09-30T14:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "TCS_2025-10-01T09:30:00+05:30_phase4_full_backtest",
+      "ticker": "TCS",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade TCS_2025-10-01T09:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-10-01T13:45:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-10-01T13:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-10-01T14:30:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-10-01T14:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "RELIANCE_2025-10-03T09:45:00+05:30_phase4_full_backtest",
+      "ticker": "RELIANCE",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade RELIANCE_2025-10-03T09:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "TCS_2025-10-03T10:30:00+05:30_phase4_full_backtest",
+      "ticker": "TCS",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade TCS_2025-10-03T10:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-10-03T14:45:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-10-03T14:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "NIFTY_2025-10-06T10:00:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade NIFTY_2025-10-06T10:00:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "TCS_2025-10-06T10:45:00+05:30_phase4_full_backtest",
+      "ticker": "TCS",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade TCS_2025-10-06T10:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "RELIANCE_2025-10-06T11:00:00+05:30_phase4_full_backtest",
+      "ticker": "RELIANCE",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade RELIANCE_2025-10-06T11:00:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-10-06T12:15:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-10-06T12:15:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-10-06T14:15:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-10-06T14:15:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "NIFTY_2025-10-06T14:30:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade NIFTY_2025-10-06T14:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-10-07T09:45:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-10-07T09:45:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "TCS_2025-10-07T12:00:00+05:30_phase4_full_backtest",
+      "ticker": "TCS",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade TCS_2025-10-07T12:00:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "RELIANCE_2025-10-07T12:30:00+05:30_phase4_full_backtest",
+      "ticker": "RELIANCE",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade RELIANCE_2025-10-07T12:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "RELIANCE_2025-10-08T09:15:00+05:30_phase4_full_backtest",
+      "ticker": "RELIANCE",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade RELIANCE_2025-10-08T09:15:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "BANKNIFTY_2025-10-08T11:30:00+05:30_phase4_full_backtest",
+      "ticker": "BANKNIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade BANKNIFTY_2025-10-08T11:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "INFY_2025-10-08T11:30:00+05:30_phase4_full_backtest",
+      "ticker": "INFY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade INFY_2025-10-08T11:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "NIFTY_2025-10-08T11:30:00+05:30_phase4_full_backtest",
+      "ticker": "NIFTY",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade NIFTY_2025-10-08T11:30:00+05:30_phase4_full_backtest"
+    },
+    {
+      "trade_id": "TCS_2025-10-08T11:30:00+05:30_phase4_full_backtest",
+      "ticker": "TCS",
+      "date_range": "2025-04-01_to_2025-10-08",
+      "reason": "mapping_failed",
+      "details": "No expiry matched DTE constraints [5, 45] for trade TCS_2025-10-08T11:30:00+05:30_phase4_full_backtest"
+    }
+  ],
+  "ticker_summary": {
+    "BANKNIFTY": {
+      "processed": 93,
+      "skipped": 27,
+      "realized_pnl": 24861.52500000001,
+      "fallback_counts": {}
+    },
+    "INFY": {
+      "processed": 112,
+      "skipped": 8,
+      "realized_pnl": 60908.000000000015,
+      "fallback_counts": {}
+    },
+    "NIFTY": {
+      "processed": 112,
+      "skipped": 8,
+      "realized_pnl": 159036.0,
+      "fallback_counts": {}
+    },
+    "RELIANCE": {
+      "processed": 113,
+      "skipped": 7,
+      "realized_pnl": 52675.0,
+      "fallback_counts": {}
+    },
+    "TCS": {
+      "processed": 113,
+      "skipped": 7,
+      "realized_pnl": 19468.985756103066,
+      "fallback_counts": {
+        "no_actual_bar(1minute/5minute/1day)": 21
+      }
+    }
+  },
+  "risk": {
+    "portfolio": {
+      "initial_capital": 1000000.0,
+      "deployed_capital": 0,
+      "deployed_capital_pct": 0.0,
+      "realized_pnl": 316949.51075610303,
+      "current_equity": 1316949.510756103,
+      "max_equity": 1415714.510756103,
+      "min_equity": 993532.375,
+      "max_drawdown_pct": -29.821135020409205,
+      "kill_switch_triggered": false,
+      "kill_switch_reason": null,
+      "kill_switch_timestamp": null,
+      "risk_events": 1342
+    },
+    "per_ticker": {
+      "BANKNIFTY": {
+        "open_capital": 0.0,
+        "open_positions": 0,
+        "realized_pnl": 24861.52500000001
+      },
+      "INFY": {
+        "open_capital": 0.0,
+        "open_positions": 0,
+        "realized_pnl": 60908.000000000015
+      },
+      "NIFTY": {
+        "open_capital": 0.0,
+        "open_positions": 0,
+        "realized_pnl": 159036.0
+      },
+      "RELIANCE": {
+        "open_capital": 0.0,
+        "open_positions": 0,
+        "realized_pnl": 52675.0
+      },
+      "TCS": {
+        "open_capital": 0.0,
+        "open_positions": 0,
+        "realized_pnl": 19468.985756103066
+      }
+    }
+  },
+  "determinism": {
+    "verify_hash": false
+  }
+}
