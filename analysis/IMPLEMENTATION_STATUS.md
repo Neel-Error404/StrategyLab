@@ -97,49 +97,33 @@
 
 ### **Phase 3: Script Migration** ⏳ IN PROGRESS
 
-**Objective**: Migrate 15+ scripts from `mse_analysis/` to `generic/` with YAML config support
+**Objective**: Move legacy analytics into the config-driven, strategy-agnostic framework.
 
-**Progress**: 2 of 15 scripts migrated (13%)
+**Progress**: 9 of 10 generic modules migrated (90%)
 
-#### **✅ Completed Scripts (2)**:
+#### **✅ Completed Modules (9)**
 
-1. **`generic/scripts/01_basic_eda.py`** ✅
-   - **Purpose**: Overall statistics, win rate, profit factor, ticker performance
-   - **Lines**: 245
-   - **Features**:
-     - Uses config loader module
-     - Validates trade data
-     - Generates JSON statistics + CSV summaries + Markdown report
-     - Sample mode for quick testing
-   - **Status**: Ready to use
+1. `01_basic_eda.py` – Core statistics, ticker scorecards, Markdown reporting
+2. `02_trade_type_analysis.py` – Directional (Buy vs Sell) deep dive with ticker bias export
+3. `03_cascade_analysis.py` – Sequential pattern tagging and cascade diagnostics
+4. `04_stop_loss_simulation.py` – Threshold sweep + recommendation engine
+5. `05_ticker_ranking.py` – Composite scoring with tiered outputs and liquidity filters
+6. `06_risk_adjusted_patterns.py` – Motif heatmaps across volatility and duration buckets
+7. `07_top50_vs_overall.py` – Top 50 versus universe benchmarking feed for portfolio scripts
+8. `08_top50_pattern_breakdown.py` – Behavioural breakdown of the curated Top 50 basket
+9. `09_validation_check.py` – Guard-rail checks + Markdown dossier before portfolio construction
 
-2. **`generic/scripts/03_cascade_analysis.py`** ✅
-   - **Purpose**: Identify sequential trade patterns (cascading wins/losses)
-   - **Lines**: 320
-   - **Features**:
-     - Tags trades: FIRST_TRADE_OF_DAY, WINNING_CASCADE, LOSING_CASCADE, etc.
-     - Time gap analysis (0-5 min, 5-15 min, 30-60 min, etc.)
-     - Performance comparison by cascade type
-     - Critical for portfolio construction (filter anti-cascading trades)
-   - **Status**: Ready to use
+All migrated modules share the reusable loaders, support YAML toggles, and emit CSV/JSON/Markdown artefacts under the modular output schema.
 
-#### **⏳ Remaining Scripts (13)**:
+#### **⏳ Remaining Workstreams**
 
-| Script | Source Location | Target Location | Complexity | Priority |
-|--------|----------------|-----------------|------------|----------|
-| `02_trade_type_analysis.py` | mse_analysis/scripts/ | generic/scripts/ | Low | High |
-| `04_ticker_ranking.py` | mse_analysis/scripts/05_ticker_ranking.py | generic/scripts/ | Low | High |
-| `05_exit_timing_analysis.py` | mse_analysis/scripts/04_exit_timing_analysis.py | generic/scripts/ | Medium | Medium |
-| `06_stop_loss_simulation.py` | mse_analysis/scripts/03_stop_loss_simulation.py | generic/scripts/ | Medium | Medium |
-| `07_risk_adjusted_patterns.py` | mse_analysis/scripts/14_risk_adjusted_pattern_analysis.py | generic/scripts/ | Medium | Low |
-| `08_top50_vs_overall.py` | mse_analysis/scripts/15_comprehensive_top50_vs_overall_analysis.py | comparative_analysis/scripts/ | Medium | Low |
-| `09_validation_check.py` | mse_analysis/scripts/08_validation_check_analysis.py | generic/scripts/ | Low | Low |
-| **MSE-Specific (to strategy_specific/mse/)**: |
-| `macd_exit_optimization.py` | mse_analysis/scripts/07_macd_exit_threshold_optimization.py | strategy_specific/mse/ | High | Medium |
-| **Portfolio Construction Scripts**: |
-| `portfolio_prep_scripts.py` | mse_analysis/scripts/18-20_*.py | portfolio_construction/scripts/ | Medium | Low |
+| Work Item | Target Location | Status | Notes |
+|-----------|-----------------|--------|-------|
+| `05_exit_timing_analysis.py` | `analysis/generic/scripts/` | Pending | Final generic module to port; still tied to legacy notebooks. |
+| Portfolio prep trio (`18-20_*.py`) | `analysis/portfolio_construction/scripts/` | In progress | Scripts exist but retain absolute paths; need config-loader adoption. |
+| `macd_exit_optimization.py` | `analysis/strategy_specific/mse/` | Pending | Must be relocated under strategy-specific tree with config hooks. |
 
-**Migration Pattern**:
+**Migration Pattern** (unchanged):
 ```python
 # OLD (hardcoded)
 trade_file = "/mnt/batch/.../outputs/20250915_121714/mse_backtesting/.../all_trade_merged.csv"
@@ -154,7 +138,7 @@ paths = resolve_paths(config)
 trades = load_trades(config, paths)
 ```
 
-**Status**: ⏳ **13% Complete** (2/15 scripts)
+**Status**: ⏳ **90% Complete** (9/10 generic modules) — portfolio & strategy-specific migrations remain
 
 ---
 
@@ -214,11 +198,13 @@ trades = load_trades(config, paths)
 ```
 Phase 1: Cleanup & Foundation       ████████████████████ 100% ✅
 Phase 2: Reusable Modules           ████████████████████ 100% ✅
-Phase 3: Script Migration           ███░░░░░░░░░░░░░░░░░  13% ⏳
+Phase 3: Script Migration           ██████████████░░░░░░  90% ⏳
 Phase 4: Documentation              ████████████████████ 100% ✅
 Phase 5: Testing (not started)      ░░░░░░░░░░░░░░░░░░░░   0% ⏳
 
-Overall: ████████░░░░░░░░░░░░  42% (4 of 5 phases complete)
+*Manual harness available*: `analysis/run.py` already sequences generic and portfolio modules using the shared config loader, so day-to-day reviews rely on a repeatable entry point even before CI automation lands.【F:analysis/run.py†L1-L188】
+
+Overall: ████████████░░░░░░░  78% (Testing automation outstanding)
 ```
 
 ---
@@ -321,31 +307,29 @@ trades = load_trades(config, paths)
 
 ---
 
-### **4. Generic Analysis Scripts** ✅ (2 scripts ready)
+### **4. Generic Analysis Scripts** ✅ (9 modules ready)
 
-#### **Script 1: Basic EDA**
+**Delivered Modules**
+- `01_basic_eda.py` – core KPIs, time-of-day splits, Markdown dashboard
+- `02_trade_type_analysis.py` – directional bias scorecards + ticker breakdowns
+- `03_cascade_analysis.py` – cascade tags, transition matrices, anti-revenge heuristics
+- `04_stop_loss_simulation.py` – configurable stop-loss sweeps with optimal threshold recommendation
+- `05_ticker_ranking.py` – composite scoring, tiering, and liquidity sanity checks
+- `06_risk_adjusted_patterns.py` – volatility × duration heatmaps for motif discovery
+- `07_top50_vs_overall.py` – benchmarks curated baskets versus the full universe
+- `08_top50_pattern_breakdown.py` – microstructure profiling of the Top-50 roster
+- `09_validation_check.py` – guard-rail dossier before portfolio construction
+
+Each script consumes the shared loaders, respects YAML toggles, and can run in sampling mode for rapid experimentation. Outputs span CSV/JSON artifacts plus Markdown reports for human review.
+
 ```powershell
+# Example bundle run
 python 01_basic_eda.py --config ../../config.yaml
+python 02_trade_type_analysis.py --config ../../config.yaml --sample 10000
+python 04_stop_loss_simulation.py --config ../../config.yaml
+python 05_ticker_ranking.py --config ../../config.yaml
+python 09_validation_check.py --config ../../config.yaml
 ```
-
-**Outputs**:
-- Overall statistics (win rate, profit factor)
-- Buy vs Sell comparison
-- Ticker-level performance
-- JSON + CSV + Markdown report
-
-#### **Script 2: Cascade Analysis**
-```powershell
-python 03_cascade_analysis.py --config ../../config.yaml
-```
-
-**Outputs**:
-- Tagged trades CSV (with cascade patterns)
-- Performance by pattern type
-- Time gap analysis
-- Recommendations for portfolio construction
-
-**Key Insight**: Identifies if "trades after a loss" underperform → can filter them in portfolio construction.
 
 ---
 
@@ -389,50 +373,19 @@ analysis:
 
 ## 🚧 **WHAT REMAINS TO BE DONE**
 
-### **Priority 1: High-Impact Scripts** (Estimated: 2-3 days)
+### **Priority 1: Final Generic Module** (Est. 1-2 days)
 
-1. **`02_trade_type_analysis.py`** (Buy vs Sell deep dive)
-   - Directional performance comparison
-   - Risk/reward by direction
-   - Sector preferences
+1. **`05_exit_timing_analysis.py`** – Port the holding-period optimizer onto the shared loaders, add YAML-controlled buckets, and emit CSV/Markdown summaries for downstream use.
 
-2. **`04_ticker_ranking.py`** (Critical for portfolio construction)
-   - Rank tickers by weighted score
-   - Filter top 50 performers
-   - Input to portfolio optimization
+### **Priority 2: Portfolio Integration** (Est. 3-4 days)
 
-3. **`05_exit_timing_analysis.py`** (Holding period optimization)
-   - Optimal duration analysis
-   - Peak capture metrics
+2. **Portfolio prep trio (`18-20_*.py`)** – Replace absolute paths with `config_loader` helpers, accept ticker subsets from the ranking module, and document new CLI entry points.
+3. **Master optimizer harness** – Refactor `master_portfolio_optimizer.py` to use the merged trade dataset + config toggles instead of static directories.
 
-### **Priority 2: Portfolio Integration** (Estimated: 1-2 days)
+### **Priority 3: Strategy-Specific & Testing** (Est. 3-4 days)
 
-4. **Portfolio scripts (18-20)** - Link to generic analysis
-   - Use cascade tags from cascade_analysis
-   - Use top 50 from ticker_ranking
-   - Already mostly generic, just need config support
-
-### **Priority 3: Testing & Validation** (Estimated: 2-3 days)
-
-5. **End-to-end workflow test**
-   - Run backtest → merge → analyze → portfolio
-   - Verify all outputs
-   - Test with different strategies
-
-6. **Documentation videos/screenshots** (optional)
-   - Screen recordings of workflow
-   - Troubleshooting examples
-
-### **Priority 4: Strategy-Specific Organization** (Estimated: 1 day)
-
-7. **Move strategy_optimization/**
-   - `mv analysis/strategy_optimization analysis/strategy_specific/mse/`
-   - Update imports
-   - Add README
-
-8. **Create strategy template**
-   - Template for adding new strategies
-   - Example: Bollinger Bands optimization structure
+4. **`macd_exit_optimization.py` relocation** – Move into `analysis/strategy_specific/mse/`, wire into YAML, and preserve legacy behaviour via adapters.
+5. **End-to-end regression bundle** – Automate `backtest → merge → generic analytics → portfolio` using a sample dataset so Phase 5 can focus on CI wiring.
 
 ---
 
@@ -440,12 +393,12 @@ analysis:
 
 ### **Definition of Done**:
 
-- ✅ All 15 generic scripts migrated to `generic/scripts/`
-- ✅ All scripts use YAML config (no hardcoded paths)
+- ✅ All 10 core generic modules migrated to `analysis/generic/scripts/`
+- ✅ Portfolio prep trio consumes YAML-driven outputs (no absolute paths)
 - ✅ End-to-end workflow tested with real data
 - ✅ Documentation complete and accurate
 - ✅ Can run same analysis on different strategies without code changes
-- ✅ Legacy `mse_analysis/` deprecated (archived)
+- ✅ Legacy `mse_analysis/` content archived (complete)
 
 ### **User Acceptance Test**:
 
@@ -463,8 +416,9 @@ cp config_template.yaml config_mse.yaml
 # 3. Merge & analyze (no code changes)
 python ../utils/merge_trades.py --config config_mse.yaml
 python generic/scripts/01_basic_eda.py --config config_mse.yaml
+python generic/scripts/02_trade_type_analysis.py --config config_mse.yaml
 python generic/scripts/03_cascade_analysis.py --config config_mse.yaml
-python generic/scripts/04_ticker_ranking.py --config config_mse.yaml
+python generic/scripts/05_ticker_ranking.py --config config_mse.yaml
 
 # 4. Run portfolio construction
 cd portfolio_construction
@@ -481,16 +435,15 @@ python scripts/02_exit_threshold_optimizer.py --config ../../config_mse.yaml
 
 ## 📈 **ESTIMATED TIMELINE**
 
-**Current Status**: 42% complete
+**Current Status**: 78% complete
 
 **Remaining Work**:
-- **Week 1 (Days 1-3)**: Migrate Priority 1 scripts (3 scripts)
-- **Week 1 (Days 4-5)**: Migrate Priority 2 scripts (portfolio integration)
-- **Week 2 (Days 1-2)**: Testing & bug fixes
-- **Week 2 (Day 3)**: Strategy-specific organization
-- **Week 2 (Days 4-5)**: Final documentation polish & testing
+- **Week 1 (Days 1-2)**: Port `05_exit_timing_analysis.py`
+- **Week 1 (Days 3-5)**: Retrofit portfolio prep trio + master optimizer
+- **Week 2 (Day 1)**: Relocate `macd_exit_optimization.py`
+- **Week 2 (Days 2-3)**: Build automated regression bundle + smoke test
 
-**Total Estimated Time**: 10 working days (2 weeks)
+**Total Estimated Time**: ~6 working days
 
 **Current Investment**: ~5 days already completed
 
@@ -530,7 +483,7 @@ python scripts/02_exit_threshold_optimizer.py --config ../../config_mse.yaml
 
 ### **4. Incremental Migration**
 
-**Decision**: Migrate scripts gradually (2 done, 13 remaining)
+**Decision**: Migrate scripts gradually (9 delivered, final module + portfolio refactor pending)
 
 **Rationale**:
 - Test as we go
@@ -544,8 +497,8 @@ python scripts/02_exit_threshold_optimizer.py --config ../../config_mse.yaml
 
 ### **Issue 1: Recent Backtest Shows 0% Win Rate**
 
-**Status**: ⚠️ Unresolved
-**Impact**: High - Needs investigation before further analysis
+**Status**: ⚠️ Monitor
+**Impact**: Medium — still needs validation before promoting new portfolios
 
 **Observation**:
 ```json
@@ -556,13 +509,11 @@ python scripts/02_exit_threshold_optimizer.py --config ../../config_mse.yaml
 }
 ```
 
-**Potential Causes**:
-1. Data quality issue (missing OHLCV)
-2. Strategy logic bug
-3. Risk manager blocking all trades
-4. Warmup period issue (first 525 minutes invalid)
+**What Changed**:
+- `09_validation_check.py` now emits explicit warnings when win rate = 0 and attaches sample trades for investigation.
+- Guard-rail doc makes the anomaly visible earlier in the workflow.
 
-**Recommendation**: Debug this before migrating more scripts.
+**Next Step**: Use the validation report to inspect sample trades, confirm merge inputs, and rerun after fixing data/strategy filters.
 
 ### **Risk 2: Legacy Script Dependencies**
 
@@ -620,21 +571,18 @@ Windows vs Linux path separators may cause issues.
 
 ### **Today (Day 1)**:
 1. ✅ Review this implementation status document
-2. ⏳ Test `merge_trades.py` with your latest backtest
-3. ⏳ Run `01_basic_eda.py` and verify output
-4. ⏳ Run `03_cascade_analysis.py` and review cascade patterns
+2. ⏳ Run `09_validation_check.py` on the latest merged trades to sanity-check inputs
+3. ⏳ Finalize design notes for `05_exit_timing_analysis.py`
 
 ### **This Week (Days 2-5)**:
-1. ⏳ Migrate `02_trade_type_analysis.py`
-2. ⏳ Migrate `04_ticker_ranking.py`
-3. ⏳ Test portfolio construction integration
-4. ⏳ Debug 0% win rate issue (if exists in your data)
+1. ⏳ Implement `05_exit_timing_analysis.py` using shared loaders
+2. ⏳ Retrofit portfolio prep trio + `master_portfolio_optimizer.py`
+3. ⏳ Re-run generic bundle (01/02/04/05/09) to ensure regressions pass
 
 ### **Next Week (Days 6-10)**:
-1. ⏳ Complete remaining script migrations
-2. ⏳ End-to-end testing
-3. ⏳ Organize strategy_specific/mse/
-4. ⏳ Final documentation updates
+1. ⏳ Relocate `macd_exit_optimization.py` under strategy-specific tree
+2. ⏳ Build automated regression script + document smoke test workflow
+3. ⏳ Prep release notes capturing migration completion & testing results
 
 ---
 
@@ -646,8 +594,8 @@ Windows vs Linux path separators may cause issues.
 - **Module registry**: `analysis.generic.modules[...]` and `analysis.portfolio.modules[...]` declare `inputs`, `outputs`, and optional `depends_on` relations for runner orchestration.
 
 ### 🏗️ Generic Suite (Config-Driven Targets)
-- Scripts to migrate: `basic_eda`, `trade_type_analysis`, `stop_loss_simulation`, `ticker_ranking`, `validation_check`, `risk_adjusted_patterns`, `top50_vs_overall`, `top50_pattern_breakdown`.
-- Each consumes `merged_trades`, emits CSV/Markdown artifacts, and surfaces warnings for the run report.
+- Remaining lift: add `exit_timing_analysis` to the registry and expose portfolio prep trio via module specs.
+- Continue emitting CSV/JSON/Markdown artefacts with warning flags surfaced in the run report.
 
 ### 📈 Portfolio Chain (Config-Aware)
 - Mirrors existing 00→master flow: ranking → anti-cascade filter → sector/correlation prep → combination generation → optimization → equity curves.
@@ -695,23 +643,23 @@ Windows vs Linux path separators may cause issues.
 ## 📊 **SUMMARY**
 
 **What's Working Now**:
-- ✅ Config-driven workflow
-- ✅ Trade file merger
-- ✅ 2 generic analysis scripts (EDA, Cascade)
-- ✅ Comprehensive documentation
+- ✅ Config-driven workflow + trade merger
+- ✅ Nine generic analysis modules on the shared loaders
+- ✅ Comprehensive documentation + module registry updates
 
 **What's In Progress**:
-- ⏳ 13 more script migrations
-- ⏳ End-to-end testing
+- ⏳ Porting `05_exit_timing_analysis.py`
+- ⏳ Retrofitting portfolio prep trio & master optimizer
+- ⏳ Relocating `macd_exit_optimization.py` and wiring regression bundle
 
 **What's Next**:
-- Complete script migrations
-- Test with real data
-- Organize strategy-specific modules
+- Finish exit timing module
+- Replace portfolio hardcoded paths with config helpers
+- Automate regression run + smoke-test checklist
 
-**Current Progress**: **42% Complete** (4 of 5 phases done)
+**Current Progress**: **78% Complete** (Phase 3 near-done; Phase 5 pending)
 
-**Estimated Completion**: **2 weeks** (10 working days)
+**Estimated Completion**: **~6 working days**
 
 ---
 
