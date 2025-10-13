@@ -1,0 +1,150 @@
+{
+  "summary": {
+    "total_trades": 543,
+    "win_rate_pct": 48.06629834254144,
+    "total_pnl": 316949.51075610303,
+    "realized_pnl": 316949.51075610303,
+    "unrealized_pnl": 0.0,
+    "return_on_capital_pct": 31.6949510756103,
+    "average_hold_hours": 51.999079189686924,
+    "sharpe_ratio": 1.6871043489475268,
+    "max_drawdown_pct": -8.154023642154892,
+    "fallback_rate_pct": 0.1841620626151013,
+    "actual_entry_ratio_pct": 99.8158379373849,
+    "actual_exit_ratio_pct": 100.0,
+    "average_entry_slippage": 20.161322680293562,
+    "average_exit_slippage": 10.624585514706606,
+    "average_entry_slippage_bp": 4764.93792091262,
+    "average_exit_slippage_bp": 38649.080602588234
+  },
+  "per_ticker": {
+    "BANKNIFTY": {
+      "trades": 93,
+      "pnl": 24861.52500000001,
+      "wins": 45,
+      "fallback_count": 0,
+      "actual_entry_count": 93,
+      "actual_exit_count": 93,
+      "win_rate_pct": 48.38709677419355,
+      "return_pct": 2.486152500000001,
+      "fallback_rate_pct": 0.0,
+      "actual_entry_ratio_pct": 100.0,
+      "actual_exit_ratio_pct": 100.0,
+      "entry_slippage_mean": 78.70642950684561,
+      "exit_slippage_mean": 47.09275390218152,
+      "entry_slippage_bp_mean": 13573.69452345159,
+      "exit_slippage_bp_mean": 48111.08031741444
+    },
+    "INFY": {
+      "trades": 112,
+      "pnl": 60908.000000000015,
+      "wins": 50,
+      "fallback_count": 0,
+      "actual_entry_count": 112,
+      "actual_exit_count": 112,
+      "win_rate_pct": 44.642857142857146,
+      "return_pct": 6.0908000000000015,
+      "fallback_rate_pct": 0.0,
+      "actual_entry_ratio_pct": 100.0,
+      "actual_exit_ratio_pct": 100.0,
+      "entry_slippage_mean": 4.148422941559574,
+      "exit_slippage_mean": 2.9598334742169556,
+      "entry_slippage_bp_mean": 2348.7024246229785,
+      "exit_slippage_bp_mean": 2013.7622251108717
+    },
+    "NIFTY": {
+      "trades": 112,
+      "pnl": 159036.0,
+      "wins": 58,
+      "fallback_count": 0,
+      "actual_entry_count": 112,
+      "actual_exit_count": 112,
+      "win_rate_pct": 51.78571428571429,
+      "return_pct": 15.9036,
+      "fallback_rate_pct": 0.0,
+      "actual_entry_ratio_pct": 100.0,
+      "actual_exit_ratio_pct": 100.0,
+      "entry_slippage_mean": 18.734716830653174,
+      "exit_slippage_mean": 4.563992468983708,
+      "entry_slippage_bp_mean": 5787.300876989851,
+      "exit_slippage_bp_mean": 138115.4793946337
+    },
+    "RELIANCE": {
+      "trades": 113,
+      "pnl": 52675.0,
+      "wins": 52,
+      "fallback_count": 0,
+      "actual_entry_count": 113,
+      "actual_exit_count": 113,
+      "win_rate_pct": 46.017699115044245,
+      "return_pct": 5.2675,
+      "fallback_rate_pct": 0.0,
+      "actual_entry_ratio_pct": 100.0,
+      "actual_exit_ratio_pct": 100.0,
+      "entry_slippage_mean": 0.06877022064266738,
+      "exit_slippage_mean": -0.2436879624564711,
+      "entry_slippage_bp_mean": 1401.7450637658992,
+      "exit_slippage_bp_mean": 2944.616447754278
+    },
+    "TCS": {
+      "trades": 113,
+      "pnl": 19468.985756103066,
+      "wins": 56,
+      "fallback_count": 1,
+      "actual_entry_count": 112,
+      "actual_exit_count": 113,
+      "win_rate_pct": 49.557522123893804,
+      "return_pct": 1.9468985756103068,
+      "fallback_rate_pct": 0.8849557522123894,
+      "actual_entry_ratio_pct": 99.11504424778761,
+      "actual_exit_ratio_pct": 100.0,
+      "entry_slippage_mean": 9.355907803914278,
+      "exit_slippage_mean": 5.083115537185068,
+      "entry_slippage_bp_mean": 2259.9835255608086,
+      "exit_slippage_bp_mean": 4291.1821033472515
+    }
+  },
+  "ticker_summary": {
+    "BANKNIFTY": {
+      "processed": 93,
+      "skipped": 27,
+      "realized_pnl": 24861.52500000001,
+      "fallback_counts": {}
+    },
+    "INFY": {
+      "processed": 112,
+      "skipped": 8,
+      "realized_pnl": 60908.000000000015,
+      "fallback_counts": {}
+    },
+    "NIFTY": {
+      "processed": 112,
+      "skipped": 8,
+      "realized_pnl": 159036.0,
+      "fallback_counts": {}
+    },
+    "RELIANCE": {
+      "processed": 113,
+      "skipped": 7,
+      "realized_pnl": 52675.0,
+      "fallback_counts": {}
+    },
+    "TCS": {
+      "processed": 113,
+      "skipped": 7,
+      "realized_pnl": 19468.985756103066,
+      "fallback_counts": {
+        "no_actual_bar(1minute/5minute/1day)": 21
+      }
+    }
+  },
+  "diagnostics": {
+    "fallback_trades": 1,
+    "actual_entry_count": 542,
+    "actual_exit_count": 543,
+    "entry_slippage_samples": 543,
+    "exit_slippage_samples": 543
+  },
+  "config_hash": "e5b730b9d68947912a0b994da24115dc1b94ae652e1518990d9ff438cf1e04da",
+  "run_id": "20251012_122349_phase3_replay_mvp"
+}
