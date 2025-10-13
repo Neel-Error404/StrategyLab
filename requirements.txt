@@ -34,6 +34,7 @@ multiprocessing-logging>=0.3.4
 # Utilities
 pathlib2>=2.3.7; python_version<"3.4"
 typing-extensions>=4.5.0; python_version<"3.8"
+tqdm>=4.65.0  # Progress bars for data fetching
 
 # Development & Testing (optional)
 pytest>=7.0.0

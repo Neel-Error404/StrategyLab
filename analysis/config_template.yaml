@@ -1,0 +1,349 @@
+# ============================================================
+# Analysis Configuration Template
+# ============================================================
+# Copy this file to e.g. analysis/configs/<strategy>_<run>.yaml,
+# then update the paths below to match your latest backtest.
+# The CLI runner will consume this file and orchestrate merges,
+# generic analysis, and portfolio construction automatically.
+# ============================================================
+
+# ------------------------------------------------------------
+# RUN METADATA
+# ------------------------------------------------------------
+run:
+  run_id: "20251006_024924"                  # Required: unique identifier per run
+  strategy: "mse"                            # Required: strategy name
+  date_range: "2022-01-01_to_2025-08-31"     # Optional but recommended
+  label: "baseline_review"                   # Optional friendly tag (used in reports)
+
+# ------------------------------------------------------------
+# DATA SOURCES
+# ------------------------------------------------------------
+# Provide absolute paths. Runner validates the directories.
+data_sources:
+  strategy_trades_dir: "/path/to/strategy_trades"   # Required
+  base_data_dir: "/path/to/base_data"               # Required (indicator context)
+  merged_trades_dir: null                           # Optional; auto-generated if null
+
+# ------------------------------------------------------------
+# MERGE OPTIONS
+# ------------------------------------------------------------
+merge:
+  auto_generate: true                    # If true and merged path missing → run merge_trades
+  trade_source: "strategy_trades"        # strategy_trades | risk_approved_trades
+  output_filename: "all_trades_merged.csv"
+
+# ------------------------------------------------------------
+# OUTPUT ROUTING
+# ------------------------------------------------------------
+output:
+  root_dir: "analysis/output"            # Base directory for CSV / JSON artifacts
+  reports_root_dir: "analysis/reports"   # Base directory for Markdown / PDF reports
+  run_logs_dir: "analysis/run_logs"      # Where run summaries are stored
+  merged_filename: "all_trades_merged.csv"  # Name of merged trades file
+  data_dir: "{root}/{strategy}/{run_id}/data"  # Where merged file is saved when auto-generated
+  dir_pattern: "{root}/{strategy}/{run_id}/{category}/{module}"
+  report_pattern: "{reports_root}/{strategy}/{run_id}/{category}/{module}"
+  filename_template: "{module}_{artifact}"
+
+# ------------------------------------------------------------
+# ANALYSIS MODULE REGISTRY
+# ------------------------------------------------------------
+analysis:
+  # --------------------------------------------
+  # 1. GENERIC ANALYSIS (strategy-agnostic)
+  # --------------------------------------------
+  generic:
+    enabled: true
+    defaults:
+      output_dir: "{root}/{strategy}/{run_id}/generic/{module}"
+      report_dir: "{reports_root}/{strategy}/{run_id}/generic/{module}"
+    modules:
+      basic_eda:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "json"
+            artifact: "summary"
+          - type: "csv"
+            artifact: "ticker_performance"
+          - type: "markdown"
+            artifact: "report"
+        config:
+          include_ticker_breakdown: true
+          include_time_of_day_stats: true
+          sample_size: null              # Optionally limit trades for quick checks
+      trade_type_analysis:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "directional_breakdown"
+          - type: "markdown"
+            artifact: "directional_summary"
+          - type: "csv"
+            artifact: "ticker_bias"
+        config:
+          metrics:
+            - "win_rate"
+            - "avg_pnl"
+            - "avg_drawdown"
+          include_consecutive_patterns: true
+          sample_size: null
+          min_trades_for_bias: 100
+      stop_loss_simulation:
+        enabled: false
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "stop_loss_scenarios"
+          - type: "json"
+            artifact: "stop_loss_summary"
+        config:
+          thresholds: [0.5, 1.0, 1.5, 2.0, 2.5]    # Percent stop levels
+          direction_specific: false               # Separate thresholds per Buy/Sell
+          base_threshold: 2.0                     # Primary threshold to highlight
+      cascade_analysis:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "cascade_tags"
+          - type: "markdown"
+            artifact: "cascade_insights"
+          - type: "json"
+            artifact: "cascade_metrics"
+        config:
+          min_time_gap_minutes: 30
+          max_same_day_gap: 1440
+          tag_categories:
+            - "FIRST_TRADE_OF_DAY"
+            - "WINNING_CASCADE"
+            - "LOSING_CASCADE"
+            - "ANTI_CASCADE_RECOVERY"
+      ticker_ranking:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "ticker_scores"
+        config:
+          top_n: 50
+          min_trades: 20
+          weighting_scheme:
+            profit_factor: 0.4
+            win_rate: 0.3
+            avg_return: 0.3
+      risk_adjusted_patterns:
+        enabled: false
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "pattern_metrics"
+          - type: "markdown"
+            artifact: "pattern_report"
+        config:
+          grouping_columns:
+            - "Trade Type"
+            - "Day Type"
+          metrics:
+            - "sharpe_like"
+            - "avg_return"
+            - "drawdown_pct"
+      validation_check:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "markdown"
+            artifact: "validation_report"
+        config:
+          min_trades: 1000
+          required_columns:
+            - "Profit (Currency)"
+            - "Trade Type"
+            - "Entry Time"
+          warn_on_zero_win_rate: true
+          sample_rows: 5
+          sample_ticker: null
+      top50_vs_overall:
+        enabled: false
+        depends_on: ["generic:ticker_ranking"]
+        inputs: ["merged_trades", "ticker_scores"]
+        outputs:
+          - type: "csv"
+            artifact: "top50_comparison"
+          - type: "markdown"
+            artifact: "top50_report"
+        config:
+          top_n: 50
+          comparison_metrics:
+            - "win_rate"
+            - "avg_return"
+            - "drawdown_pct"
+          patterns:
+            - "CONSECUTIVE_SAME_DIRECTION"
+            - "CONSECUTIVE_OPPOSITE_DIRECTION"
+            - "FIRST_TRADE_OF_DAY"
+      top50_pattern_breakdown:
+        enabled: false
+        depends_on: ["generic:ticker_ranking"]
+        inputs: ["merged_trades", "ticker_scores"]
+        outputs:
+          - type: "csv"
+            artifact: "top50_pattern_metrics"
+          - type: "markdown"
+            artifact: "top50_pattern_summary"
+        config:
+          top_n: 50
+          patterns:
+            - "CONSECUTIVE_SAME_DIRECTION"
+            - "CONSECUTIVE_OPPOSITE_DIRECTION"
+            - "FIRST_TRADE_OF_DAY"
+
+  # --------------------------------------------
+  # 2. PORTFOLIO CONSTRUCTION
+  # --------------------------------------------
+  portfolio:
+    enabled: true
+    defaults:
+      output_dir: "{root}/{strategy}/{run_id}/portfolio/{module}"
+      report_dir: "{reports_root}/{strategy}/{run_id}/portfolio/{module}"
+    modules:
+      # Foundation: Cascade vs Anti-Cascade Analysis (generates Top 50 lists)
+      ticker_ranking:
+        enabled: true
+        depends_on: ["generic:cascade_analysis"]  # Needs cascade-tagged trades
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "TOP50_ALL_TRADES"
+          - type: "csv"
+            artifact: "TOP50_CASCADING_TRADES"
+          - type: "csv"
+            artifact: "TOP50_ANTICASCADING_TRADES"
+        config:
+          min_trades_per_ticker: 10  # Minimum trades to calculate performance
+
+      # Filter 1: Anti-Cascading Subset Creation
+      anti_cascade_filter:
+        enabled: true
+        depends_on: ["portfolio:ticker_ranking"]
+        inputs: ["merged_trades", "top50_anticascading"]
+        outputs:
+          - type: "csv"
+            artifact: "anti_cascading_trades_filtered"
+          - type: "csv"
+            artifact: "affordable_tickers_metadata"
+        config:
+          price_threshold: 2000  # Maximum price for affordable tickers (INR)
+
+      # Sector & Correlation Analysis
+      sector_classification:
+        enabled: true
+        depends_on: ["portfolio:anti_cascade_filter"]
+        inputs: ["anti_cascading_trades_filtered", "affordable_tickers_metadata"]
+        outputs:
+          - type: "csv"
+            artifact: "sector_mapping"
+          - type: "csv"
+            artifact: "correlation_matrix"
+          - type: "csv"
+            artifact: "daily_returns_data"
+        config:
+          min_trades_for_correlation: 10  # Minimum trades per ticker
+
+      # Combination Generation with Diversification Filters
+      combination_generator:
+        enabled: true
+        depends_on: ["portfolio:sector_classification"]
+        inputs: ["sector_mapping", "correlation_matrix", "anti_cascading_trades_filtered"]
+        outputs:
+          - type: "csv"
+            artifact: "valid_combinations"
+        config:
+          portfolio_sizes: [5]  # Generate combinations for these sizes [4, 5, 6, 7, 8]
+          max_sector_concentration: 0.6  # Maximum 60% weight in one sector
+          max_correlation: 0.75  # Maximum average correlation between tickers
+          min_trades_per_ticker: 200  # Minimum trades for inclusion
+
+      # Portfolio Optimization Engine - Evaluate and rank all combinations
+      portfolio_optimizer:
+        enabled: false  # Enable after combination_generator completes
+        depends_on: ["portfolio:combination_generator"]
+        inputs: ["valid_combinations", "anti_cascading_trades_filtered"]
+        outputs:
+          - type: "csv"
+            artifact: "portfolio_performance_all"
+          - type: "csv"
+            artifact: "portfolio_performance_top50"
+          - type: "markdown"
+            artifact: "portfolio_optimization_summary"
+        config:
+          top_n: 50  # Number of top portfolios to save
+          max_portfolios: null  # For quick testing, limit evaluation (null = all)
+
+      # PyPortfolioOpt - Optimal Weight Allocation (Markowitz)
+      pypfopt_weights:
+        enabled: false  # Enable after portfolio_optimizer completes
+        depends_on: ["portfolio:portfolio_optimizer"]
+        inputs: ["portfolio_performance_top50", "anti_cascading_trades_filtered"]
+        outputs:
+          - type: "csv"
+            artifact: "optimal_weights"
+          - type: "markdown"
+            artifact: "pypfopt_summary"
+        config:
+          portfolio_sizes: [5, 6, 7]  # Which portfolio sizes to optimize
+          top_n: 50  # How many portfolios per size to optimize
+          l2_regularization: 0.1  # L2 penalty to prevent extreme weights
+          target_volatility: 0.15  # Target volatility for efficient risk method
+
+      # Equity Curve Generator - Visualizations and Performance Charts
+      equity_curves:
+        enabled: false  # Enable after portfolio_optimizer completes
+        depends_on: ["portfolio:portfolio_optimizer", "portfolio:sector_classification"]
+        inputs: ["portfolio_performance_top50", "anti_cascading_trades_filtered", "sector_mapping"]
+        outputs:
+          - type: "png"
+            artifact: "equity_curves"
+          - type: "png"
+            artifact: "monthly_returns_heatmap"
+          - type: "png"
+            artifact: "rolling_sharpe"
+          - type: "png"
+            artifact: "sector_allocation"
+          - type: "csv"
+            artifact: "portfolio_summary_stats"
+        config:
+          portfolio_sizes: [5, 6, 7]  # Which portfolio sizes to visualize
+          top_n: 5  # How many portfolios per size to visualize
+
+  # --------------------------------------------
+  # 3. STRATEGY-SPECIFIC (e.g., MSE)
+  # --------------------------------------------
+  strategy_specific:
+    mse:
+      enabled: false
+      defaults:
+        output_dir: "{root}/{strategy}/{run_id}/strategy_specific/mse/{module}"
+        report_dir: "{reports_root}/{strategy}/{run_id}/strategy_specific/mse/{module}"
+      modules:
+        macd_exit_threshold:
+          enabled: false
+          inputs: ["merged_trades", "base_data"]
+        outputs:
+          - type: "csv"
+            artifact: "threshold_results"
+          - type: "markdown"
+            artifact: "threshold_report"
+        config:
+          current_threshold: 0.8
+          test_thresholds: [0.7, 0.75, 0.8, 0.85, 0.9]
+          evaluation_metric: "mfe_capture_ratio"
+
+# ------------------------------------------------------------
+# INTEGRATION (Indicator Context)
+# ------------------------------------------------------------
+integration:
+  enhance_trades: false              # If true, scripts can request enhanced data
+  sample_size: null                  # Optional: sample trades before enhancement

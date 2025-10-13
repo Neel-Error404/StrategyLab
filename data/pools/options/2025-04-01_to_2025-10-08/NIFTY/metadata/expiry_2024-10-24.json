@@ -1,0 +1,19 @@
+{
+  "ticker": "NIFTY",
+  "expiry": "2024-10-24",
+  "expiry_type": "weekly",
+  "lot_size": 25,
+  "call_strikes": [
+    24850.0,
+    25750.0,
+    25800.0
+  ],
+  "put_strikes": [
+    24850.0,
+    25800.0
+  ],
+  "data_start_date": "2024-09-25",
+  "data_end_date": "2024-10-23",
+  "total_trading_days": 17,
+  "contracts": null
+}

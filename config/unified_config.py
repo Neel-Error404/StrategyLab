@@ -233,6 +233,7 @@ class BacktestConfig:
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    replay_manifest: Optional[str] = None
     
     # Infrastructure configurations (absorbed from config.py)
     broker: BrokerConfig = field(default_factory=BrokerConfig)

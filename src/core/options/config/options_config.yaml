@@ -1,0 +1,357 @@
+# Options Backtesting Configuration
+# Controls how equity trades are replayed using options contracts
+
+# Input Sources
+inputs:
+  # Path to equity trades CSV (must include ticker column)
+  equity_trades_path: "outputs/20251006_024924/mse/2022-01-01_to_2025-08-31/data/all_trades_merged.csv"
+
+  # Directory containing equity data pools (timeframe folders inside)
+  equity_data_root: "data/pools"
+
+  # Directory containing cached option chains organised by date range and ticker
+  options_data_root: "data/pools/options"
+
+  # Timeframes to use for replay
+  underlying_timeframe: "1minute"
+  options_timeframe:
+    - "1minute"
+    - "5minute"
+    - "1day"
+
+  # Timezone for timestamps
+  timezone: "Asia/Kolkata"
+
+  # Determinism controls
+  seed: 42
+  run_label: "phase3_replay_mvp"
+
+  # Optional filter if trade file contains multiple tickers (set to null to allow all)
+  ticker_whitelist: null
+
+# Pricing Mode Selection
+pricing:
+  # Mode: synthetic | actual | hybrid
+  # - synthetic: Use Black-Scholes with historical volatility
+  # - actual: Use historical option prices from Upstox
+  # - hybrid: Prefer actual, fall back to synthetic for gaps
+  mode: "hybrid"
+
+  # Synthetic pricing configuration (used in synthetic/hybrid mode)
+  synthetic:
+    # Volatility model to use
+    volatility_model: "historical_20d"  # historical_20d | historical_5d | parkinson | calibrated_iv
+
+    # Black-Scholes parameters
+    risk_free_rate: 0.06  # 6% annual
+    dividend_yield: 0.0   # Assume no dividends for simplicity
+
+    # Volatility constraints (prevent extreme values)
+    vol_floor: 0.10   # Minimum 10% annualized vol
+    vol_cap: 1.50     # Maximum 150% annualized vol
+
+  # Actual pricing configuration (used in actual/hybrid mode)
+  actual:
+    # What price to use for fills
+    fill_assumption: "mid"  # mid | open | close | vwap
+    # mid = (bid + ask) / 2 (theoretical best case)
+    # open = open price of next bar (realistic)
+    # close = close price of current bar (lookahead bias)
+
+    # Data source
+    cache_dir: "src/core/options/data/cache"
+
+# Strike Selection Strategy
+strike_selection:
+  # Method: atm | delta | moneyness | premium_pct
+  method: "atm"
+
+  # ATM: Select strike closest to underlying price
+  # (No additional parameters needed)
+
+  # Delta-based selection (if method = delta)
+  delta:
+    target: 0.30  # Target delta (0.30 = 30-delta option)
+    tolerance: 0.05  # Accept strikes within ±5 delta
+
+  # Moneyness-based selection (if method = moneyness)
+  moneyness:
+    # For LONG signals (calls)
+    call_moneyness: 1.00  # 1.00 = ATM, 1.05 = 5% OTM, 0.95 = 5% ITM
+    # For SHORT signals (puts)
+    put_moneyness: 1.00
+
+  # Premium percentage (if method = premium_pct)
+  premium_pct:
+    target: 0.02  # Option should cost ~2% of underlying price
+    tolerance: 0.005  # Accept ±0.5%
+
+# Expiry Selection Strategy
+expiry_selection:
+  # Method: nearest_weekly | nearest_monthly | fixed_dte | next_expiry
+  method: "nearest_weekly"
+
+  # Fixed DTE (if method = fixed_dte)
+  fixed_dte:
+    target_days: 7  # Always trade options with 7 days to expiry
+    tolerance_days: 2  # Accept 5-9 DTE
+
+  # Next expiry after signal (if method = next_expiry)
+  next_expiry:
+    min_dte: 3  # Must have at least 3 days left
+    max_dte: 45  # Don't go beyond 45 days
+
+# Option Type Selection
+option_type:
+  # For LONG equity signals
+  long_signal: "CE"  # CE (call) | PE (put - bearish bet)
+
+  # For SHORT equity signals
+  short_signal: "PE"  # PE (put) | CE (call - if selling)
+
+  # Strategy type (affects risk profile)
+  strategy: "directional"  # directional | premium_selling | spreads
+  # directional: Buy calls/puts (limited risk)
+  # premium_selling: Sell options (unlimited risk, not implemented in MVP)
+  # spreads: Vertical/horizontal spreads (defined risk, future enhancement)
+
+# Lot Sizing Strategy
+lot_sizing:
+  # Method: fixed | capital_match | delta_match
+  method: "fixed"
+
+  # Fixed lot count (if method = fixed)
+  fixed:
+    lots_per_trade: 1  # Always trade 1 lot
+
+  # Capital matching (if method = capital_match)
+  capital_match:
+    # Match equity capital deployed
+    source: "equity_trade"  # equity_trade | portfolio_pct
+    # If equity_trade: Use equity position size
+    # If portfolio_pct: Use % of portfolio
+
+    portfolio_pct: 0.05  # 5% of portfolio per trade (if source = portfolio_pct)
+
+    # Rounding method for fractional lots
+    rounding: "nearest"  # nearest | floor | ceiling
+    min_lots: 1  # Minimum lots to trade (skip if below)
+
+  # Delta-adjusted matching (if method = delta_match)
+  delta_match:
+    # Match notional exposure via delta
+    # equity_exposure = qty × price
+    # option_exposure = lots × lot_size × underlying_price × delta
+    target_delta_multiplier: 1.0  # 1.0 = match exactly, 0.5 = half exposure
+
+# Position Management
+position_management:
+  # Entry constraints
+  entry:
+    # Minimum days to expiry to enter a trade
+    min_dte_to_enter: 5
+
+    # Maximum days to expiry (don't trade far-dated options)
+    max_dte_to_enter: 45
+
+    # Skip if contract not available or illiquid
+    skip_if_illiquid: true
+
+  # Exit triggers
+  exit:
+    # Primary: Follow equity exit signal
+    follow_equity_signal: true
+
+    # Force close before expiry (avoid assignment)
+    force_close_before_expiry:
+      enabled: true
+      hours_before: 24  # Close 1 day (24 hours) before expiry
+
+    # Independent options exits (override equity signal if triggered)
+    stop_loss:
+      enabled: false  # Disabled for MVP (pure replay)
+      threshold_pct: -0.50  # Close if down 50%
+
+    take_profit:
+      enabled: false  # Disabled for MVP
+      threshold_pct: 2.00  # Close if up 200%
+
+    # Time-based exit
+    time_based:
+      enabled: false  # Disabled for MVP
+      max_hold_hours: 24  # Close after 24 hours regardless of P&L
+
+  # Roll logic (future enhancement)
+  roll:
+    enabled: false  # Not implemented in MVP
+    # When to roll: time_based | delta_drift | signal_persistence
+    # Roll cost: account for bid-ask spread on exit + entry
+
+# Liquidity Filters (for actual data mode)
+liquidity:
+  # Minimum open interest
+  min_open_interest: 100
+
+  # Maximum bid-ask spread (as % of mid)
+  max_spread_pct: 0.10  # 10%
+
+  # Minimum daily volume
+  min_volume: 10
+
+  # If filters fail, what to do?
+  on_filter_fail: "skip_trade"  # skip_trade | use_synthetic | ignore_filters
+
+# Greeks Calculation
+greeks:
+  # Calculate Greeks at each bar
+  calculate: true
+
+  # Greeks to track
+  metrics:
+    - "delta"
+    - "gamma"
+    - "theta"
+    - "vega"
+    # - "rho"  # Less critical for short-dated options
+
+  # Calculation frequency (for performance)
+  frequency: "every_bar"  # every_bar | hourly | entry_exit_only
+
+# Risk Management (Portfolio Level)
+risk:
+  # Portfolio capital assumptions
+  initial_portfolio_value: 1000000.0  # ₹10L base capital for allocation checks
+
+  # Maximum capital allocation to options (% of portfolio)
+  max_portfolio_allocation: 0.30  # 30%
+
+  # Maximum number of concurrent option positions
+  max_concurrent_positions: 10
+
+  # Position size limits
+  max_position_size_per_trade: 0.05  # 5% of portfolio
+
+  # Drawdown limits
+  max_drawdown_pct: 0.25  # 25%
+  stop_trading_on_drawdown: true  # Stop taking new trades once drawdown threshold breached
+
+  # Circuit breakers / kill switch
+  kill_switch:
+    enabled: true
+    max_intraday_loss_pct: 0.12  # Stop run if intraday loss exceeds 12%
+    max_single_trade_loss_pct: 0.06  # Reject trades if projected loss >6%
+    reason_codes: true  # Emit structured reason codes when triggered
+
+# Data Quality Tracking
+data_quality:
+  # Track which pricing mode was used per trade
+  log_pricing_mode: true
+
+  # Track data gaps and fallbacks
+  log_synthetic_fallbacks: true
+
+  # Generate data quality report
+  generate_quality_report: true
+
+# Output Configuration
+output:
+  # Base output directory
+  output_dir: "outputs"
+
+  # Files to generate
+  files:
+    trades: true              # options_trades.csv
+    base_data: true           # options_base_data.csv
+    metrics: true             # options_metrics.json
+    comparison: true          # comparison_equity_vs_options.csv
+    position_lifecycle: true  # position_lifecycle.csv (Greeks evolution)
+    pricing_validation: true  # pricing_validation.csv (if hybrid mode)
+
+  # File formats
+  formats:
+    trades: "csv"
+    base_data: "csv"
+    metrics: "json"
+
+  # Compression (for large datasets)
+  compress: false  # If true, gzip CSV files
+
+# Visualization
+visualization:
+  # Generate plots
+  enabled: true
+
+  # Plot types
+  plots:
+    - "equity_curve_comparison"  # Equity vs Options cumulative P&L
+    - "drawdown_comparison"
+    - "pnl_distribution"
+    - "greeks_evolution"  # Sample position Greeks over time
+    - "win_rate_by_ticker"
+
+  # Plot format
+  format: "png"  # png | pdf | svg
+  dpi: 300
+  save_dir: "outputs/{run_id}/plots"
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG | INFO | WARNING | ERROR
+  log_to_file: true
+  log_file: "logs/options_backtest.log"
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  max_file_size: "15MB"
+  backup_count: 7
+
+# Performance
+performance:
+  # Enable caching of intermediate calculations
+  enable_cache: true
+
+  # Parallel processing
+  parallel:
+    enabled: false  # Set to true for multi-ticker backtests
+    max_workers: 3
+
+  # Memory management
+  chunk_size: 1000  # Process positions in chunks to avoid OOM
+
+# Validation
+validation:
+  # Enable sanity checks
+  enabled: true
+
+  # Checks to perform
+  checks:
+    - "no_negative_prices"
+    - "no_positions_past_expiry"
+    - "pnl_balances"  # Sum of unrealized = realized
+    - "greeks_bounds"  # Delta 0-1, etc.
+    - "no_lookahead_bias"
+
+  # Action on validation failure
+  on_failure: "raise_error"  # raise_error | log_warning | continue
+
+# Experimental Features (Not Yet Implemented)
+experimental:
+  # IV surface modeling (future)
+  iv_surface:
+    enabled: false
+    method: "ssvi"  # SSVI, SVI, cubic spline
+
+  # Transaction costs modeling
+  transaction_costs:
+    enabled: false
+    brokerage_per_lot: 20  # ₹20 per lot
+    stt: 0.0005  # 0.05% on premium
+    exchange_charges: 0.00005
+
+  # Slippage modeling
+  slippage:
+    enabled: false
+    model: "fixed_pct"  # fixed_pct | volume_based
+    fixed_pct: 0.001  # 0.1% slippage
+
+# Templates
+# Users can create custom configs based on this template
+# Example: options_config_conservative.yaml with tighter risk limits

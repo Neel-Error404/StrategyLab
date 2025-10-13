@@ -1,0 +1,19 @@
+# Portfolio Construction Pipeline - Dependencies
+
+# Core Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Portfolio Optimization (Phase 1)
+PyPortfolioOpt>=1.5.5
+
+# Visualization (Phase 1 - Equity Curves)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Optional: Performance Analysis
+scipy>=1.10.0
+
+# Development
+jupyter>=1.0.0
+ipython>=8.0.0

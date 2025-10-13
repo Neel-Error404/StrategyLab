@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+"""
+COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS
+=============================================
+
+Purpose: Address fundamental flaw in portfolio construction approach
+- Analyze ALL 1.15M trades to understand true performance differences
+- Segregate into: All Trades, Cascading Trades, Anti-Cascading Trades
+- Generate separate Top 50 performer lists for each category
+- Compare performance differences to validate portfolio selection basis
+
+Key Question: Are Top 50 performers from "All Trades" the same as
+Top 50 performers from "Anti-Cascading Trades"?
+
+Reusing Infrastructure From:
+- Script 05: Ticker ranking and performance calculation
+- Script 10: Cascade tagging logic
+- Script 15: TOP_50_TICKERS list and comparison framework
+- Script 14: Risk-adjusted metrics calculation
+
+Author: Portfolio Construction Team
+Date: September 2025
+Version: 1.0 - Comprehensive Cascade Analysis
+"""
+
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
+
+# Current Top 50 tickers (from overall trades analysis)
+CURRENT_TOP_50_TICKERS = [
+    'MRF', 'PAGEIND', 'POWERINDIA', 'HONAUT', 'LICI', 'ULTRACEMCO', 'SHREECEM', 'BEML', 'MCX', 'SBIN',
+    'PNB', 'OFSS', 'ABB', 'TATAPOWER', 'ABBOTINDIA', 'LT', 'RELIANCE', 'LICHSGFIN', 'ATUL', 'ADANIENT',
+    'INDUSINDBK', 'TATAELXSI', 'PAYTM', 'CANBK', 'BALRAMCHIN', 'IEX', 'RECLTD', 'IRCTC', 'TCS', 'M&M',
+    'BIOCON', 'UNIONBANK', 'SBICARD', '3MINDIA', 'JUSTDIAL', 'GMDCLTD', 'GODFRYPHLP', 'BAJAJ-AUTO',
+    'DEEPAKNTR', 'MARUTI', 'APOLLOHOSP', 'BANKINDIA', 'TATACHEM', 'SONACOMS', 'AARTIIND', 'NIACL',
+    'JUBLFOOD', 'BANDHANBNK', 'GSFC', 'ASHOKLEY'
+]
+
+def load_and_tag_all_trades():
+    """
+    Load ALL 1.15M trades and tag them with cascade characteristics
+    Reusing logic from Script 10: cascade_tagging_analysis.py
+    """
+
+    print("🔄 COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS")
+    print("=" * 70)
+    print("🎯 Objective: Compare Top 50 performers across trade categories")
+    print("=" * 70)
+
+    print("📊 STEP 1: LOADING AND TAGGING ALL TRADES")
+    print("=" * 50)
+
+    # Load complete dataset (reusing from Script 05)
+    trade_file = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/outputs/20250915_121714/mse_backtesting/2022-01-01_to_2025-08-31/data/all_trade_mereged.csv"
+
+    trades = pd.read_csv(trade_file)
+    trades['Entry Time'] = pd.to_datetime(trades['Entry Time'])
+    trades['Exit Time'] = pd.to_datetime(trades['Exit Time'])
+    trades['Entry Date'] = trades['Entry Time'].dt.date
+
+    print(f"✅ Loaded {len(trades):,} total trades")
+    print(f"✅ Date range: {trades['Entry Time'].min().date()} to {trades['Entry Time'].max().date()}")
+    print(f"✅ Unique tickers: {trades['ticker'].nunique()}")
+
+    # Sort by ticker and time for cascade analysis (reusing from Script 10)
+    trades_sorted = trades.sort_values(['ticker', 'Entry Time']).reset_index(drop=True)
+
+    # Create previous trade reference columns (from Script 10)
+    trades_sorted['prev_ticker'] = trades_sorted['ticker'].shift(1)
+    trades_sorted['prev_entry_date'] = trades_sorted['Entry Date'].shift(1)
+    trades_sorted['prev_trade_type'] = trades_sorted['Trade Type'].shift(1)
+
+    # Tag each trade with cascade characteristics (adapted from Script 10)
+    print("🏷️ Tagging trades with cascade characteristics...")
+
+    cascade_tags = []
+    for _, trade in trades_sorted.iterrows():
+        if pd.isna(trade['prev_ticker']):
+            tag = 'FIRST_TRADE_OVERALL'
+        elif trade['ticker'] != trade['prev_ticker']:
+            tag = 'FIRST_TRADE_FOR_TICKER'
+        elif trade['Entry Date'] != trade['prev_entry_date']:
+            tag = 'FIRST_TRADE_OF_DAY'
+        elif trade['Trade Type'] == trade['prev_trade_type']:
+            tag = 'CONSECUTIVE_SAME_DIRECTION'  # CASCADING
+        else:
+            tag = 'CONSECUTIVE_OPPOSITE_DIRECTION'  # ANTI-CASCADING
+
+        cascade_tags.append(tag)
+
+    trades_sorted['cascade_tag'] = cascade_tags
+
+    # Categorize trades into main categories
+    trades_sorted['trade_category'] = trades_sorted['cascade_tag'].apply(lambda x:
+        'CASCADING' if x == 'CONSECUTIVE_SAME_DIRECTION' else 'ANTI_CASCADING'
+    )
+
+    # Show tagging results
+    tag_counts = trades_sorted['cascade_tag'].value_counts()
+    print(f"\n📊 TRADE TAGGING RESULTS:")
+    for tag, count in tag_counts.items():
+        percentage = (count / len(trades_sorted)) * 100
+        category = "🔄 CASCADING" if tag == 'CONSECUTIVE_SAME_DIRECTION' else "✅ ANTI-CASCADING"
+        print(f"   {tag:30} | {count:8,} ({percentage:5.1f}%) | {category}")
+
+    return trades_sorted
+
+def calculate_ticker_performance_by_category(trades_df, category_filter=None, category_name="ALL"):
+    """
+    Calculate comprehensive ticker performance metrics for a specific trade category
+    Reusing performance calculation logic from Script 05 and Script 14
+    """
+
+    print(f"\n📈 STEP 2{['A', 'B', 'C'][['ALL', 'CASCADING', 'ANTI_CASCADING'].index(category_name)]}: CALCULATING PERFORMANCE - {category_name} TRADES")
+    print("=" * 60)
+
+    # Filter trades by category
+    if category_filter:
+        filtered_trades = trades_df[trades_df['trade_category'] == category_filter].copy()
+    else:
+        filtered_trades = trades_df.copy()
+
+    print(f"📊 Analyzing {len(filtered_trades):,} trades in {category_name} category")
+
+    # Calculate ticker-wise performance metrics
+    ticker_performance = {}
+
+    for ticker in filtered_trades['ticker'].unique():
+        ticker_trades = filtered_trades[filtered_trades['ticker'] == ticker].copy()
+
+        if len(ticker_trades) < 10:  # Minimum trade threshold
+            continue
+
+        # PERCENTAGE-BASED METHODOLOGY (Industry Standard)
+        # Calculate percentage returns for each trade
+        ticker_trades['percentage_return'] = (
+            (ticker_trades['Exit Price'] / ticker_trades['Entry Price'] - 1) * 100
+        )
+
+        # Basic metrics
+        total_trades = len(ticker_trades)
+        total_pnl = ticker_trades['Profit (Currency)'].sum()  # Keep for reference
+        avg_return_pct = ticker_trades['percentage_return'].mean()
+
+        # Risk metrics - PERCENTAGE-BASED
+        winning_trades = ticker_trades[ticker_trades['percentage_return'] > 0]
+        losing_trades = ticker_trades[ticker_trades['percentage_return'] < 0]
+
+        win_rate = len(winning_trades) / total_trades if total_trades > 0 else 0
+
+        # Profit factor from percentage returns
+        profit_factor = abs(winning_trades['percentage_return'].sum() /
+                           losing_trades['percentage_return'].sum()) if len(losing_trades) > 0 else float('inf')
+
+        # Risk-reward ratio from percentage returns
+        avg_win = winning_trades['percentage_return'].mean() if len(winning_trades) > 0 else 0
+        avg_loss = losing_trades['percentage_return'].mean() if len(losing_trades) > 0 else 0
+        risk_reward_ratio = abs(avg_win / avg_loss) if avg_loss != 0 else float('inf')
+
+        # Sharpe-like ratio from percentage returns
+        returns = ticker_trades['percentage_return']
+        sharpe_like_ratio = returns.mean() / returns.std() if returns.std() > 0 else 0
+
+        # Store metrics (PERCENTAGE-BASED)
+        ticker_performance[ticker] = {
+            'ticker': ticker,
+            'total_trades': total_trades,
+            'total_pnl': total_pnl,  # Keep for reference
+            'avg_return_pct': avg_return_pct,  # Now percentage-based
+            'win_rate': win_rate * 100,  # Convert to percentage
+            'profit_factor': profit_factor,  # Now percentage-based
+            'risk_reward_ratio': risk_reward_ratio,
+            'sharpe_like_ratio': sharpe_like_ratio,  # Now percentage-based
+        }
+
+    # Convert to DataFrame and rank
+    performance_df = pd.DataFrame.from_dict(ticker_performance, orient='index')
+
+    # Composite scoring with FINANCIAL THEORY-BASED WEIGHTING (PERCENTAGE-BASED)
+    # Focus on fundamental profitability, exclude individual Sharpe
+    metrics_to_score = ['avg_return_pct', 'win_rate', 'profit_factor']
+
+    for metric in metrics_to_score:
+        if metric in performance_df.columns:
+            # Handle infinite values
+            finite_values = performance_df[performance_df[metric] != float('inf')][metric]
+            if len(finite_values) > 0:
+                max_val = finite_values.max()
+                min_val = finite_values.min()
+                if max_val != min_val:
+                    performance_df[f'{metric}_score'] = np.where(
+                        performance_df[metric] == float('inf'),
+                        100,  # Give max score to infinite values
+                        (performance_df[metric] - min_val) / (max_val - min_val) * 100
+                    )
+                else:
+                    performance_df[f'{metric}_score'] = 50  # Neutral score if all values same
+
+    # Calculate WEIGHTED composite score - PERCENTAGE-BASED Financial theory
+    # Profit Factor: 40% | Win Rate: 30% | Avg Return %: 30%
+    weights = {
+        'profit_factor_score': 0.40,  # Most important - fundamental profitability
+        'win_rate_score': 0.30,      # Consistency/reliability
+        'avg_return_pct_score': 0.30  # Average percentage return per trade
+    }
+
+    score_columns = [col for col in performance_df.columns if col.endswith('_score')]
+    if score_columns:
+        performance_df['composite_score'] = 0
+        for score_col in score_columns:
+            weight = weights.get(score_col, 0)  # Get weight or 0 if not in weights dict
+            if weight > 0:
+                performance_df['composite_score'] += performance_df[score_col] * weight
+
+        print(f"   Applied PERCENTAGE-BASED weighted scoring: PF(40%) + WR(30%) + AvgReturn%(30%)")
+    else:
+        performance_df['composite_score'] = 0
+
+    # Rank by composite score
+    performance_df = performance_df.sort_values('composite_score', ascending=False).reset_index(drop=True)
+    performance_df['rank'] = range(1, len(performance_df) + 1)
+
+    print(f"✅ Calculated performance for {len(performance_df)} tickers")
+    print(f"📊 Top 5 performers in {category_name} category:")
+    for i in range(min(5, len(performance_df))):
+        row = performance_df.iloc[i]
+        print(f"   {i+1:2}. {row['ticker']:12} | Composite: {row['composite_score']:5.1f} | PF: {row['profit_factor']:5.2f} | Sharpe: {row['sharpe_like_ratio']:5.2f}")
+
+    return performance_df
+
+def compare_top50_across_categories(all_performance, cascading_performance, anticascading_performance):
+    """
+    Compare Top 50 performers across all three categories
+    """
+
+    print(f"\n🔍 STEP 3: COMPARING TOP 50 PERFORMERS ACROSS CATEGORIES")
+    print("=" * 70)
+
+    # Get Top 50 from each category
+    top50_all = set(all_performance.head(50)['ticker'].tolist())
+    top50_cascading = set(cascading_performance.head(50)['ticker'].tolist())
+    top50_anticascading = set(anticascading_performance.head(50)['ticker'].tolist())
+
+    # Current top 50 (from original analysis)
+    current_top50 = set(CURRENT_TOP_50_TICKERS)
+
+    print(f"📊 TOP 50 LISTS COMPARISON:")
+    print(f"   All Trades Top 50:           {len(top50_all)} tickers")
+    print(f"   Cascading Trades Top 50:     {len(top50_cascading)} tickers")
+    print(f"   Anti-Cascading Trades Top 50: {len(top50_anticascading)} tickers")
+    print(f"   Current Top 50 (Original):    {len(current_top50)} tickers")
+
+    # Calculate overlaps
+    print(f"\n🎯 OVERLAP ANALYSIS:")
+
+    # All vs Anti-Cascading
+    all_vs_anti = top50_all.intersection(top50_anticascading)
+    print(f"   All Trades ∩ Anti-Cascading:     {len(all_vs_anti)}/50 ({len(all_vs_anti)/50*100:.1f}%)")
+
+    # All vs Cascading
+    all_vs_casc = top50_all.intersection(top50_cascading)
+    print(f"   All Trades ∩ Cascading:          {len(all_vs_casc)}/50 ({len(all_vs_casc)/50*100:.1f}%)")
+
+    # Current vs Anti-Cascading (CRITICAL!)
+    current_vs_anti = current_top50.intersection(top50_anticascading)
+    print(f"   Current Top 50 ∩ Anti-Cascading: {len(current_vs_anti)}/50 ({len(current_vs_anti)/50*100:.1f}%)")
+
+    # Show tickers unique to anti-cascading
+    unique_to_anti = top50_anticascading - current_top50
+    unique_to_current = current_top50 - top50_anticascading
+
+    if unique_to_anti:
+        print(f"\n✨ TICKERS UNIQUE TO ANTI-CASCADING TOP 50:")
+        print(f"   {', '.join(sorted(list(unique_to_anti))[:10])}{'...' if len(unique_to_anti) > 10 else ''}")
+        print(f"   Total: {len(unique_to_anti)} tickers")
+
+    if unique_to_current:
+        print(f"\n❌ CURRENT TOP 50 TICKERS NOT IN ANTI-CASCADING TOP 50:")
+        print(f"   {', '.join(sorted(list(unique_to_current))[:10])}{'...' if len(unique_to_current) > 10 else ''}")
+        print(f"   Total: {len(unique_to_current)} tickers")
+
+    return {
+        'all_vs_anti_overlap': len(all_vs_anti),
+        'current_vs_anti_overlap': len(current_vs_anti),
+        'unique_to_anti': unique_to_anti,
+        'unique_to_current': unique_to_current
+    }
+
+def save_comprehensive_results(all_performance, cascading_performance, anticascading_performance, comparison_results):
+    """
+    Save all results for further analysis
+    """
+
+    print(f"\n💾 STEP 4: SAVING COMPREHENSIVE ANALYSIS RESULTS")
+    print("=" * 60)
+
+    output_dir = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/analysis/portfolio_construction/data"
+
+    # Save performance rankings
+    all_performance.to_csv(f"{output_dir}/top50_ALL_TRADES_performance.csv", index=False)
+    cascading_performance.to_csv(f"{output_dir}/top50_CASCADING_TRADES_performance.csv", index=False)
+    anticascading_performance.to_csv(f"{output_dir}/top50_ANTICASCADING_TRADES_performance.csv", index=False)
+
+    # Save top 50 lists
+    top50_all = all_performance.head(50)[['ticker', 'rank', 'composite_score', 'profit_factor', 'sharpe_like_ratio']].copy()
+    top50_cascading = cascading_performance.head(50)[['ticker', 'rank', 'composite_score', 'profit_factor', 'sharpe_like_ratio']].copy()
+    top50_anticascading = anticascading_performance.head(50)[['ticker', 'rank', 'composite_score', 'profit_factor', 'sharpe_like_ratio']].copy()
+
+    top50_all.to_csv(f"{output_dir}/TOP50_ALL_TRADES.csv", index=False)
+    top50_cascading.to_csv(f"{output_dir}/TOP50_CASCADING_TRADES.csv", index=False)
+    top50_anticascading.to_csv(f"{output_dir}/TOP50_ANTICASCADING_TRADES.csv", index=False)
+
+    # Save comparison summary
+    summary_file = f"{output_dir}/cascade_vs_anticascade_comparison_summary.txt"
+    with open(summary_file, 'w') as f:
+        f.write("COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS SUMMARY\\n")
+        f.write("=" * 70 + "\\n")
+        f.write(f"Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n")
+        f.write(f"Total Trades Analyzed: {len(all_performance) + len(cascading_performance) + len(anticascading_performance)}\\n\\n")
+
+        f.write("CRITICAL FINDINGS:\\n")
+        f.write(f"- Current Top 50 vs Anti-Cascading Top 50 Overlap: {comparison_results['current_vs_anti_overlap']}/50 ({comparison_results['current_vs_anti_overlap']/50*100:.1f}%)\\n")
+        f.write(f"- Tickers unique to Anti-Cascading Top 50: {len(comparison_results['unique_to_anti'])}\\n")
+        f.write(f"- Current Top 50 tickers NOT in Anti-Cascading Top 50: {len(comparison_results['unique_to_current'])}\\n\\n")
+
+        f.write("CONCLUSION:\\n")
+        if comparison_results['current_vs_anti_overlap'] < 40:
+            f.write("❌ SIGNIFICANT DIFFERENCE: Current portfolio selection basis may be flawed!\\n")
+            f.write("✅ RECOMMENDATION: Use Anti-Cascading Top 50 for portfolio construction\\n")
+        else:
+            f.write("✅ GOOD OVERLAP: Current selection basis is reasonably valid\\n")
+
+    print(f"✅ All performance rankings saved")
+    print(f"✅ Top 50 lists saved for each category")
+    print(f"✅ Comparison summary saved: {summary_file}")
+
+    print(f"\\n🏆 COMPREHENSIVE ANALYSIS COMPLETED!")
+    return summary_file
+
+def main():
+    """
+    Execute the complete comprehensive cascade vs anti-cascade analysis
+    """
+
+    print("🚀 STARTING COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS")
+    print("=" * 80)
+
+    try:
+        # Step 1: Load and tag all trades
+        all_trades_tagged = load_and_tag_all_trades()
+
+        # Step 2A: Calculate performance for ALL trades
+        all_performance = calculate_ticker_performance_by_category(
+            all_trades_tagged, category_filter=None, category_name="ALL"
+        )
+
+        # Step 2B: Calculate performance for CASCADING trades only
+        cascading_performance = calculate_ticker_performance_by_category(
+            all_trades_tagged, category_filter="CASCADING", category_name="CASCADING"
+        )
+
+        # Step 2C: Calculate performance for ANTI-CASCADING trades only
+        anticascading_performance = calculate_ticker_performance_by_category(
+            all_trades_tagged, category_filter="ANTI_CASCADING", category_name="ANTI_CASCADING"
+        )
+
+        # Step 3: Compare Top 50 performers across categories
+        comparison_results = compare_top50_across_categories(
+            all_performance, cascading_performance, anticascading_performance
+        )
+
+        # Step 4: Save comprehensive results
+        summary_file = save_comprehensive_results(
+            all_performance, cascading_performance, anticascading_performance, comparison_results
+        )
+
+        print(f"\\n🎯 CRITICAL QUESTION ANSWERED:")
+        overlap_percentage = comparison_results['current_vs_anti_overlap'] / 50 * 100
+        if overlap_percentage < 80:
+            print(f"❌ Current Top 50 basis is FLAWED! Only {overlap_percentage:.1f}% overlap with Anti-Cascading Top 50")
+            print(f"✅ MUST use Anti-Cascading Top 50 for portfolio construction")
+        else:
+            print(f"✅ Current Top 50 basis is VALID! {overlap_percentage:.1f}% overlap with Anti-Cascading Top 50")
+
+        return {
+            'all_performance': all_performance,
+            'cascading_performance': cascading_performance,
+            'anticascading_performance': anticascading_performance,
+            'comparison_results': comparison_results,
+            'summary_file': summary_file
+        }
+
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+if __name__ == "__main__":
+    results = main()
