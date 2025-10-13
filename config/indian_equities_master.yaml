@@ -1,0 +1,15 @@
+screener:
+  page_size: 250  # Match Yahoo's actual page size (they return 25 per page regardless)
+  exchanges: ["NSE", "BSE"]
+  quote_types: ["EQUITY", "ETF"]
+  request_timeout: 30  # Increased timeout for large queries
+  max_pages: 500  # Allow fetching up to 12,500 symbols (500 pages × 25 results)
+enrich:
+  batch_size: 50  # Increased batch size for faster processing
+  price_history_days: 5
+  price_history_interval: "1d"
+  enable_options_lookup: false
+  request_pause_seconds: 0.5  # Keep short to avoid rate limits
+storage:
+  output_csv: "data/indian_equities_master.csv"
+  tmp_dir: "data/tmp"
