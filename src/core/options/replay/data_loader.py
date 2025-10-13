@@ -537,8 +537,11 @@ class OptionDataStore:
                 matches = subset[subset["timestamp"] == aligned_ts]
                 alignment = "exact"
                 if matches.empty:
-                    # Use the last observed bar prior to the timestamp to avoid lookahead.
-                    matches = subset[subset["timestamp"] <= aligned_ts].sort_values("timestamp")
+                    # Restrict backfill to the same trading day to avoid leaking
+                    # prices from previous sessions.
+                    session_day = aligned_ts.normalize()
+                    same_session = subset[subset["timestamp"].dt.normalize() == session_day]
+                    matches = same_session[same_session["timestamp"] <= aligned_ts].sort_values("timestamp")
                     if matches.empty:
                         attempt["reason"] = "no_bar_before_timestamp"
                         attempt["aligned_timestamp"] = aligned_ts.isoformat()
