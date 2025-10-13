@@ -1,0 +1,296 @@
+#!/usr/bin/env python3
+"""
+PERCENTAGE-BASED STEP 1: Create Anti-Cascading Trades Subset
+============================================================
+
+Purpose: Create anti-cascading dataset using PERCENTAGE calculations
+         Based on foundation analysis (Script 00), using Anti-Cascading Top 50
+
+CRITICAL CHANGE: Using PERCENTAGE returns instead of absolute profits
+- (Exit Price / Entry Price - 1) * 100 for ALL calculations
+- Filter by Accuracy + Profit Factor only (NO Sharpe filtering)
+
+Input: all_trade_mereged.csv + TOP50_ANTICASCADING_TRADES.csv
+Output: PERCENTAGE_anti_cascading_trades_under2k.csv
+
+Author: Portfolio Construction Team
+Date: September 2025
+Version: 3.0 - PERCENTAGE-based with proper methodology
+"""
+
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
+
+def load_correct_anticascading_top50():
+    """
+    Load the CORRECT Anti-Cascading Top 50 from foundation analysis
+    """
+
+    print("🔧 CORRECTED STEP 1: ANTI-CASCADING SUBSET WITH PROPER FOUNDATION")
+    print("=" * 75)
+    print("✅ Using REAL Anti-Cascading Top 50 performers (not flawed original list)")
+    print("=" * 75)
+
+    # Load the correct Anti-Cascading Top 50 from foundation analysis
+    data_dir = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/analysis/portfolio_construction/data"
+
+    try:
+        anticascading_top50_df = pd.read_csv(f"{data_dir}/TOP50_ANTICASCADING_TRADES.csv")
+        correct_top50_tickers = anticascading_top50_df['ticker'].tolist()
+
+        print(f"✅ Loaded CORRECT Anti-Cascading Top 50 list")
+        print(f"✅ Top 10 performers: {', '.join(correct_top50_tickers[:10])}")
+
+        return correct_top50_tickers, anticascading_top50_df
+
+    except FileNotFoundError:
+        print("❌ Foundation analysis not found! Run Script 00 first.")
+        return None, None
+
+def load_and_filter_trades(correct_top50_tickers):
+    """
+    Load all trades and filter for correct Anti-Cascading Top 50 tickers
+    """
+
+    print(f"\n📊 LOADING AND FILTERING TRADES")
+    print("=" * 50)
+
+    # Load original merged trade data
+    trade_file = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/outputs/20250915_121714/mse_backtesting/2022-01-01_to_2025-08-31/data/all_trade_mereged.csv"
+
+    print(f"📈 Loading complete trade dataset...")
+    trades = pd.read_csv(trade_file)
+
+    print(f"✅ Loaded {len(trades):,} total trades")
+    print(f"✅ Date range: {trades['Entry Time'].min()} to {trades['Exit Time'].max()}")
+
+    # Filter for CORRECT Anti-Cascading Top 50 tickers only
+    trades_top50 = trades[trades['ticker'].isin(correct_top50_tickers)].copy()
+    print(f"✅ Filtered to {len(trades_top50):,} trades from CORRECT Top 50 tickers")
+
+    # Convert datetime columns
+    trades_top50['Entry Time'] = pd.to_datetime(trades_top50['Entry Time'])
+    trades_top50['Exit Time'] = pd.to_datetime(trades_top50['Exit Time'])
+
+    return trades_top50
+
+def identify_affordable_tickers_corrected(trades_top50, anticascading_top50_df):
+    """
+    Find tickers under ₹2,000 from the CORRECT Anti-Cascading Top 50
+    """
+
+    print(f"\n🔍 IDENTIFYING AFFORDABLE TICKERS FROM CORRECT TOP 50")
+    print("=" * 60)
+
+    # Get last trade for each ticker to determine current price
+    last_trades = trades_top50.groupby('ticker').last().reset_index()
+
+    # Create price analysis from CORRECT ticker universe
+    price_analysis = []
+    for _, trade in last_trades.iterrows():
+        ticker = trade['ticker']
+        current_price = trade['Exit Price']  # Last known price
+        last_date = trade['Exit Time'].date()
+
+        # Get performance metrics from Anti-Cascading analysis
+        ticker_metrics = anticascading_top50_df[anticascading_top50_df['ticker'] == ticker]
+        if len(ticker_metrics) > 0:
+            rank = ticker_metrics.iloc[0]['rank']
+            composite_score = ticker_metrics.iloc[0]['composite_score']
+            profit_factor = ticker_metrics.iloc[0]['profit_factor']
+            sharpe_like_ratio = ticker_metrics.iloc[0]['sharpe_like_ratio']
+        else:
+            rank, composite_score, profit_factor, sharpe_like_ratio = 0, 0, 0, 0
+
+        price_analysis.append({
+            'ticker': ticker,
+            'current_price': current_price,
+            'last_trade_date': last_date,
+            'under_2000': current_price < 2000,
+            'anticascading_rank': rank,
+            'composite_score': composite_score,
+            'profit_factor': profit_factor,
+            'sharpe_like_ratio': sharpe_like_ratio,
+            'price_category': 'Under ₹500' if current_price < 500
+                           else 'Under ₹1000' if current_price < 1000
+                           else 'Under ₹2000' if current_price < 2000
+                           else 'Over ₹2000'
+        })
+
+    price_df = pd.DataFrame(price_analysis)
+    price_df = price_df.sort_values('current_price')
+
+    # Filter for affordable tickers (under ₹2,000)
+    affordable_tickers = price_df[price_df['current_price'] < 2000]
+
+    print(f"📊 PRICE ANALYSIS RESULTS (CORRECT TOP 50):")
+    print(f"   Total CORRECT Top 50 tickers: {len(price_df)}")
+    print(f"   Tickers under ₹2,000: {len(affordable_tickers)} ({len(affordable_tickers)/len(price_df)*100:.1f}%)")
+
+    print(f"\n📋 AFFORDABLE TICKERS FROM CORRECT ANTI-CASCADING TOP 50:")
+    print(f"   {'Ticker':12} | {'Price':8} | {'Rank':4} | {'PF':5} | {'Sharpe':6} | {'Category':15}")
+    print("   " + "-" * 70)
+
+    for _, row in affordable_tickers.iterrows():
+        print(f"   {row['ticker']:12} | ₹{row['current_price']:6.2f} | {row['anticascading_rank']:4.0f} | {row['profit_factor']:5.2f} | {row['sharpe_like_ratio']:6.3f} | {row['price_category']}")
+
+    return affordable_tickers
+
+def apply_corrected_anti_cascading_filter(trades_top50, affordable_tickers):
+    """
+    Apply anti-cascading filter to CORRECT ticker universe
+    """
+
+    print(f"\n🎯 APPLYING ANTI-CASCADING FILTER TO CORRECT UNIVERSE")
+    print("=" * 60)
+
+    # Filter trades for affordable tickers only
+    ticker_list = affordable_tickers['ticker'].tolist()
+    trades_filtered = trades_top50[trades_top50['ticker'].isin(ticker_list)].copy()
+
+    print(f"📊 Working with {len(trades_filtered):,} trades from {len(ticker_list)} affordable CORRECT tickers")
+
+    # Sort by ticker and entry time for sequential analysis
+    trades_sorted = trades_filtered.sort_values(['ticker', 'Entry Time']).reset_index(drop=True)
+    trades_sorted['Entry Date'] = trades_sorted['Entry Time'].dt.date
+
+    # Create previous trade reference for cascade detection
+    trades_sorted['prev_ticker'] = trades_sorted['ticker'].shift(1)
+    trades_sorted['prev_entry_date'] = trades_sorted['Entry Date'].shift(1)
+    trades_sorted['prev_trade_type'] = trades_sorted['Trade Type'].shift(1)
+
+    # Categorize each trade (same logic as foundation analysis)
+    def categorize_trade(row):
+        if pd.isna(row['prev_ticker']):
+            return 'FIRST_TRADE_OVERALL'
+        elif row['ticker'] != row['prev_ticker']:
+            return 'FIRST_TRADE_FOR_TICKER'
+        elif row['Entry Date'] != row['prev_entry_date']:
+            return 'FIRST_TRADE_OF_DAY'
+        elif row['Trade Type'] == row['prev_trade_type']:
+            return 'CONSECUTIVE_SAME_DIRECTION'  # ❌ CASCADING - EXCLUDE
+        else:
+            return 'CONSECUTIVE_OPPOSITE_DIRECTION'  # ✅ INCLUDE
+
+    print("🔍 Categorizing trades for cascade detection...")
+    trades_sorted['trade_category'] = trades_sorted.apply(categorize_trade, axis=1)
+
+    # Show categorization results
+    category_counts = trades_sorted['trade_category'].value_counts()
+    print(f"\n📊 TRADE CATEGORIZATION RESULTS (CORRECT UNIVERSE):")
+    for category, count in category_counts.items():
+        percentage = (count / len(trades_sorted)) * 100
+        status = "❌ EXCLUDE" if category == 'CONSECUTIVE_SAME_DIRECTION' else "✅ INCLUDE"
+        print(f"   {category:30} | {count:8,} ({percentage:5.1f}%) | {status}")
+
+    # Apply anti-cascading filter: Exclude ONLY consecutive same-direction trades
+    anti_cascading_mask = trades_sorted['trade_category'] != 'CONSECUTIVE_SAME_DIRECTION'
+    corrected_anti_cascading_trades = trades_sorted[anti_cascading_mask].copy()
+
+    # Calculate reduction statistics
+    original_count = len(trades_sorted)
+    filtered_count = len(corrected_anti_cascading_trades)
+    excluded_count = original_count - filtered_count
+    reduction_percentage = (excluded_count / original_count) * 100
+
+    print(f"\n🎯 CORRECTED ANTI-CASCADING FILTER RESULTS:")
+    print(f"   Original trades (CORRECT affordable tickers): {original_count:,}")
+    print(f"   Anti-cascading trades (filtered): {filtered_count:,}")
+    print(f"   Excluded cascading trades: {excluded_count:,}")
+    print(f"   Data reduction: {reduction_percentage:.1f}%")
+    print(f"   Retention rate: {100-reduction_percentage:.1f}%")
+
+    return corrected_anti_cascading_trades
+
+def save_corrected_dataset(corrected_anti_cascading_trades, affordable_tickers):
+    """
+    Save the CORRECTED anti-cascading dataset for portfolio construction
+    """
+
+    print(f"\n💾 SAVING CORRECTED ANTI-CASCADING DATASET")
+    print("=" * 55)
+
+    # Prepare output directory
+    output_dir = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/analysis/portfolio_construction/data"
+
+    # Save main dataset with CORRECTED prefix
+    output_file = f"{output_dir}/CORRECTED_anti_cascading_trades_under2k.csv"
+    corrected_anti_cascading_trades.to_csv(output_file, index=False)
+
+    # Save CORRECTED ticker metadata
+    metadata_file = f"{output_dir}/CORRECTED_affordable_tickers_metadata.csv"
+    affordable_tickers.to_csv(metadata_file, index=False)
+
+    # Create CORRECTED summary report
+    summary_file = f"{output_dir}/CORRECTED_anti_cascading_dataset_summary.txt"
+    with open(summary_file, 'w') as f:
+        f.write("CORRECTED ANTI-CASCADING TRADES DATASET SUMMARY\\n")
+        f.write("=" * 60 + "\\n")
+        f.write(f"Creation Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n")
+        f.write(f"CORRECTION: Based on Real Anti-Cascading Top 50 (not flawed original)\\n")
+        f.write(f"Total Trades: {len(corrected_anti_cascading_trades):,}\\n")
+        f.write(f"Tickers Count: {len(affordable_tickers)}\\n")
+        f.write(f"Date Range: {corrected_anti_cascading_trades['Entry Time'].min()} to {corrected_anti_cascading_trades['Entry Time'].max()}\\n")
+        f.write(f"\\nCORRECT Anti-Cascading Affordable Tickers:\\n")
+        for _, row in affordable_tickers.iterrows():
+            f.write(f"  {row['ticker']} - ₹{row['current_price']:.2f} (Rank: {row['anticascading_rank']:.0f})\\n")
+
+    print(f"✅ CORRECTED anti-cascading trades saved: {output_file}")
+    print(f"✅ CORRECTED ticker metadata saved: {metadata_file}")
+    print(f"✅ CORRECTED summary report saved: {summary_file}")
+
+    # Final verification
+    verification_df = pd.read_csv(output_file)
+    print(f"\\n🔍 VERIFICATION:")
+    print(f"   File size: {len(verification_df):,} trades")
+    print(f"   Memory usage: {verification_df.memory_usage(deep=True).sum() / 1024**2:.1f} MB")
+
+    print(f"\\n🎉 SUCCESS: CORRECTED anti-cascading dataset created!")
+    print(f"📁 Location: {output_file}")
+    print(f"🎯 Ready for PROPER portfolio construction with CORRECT foundation!")
+
+    return output_file
+
+def main():
+    """
+    Execute the CORRECTED anti-cascading subset creation process
+    """
+
+    print("🚀 STARTING CORRECTED ANTI-CASCADING SUBSET CREATION")
+    print("=" * 80)
+
+    try:
+        # Load CORRECT Anti-Cascading Top 50
+        correct_top50_tickers, anticascading_top50_df = load_correct_anticascading_top50()
+        if correct_top50_tickers is None:
+            return None
+
+        # Load and filter trades for CORRECT universe
+        trades_top50 = load_and_filter_trades(correct_top50_tickers)
+
+        # Identify affordable tickers from CORRECT Top 50
+        affordable_tickers = identify_affordable_tickers_corrected(trades_top50, anticascading_top50_df)
+
+        # Apply anti-cascading filter to CORRECT universe
+        corrected_anti_cascading_trades = apply_corrected_anti_cascading_filter(trades_top50, affordable_tickers)
+
+        # Save CORRECTED dataset
+        output_file = save_corrected_dataset(corrected_anti_cascading_trades, affordable_tickers)
+
+        print(f"\\n🏆 CORRECTED ANTI-CASCADING SUBSET CREATION COMPLETED!")
+        print(f"📊 Ready for portfolio construction with {len(corrected_anti_cascading_trades):,} CORRECT trades")
+        print(f"🎯 Next step: Portfolio sector analysis with PROPER foundation")
+
+        return output_file, affordable_tickers, corrected_anti_cascading_trades
+
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+if __name__ == "__main__":
+    result = main()

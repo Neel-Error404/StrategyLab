@@ -117,7 +117,6 @@ backtests/
 *.jpg
 *.pdf
 reports/
-analysis/
 # Allow source analysis modules
 !src/analysis/**
 

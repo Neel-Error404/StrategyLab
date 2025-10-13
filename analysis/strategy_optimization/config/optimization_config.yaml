@@ -1,0 +1,302 @@
+# Strategy Optimization Configuration
+# Phase 2: MSE Strategy Exit & Entry Optimization
+
+# =============================================================================
+# DATA CONFIGURATION
+# =============================================================================
+
+data:
+  # Base data directory (symlinked)
+  base_data_dir: "data/base_data"
+
+  # Tickers to analyze (24 available tickers from base_data)
+  # Note: HDFCBANK, ICICIBANK, BHARTIARTL, BAJFINANCE not found in base_data
+  tickers:
+    - "RELIANCE"
+    - "TCS"
+    - "INFY"
+    - "HINDUNILVR"
+    - "ITC"
+    - "SBIN"
+    - "KOTAKBANK"
+    - "LT"
+    - "ASIANPAINT"
+    - "AXISBANK"
+    - "MARUTI"
+    - "SUNPHARMA"
+    - "TITAN"
+    - "ULTRACEMCO"
+    - "WIPRO"
+    - "NESTLEIND"
+    - "HCLTECH"
+    - "POWERGRID"
+    - "NTPC"
+    - "ONGC"
+    - "TATASTEEL"
+    - "JSWSTEEL"
+    - "ADANIPORTS"
+    - "TECHM"
+
+  # Date splits (strict temporal separation)
+  date_splits:
+    train_start: "2022-01-01"
+    train_end: "2023-12-31"      # 2 years
+    validation_start: "2024-01-01"
+    validation_end: "2024-06-30"  # 6 months
+    test_start: "2024-07-01"
+    test_end: "2025-08-31"        # ~14 months (NEVER touched until final stage)
+
+# =============================================================================
+# HYPOTHESIS 1: EXIT THRESHOLD OPTIMIZATION
+# =============================================================================
+
+exit_optimization:
+  # Current baseline (to be measured first)
+  baseline_threshold: 0.80  # 80% of MACD histogram peak/valley
+  current_threshold: 0.80   # Same as baseline, for Stage 4 comparison
+
+  # Threshold range to test
+  thresholds_to_test:
+    start: 0.50   # 50%
+    end: 0.95     # 95%
+    step: 0.05    # Test every 5%
+
+  # Alternative: specific values
+  # thresholds_list: [0.50, 0.60, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
+
+  # Exit simulation parameters
+  simulation:
+    use_intraday_data: true
+    timeframe: "5minute"
+    consider_slippage: true
+    slippage_bps: 5  # 0.05%
+
+# =============================================================================
+# HYPOTHESIS 2: ENTRY FILTER OPTIMIZATION
+# =============================================================================
+
+entry_optimization:
+  # Current entry logic (baseline)
+  baseline_entry:
+    indicators_required: ["5min_macd_bull", "15min_macd_bull", "5min_ema_bull", "15min_ema_bull"]
+    all_must_align: true
+
+  # Entry filters to test
+  filters_to_test:
+    # Filter 1: MACD Signal Strength
+    macd_strength:
+      enabled: true
+      thresholds: [0.2, 0.3, 0.4, 0.5]  # Minimum MACD histogram value
+      apply_to: ["5min", "15min"]
+
+    # Filter 2: EMA Spread
+    ema_spread:
+      enabled: true
+      min_spread_pct: [0.3, 0.5, 0.7, 1.0]  # Fast EMA vs Slow EMA spread %
+      apply_to: ["5min", "15min"]
+
+    # Filter 3: Indicator Alignment Duration
+    alignment_duration:
+      enabled: true
+      min_bars: [1, 2, 3, 5]  # Minimum bars all indicators aligned
+
+    # Filter 4: Volume Confirmation
+    volume_filter:
+      enabled: false  # Disabled for now (H2 focus on MACD/EMA)
+      min_volume_ratio: 1.2  # Volume vs 20-bar average
+
+# =============================================================================
+# HYPOTHESIS 3: TIMEFRAME OPTIMIZATION (DEFERRED)
+# =============================================================================
+
+timeframe_optimization:
+  enabled: false  # Only if H1 and H2 successful
+  alternative_timeframes:
+    fast: ["3min", "7min", "10min"]
+    slow: ["10min", "30min", "1hour"]
+
+# =============================================================================
+# MAE/MFE ANALYSIS PARAMETERS
+# =============================================================================
+
+mae_mfe_analysis:
+  # Exit efficiency metrics
+  calculate_mfe: true      # Maximum Favorable Excursion
+  calculate_mae: true      # Maximum Adverse Excursion
+
+  # Efficiency score formula
+  exit_efficiency_formula: "MFE_Capture_Ratio - (MAE/MFE * 50)"
+
+  # Baseline expectations (to be measured)
+  expected_baseline:
+    mfe_capture_ratio: 0.60  # ~60% capture expected
+    exit_efficiency_score: 45
+    potential_left_on_table: 1.4  # % per trade
+    mae_mfe_ratio: 0.65
+
+# =============================================================================
+# SUCCESS CRITERIA (Must Meet ALL on Test Data)
+# =============================================================================
+
+success_criteria:
+  # Traditional metrics
+  traditional:
+    min_win_rate: 0.52            # ≥52% (from 48%)
+    min_profit_factor: 1.25       # ≥1.25 (from 1.14)
+    min_sharpe_ratio: 1.5         # ≥1.5
+    max_drawdown: 0.15            # ≤15%
+    min_trade_frequency_ratio: 0.70  # ≥70% of baseline trade count
+
+  # Exit efficiency metrics (NEW)
+  exit_efficiency:
+    min_mfe_capture_ratio: 0.70   # ≥70% (from ~60%)
+    min_exit_efficiency_score: 55 # ≥55 (from ~45)
+    max_potential_left: 1.0       # ≤1.0% per trade
+    max_mae_mfe_ratio: 0.6        # MAE ≤ 60% of MFE
+
+  # Statistical validation
+  statistical:
+    max_p_value: 0.05             # p < 0.05 (bootstrap test)
+    min_confidence_level: 0.95    # 95% confidence
+    max_cv_parameter_stability: 0.10  # CV < 10%
+
+# =============================================================================
+# VALIDATION PROTOCOL
+# =============================================================================
+
+validation:
+  # Walk-forward validation
+  walk_forward:
+    enabled: true
+    window_size_months: 6
+    step_size_months: 1
+    min_trades_per_window: 50
+
+  # Bootstrap statistical testing
+  bootstrap:
+    enabled: true
+    n_iterations: 10000
+    confidence_level: 0.95
+    test_metric: "profit_factor"  # Primary metric to test
+
+  # Out-of-sample testing
+  out_of_sample:
+    strict_separation: true
+    never_use_test_data: true
+    final_test_once_only: true
+
+# =============================================================================
+# STATISTICAL VALIDATION (STAGE 4)
+# =============================================================================
+
+statistical_validation:
+  # Bootstrap parameters
+  n_bootstrap: 1000              # Number of bootstrap resamples
+  alpha: 0.05                    # Significance level (p < 0.05)
+  random_seed: 42                # For reproducibility
+
+  # Success criteria
+  required_metrics:
+    - "win_rate"                 # Must be significant
+    - "profit_factor"            # Must be significant
+
+  # Confidence intervals
+  confidence_level: 0.95         # 95% CI
+  ci_must_exclude_zero: true     # Lower bound must be > 0
+
+# =============================================================================
+# RISK MANAGEMENT
+# =============================================================================
+
+risk_management:
+  # Position sizing
+  max_position_size: 0.15       # 15% of portfolio
+  max_portfolio_exposure: 1.0   # 100% (fully invested)
+
+  # Stop-loss (currently 2% from entry)
+  stop_loss_pct: 0.02
+
+  # Transaction costs
+  transaction_costs:
+    brokerage_bps: 3            # 0.03% per trade
+    slippage_bps: 5             # 0.05% per trade
+    total_cost_bps: 8           # 0.08% round-trip
+
+# =============================================================================
+# EXECUTION PARAMETERS
+# =============================================================================
+
+execution:
+  # Parallel processing
+  parallel_processing: true
+  max_workers: 4
+
+  # Logging
+  log_level: "INFO"
+  save_intermediate_results: true
+
+  # Checkpointing
+  checkpoint_after_each_stage: true
+  checkpoint_dir: "../checkpoints"
+
+  # Output
+  output_dir: "../docs"
+  save_visualizations: true
+  visualization_format: "png"
+  dpi: 300
+
+# =============================================================================
+# STAGE GATES (GO/NO-GO DECISIONS)
+# =============================================================================
+
+stage_gates:
+  # Stage 1: Baseline
+  stage1_baseline:
+    min_trades: 100             # Need at least 100 trades
+    max_baseline_pf_threshold: 1.5  # If PF > 1.5 already, no need to optimize
+    proceed_if_meets_criteria: false  # Proceed even if already good
+
+  # Stage 2: Exit Threshold (H1)
+  stage2_exit:
+    min_improvement_pf: 0.05    # ≥5% improvement in PF
+    min_improvement_wr: 0.02    # ≥2% improvement in WR
+    proceed_if_no_improvement: false  # STOP if no improvement
+
+  # Stage 3: Entry Filter (H2)
+  stage3_entry:
+    min_improvement_wr: 0.10    # ≥10% improvement in WR
+    max_trade_reduction: 0.30   # Don't lose >30% of trades
+    proceed_if_no_improvement: false
+
+  # Stage 4: Walk-Forward
+  stage4_walkforward:
+    max_parameter_cv: 0.10      # CV < 10%
+    min_windows_profitable: 0.70  # ≥70% of windows profitable
+    proceed_if_unstable: false
+
+  # Stage 5: Statistical
+  stage5_statistical:
+    max_p_value: 0.05           # p < 0.05
+    proceed_if_not_significant: false
+
+  # Stage 6: Final Test
+  stage6_final:
+    all_criteria_must_pass: true
+    reject_if_any_fail: true
+
+# =============================================================================
+# REVERT POINTS
+# =============================================================================
+
+revert_points:
+  # Each stage has a checkpoint
+  # If stage fails, can revert to previous checkpoint
+  enable_git_checkpoints: true
+  checkpoint_branch_prefix: "stage"
+
+  # Manual revert instructions in PHASE2_ANALYSIS_LOG.md
+  # Example: git checkout stage1_baseline
+
+# =============================================================================
+# END OF CONFIGURATION
+# =============================================================================

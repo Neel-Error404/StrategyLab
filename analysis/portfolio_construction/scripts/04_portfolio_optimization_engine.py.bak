@@ -1,0 +1,310 @@
+#!/usr/bin/env python3
+"""
+STEP 4: Portfolio Optimization Engine
+====================================
+
+Purpose: Evaluate all valid portfolio combinations and find best performers
+- Load 142,302 valid 5-ticker combinations from Script 3
+- For each combination, calculate portfolio-level performance metrics
+- Merge trades from all tickers in portfolio
+- Calculate portfolio Sharpe ratio, returns, equity curve
+- Rank portfolios by risk-adjusted performance
+- Identify top performers as benchmarks
+
+Key Innovation: Portfolio-level optimization (not individual ticker filtering)
+
+Author: Portfolio Construction Team
+Date: September 2025
+Version: 1.0 - Portfolio-level optimization with proper methodology
+"""
+
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
+
+def load_valid_combinations(portfolio_size=5):
+    """
+    Load valid portfolio combinations from Script 3
+    """
+
+    print(f"🚀 STARTING PORTFOLIO OPTIMIZATION ENGINE")
+    print("=" * 80)
+    print(f"📊 Loading valid {portfolio_size}-ticker combinations...")
+
+    data_dir = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/analysis/portfolio_construction/data"
+
+    combinations_file = f"{data_dir}/PERCENTAGE_valid_combinations_{portfolio_size}ticker.csv"
+    combinations_df = pd.read_csv(combinations_file)
+
+    print(f"✅ Loaded {len(combinations_df):,} valid portfolio combinations")
+    print(f"✅ Each portfolio contains {portfolio_size} tickers")
+
+    return combinations_df
+
+def load_trade_data():
+    """
+    Load anti-cascading trades for portfolio calculation
+    """
+
+    print(f"\n📈 Loading trade data...")
+
+    data_dir = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/analysis/portfolio_construction/data"
+    trades_file = f"{data_dir}/CORRECTED_anti_cascading_trades_under2k.csv"
+
+    trades_df = pd.read_csv(trades_file)
+    trades_df['Entry Time'] = pd.to_datetime(trades_df['Entry Time'])
+    trades_df['Exit Time'] = pd.to_datetime(trades_df['Exit Time'])
+
+    print(f"✅ Loaded {len(trades_df):,} anti-cascading trades")
+    print(f"✅ Date range: {trades_df['Entry Time'].min().date()} to {trades_df['Exit Time'].max().date()}")
+
+    return trades_df
+
+def calculate_portfolio_performance(ticker_list, trades_df):
+    """
+    Calculate portfolio-level performance metrics for a combination of tickers
+    This is where portfolio diversification magic happens!
+    """
+
+    # Filter trades for this portfolio's tickers
+    portfolio_trades = trades_df[trades_df['ticker'].isin(ticker_list)].copy()
+
+    if len(portfolio_trades) < 10:
+        return None
+
+    # Calculate percentage returns for each trade
+    portfolio_trades['percentage_return'] = (
+        (portfolio_trades['Exit Price'] / portfolio_trades['Entry Price'] - 1) * 100
+    )
+
+    # Group by date to get daily portfolio returns
+    portfolio_trades['trade_date'] = pd.to_datetime(portfolio_trades['Entry Time']).dt.date
+
+    # Equal-weight portfolio: average returns across all tickers each day
+    daily_returns = portfolio_trades.groupby('trade_date')['percentage_return'].mean()
+
+    if len(daily_returns) < 10 or daily_returns.std() == 0:
+        return None
+
+    # Calculate portfolio-level metrics
+    avg_daily_return = daily_returns.mean()
+    daily_volatility = daily_returns.std()
+
+    # Portfolio Sharpe ratio (annualized)
+    annual_return = avg_daily_return * 252
+    annual_volatility = daily_volatility * np.sqrt(252)
+    portfolio_sharpe = annual_return / annual_volatility if annual_volatility > 0 else 0
+
+    # Portfolio profit factor
+    winning_days = daily_returns[daily_returns > 0]
+    losing_days = daily_returns[daily_returns < 0]
+    portfolio_pf = abs(winning_days.sum() / losing_days.sum()) if len(losing_days) > 0 else float('inf')
+
+    # Portfolio win rate
+    portfolio_win_rate = len(winning_days) / len(daily_returns) if len(daily_returns) > 0 else 0
+
+    # Total return (cumulative)
+    cumulative_return = (1 + daily_returns / 100).prod() - 1
+    total_return_pct = cumulative_return * 100
+
+    # Maximum drawdown
+    cumulative_returns = (1 + daily_returns / 100).cumprod()
+    running_max = cumulative_returns.expanding().max()
+    drawdown = (cumulative_returns - running_max) / running_max
+    max_drawdown = drawdown.min() * 100
+
+    return {
+        'portfolio_sharpe': portfolio_sharpe,
+        'portfolio_pf': portfolio_pf,
+        'portfolio_win_rate': portfolio_win_rate * 100,
+        'annual_return': annual_return,
+        'annual_volatility': annual_volatility,
+        'total_return_pct': total_return_pct,
+        'max_drawdown_pct': max_drawdown,
+        'trading_days': len(daily_returns),
+        'total_trades': len(portfolio_trades)
+    }
+
+def optimize_portfolios(combinations_df, trades_df, max_portfolios=None):
+    """
+    Calculate performance for all portfolio combinations and rank them
+    """
+
+    print(f"\n🎯 PORTFOLIO OPTIMIZATION IN PROGRESS")
+    print("=" * 80)
+    print(f"💡 Evaluating portfolio-level performance for all combinations")
+
+    if max_portfolios:
+        print(f"⚡ Quick mode: Evaluating first {max_portfolios:,} portfolios")
+        combinations_df = combinations_df.head(max_portfolios)
+
+    portfolio_results = []
+    total_combinations = len(combinations_df)
+
+    print(f"\n📊 Processing {total_combinations:,} portfolio combinations...")
+
+    for idx, row in combinations_df.iterrows():
+        # Extract ticker list from pipe-separated string
+        ticker_list = row['tickers'].split('|')
+
+        # Calculate portfolio performance
+        performance = calculate_portfolio_performance(ticker_list, trades_df)
+
+        if performance:
+            result = {
+                'combination_id': idx,
+                'tickers': ', '.join(ticker_list),
+                **performance
+            }
+            portfolio_results.append(result)
+
+        # Progress reporting
+        if (idx + 1) % 5000 == 0:
+            progress = (idx + 1) / total_combinations * 100
+            print(f"   Processed: {idx + 1:,}/{total_combinations:,} ({progress:.1f}%) | Valid: {len(portfolio_results):,}")
+
+    print(f"\n✅ Portfolio optimization complete!")
+    print(f"   Total combinations processed: {total_combinations:,}")
+    print(f"   Valid portfolios with performance data: {len(portfolio_results):,}")
+
+    results_df = pd.DataFrame(portfolio_results)
+
+    return results_df
+
+def analyze_top_performers(results_df, top_n=50):
+    """
+    Analyze and display top performing portfolios
+    """
+
+    print(f"\n🏆 TOP {top_n} PORTFOLIO PERFORMERS")
+    print("=" * 80)
+    print(f"📊 Ranked by Portfolio-Level Sharpe Ratio")
+
+    # Sort by Sharpe ratio (descending)
+    top_portfolios = results_df.nlargest(top_n, 'portfolio_sharpe')
+
+    print(f"\n📈 TOP {top_n} PORTFOLIOS BY SHARPE RATIO:")
+    print("-" * 120)
+    print(f"{'Rank':<6} {'Sharpe':<8} {'PF':<6} {'WinRate':<9} {'Ann.Ret':<10} {'Ann.Vol':<10} {'MaxDD':<8} {'Tickers':<50}")
+    print("-" * 120)
+
+    for i, row in top_portfolios.head(top_n).iterrows():
+        print(f"{i+1:<6} {row['portfolio_sharpe']:>7.3f} {row['portfolio_pf']:>5.2f} {row['portfolio_win_rate']:>8.1f}% "
+              f"{row['annual_return']:>9.2f}% {row['annual_volatility']:>9.2f}% {row['max_drawdown_pct']:>7.1f}% "
+              f"{row['tickers']:<50}")
+
+    # Summary statistics
+    print(f"\n📊 PERFORMANCE DISTRIBUTION SUMMARY:")
+    print("-" * 60)
+    print(f"   Sharpe Ratio    | Min: {results_df['portfolio_sharpe'].min():6.3f} | "
+          f"Max: {results_df['portfolio_sharpe'].max():6.3f} | "
+          f"Avg: {results_df['portfolio_sharpe'].mean():6.3f}")
+    print(f"   Profit Factor   | Min: {results_df['portfolio_pf'].min():6.2f} | "
+          f"Max: {results_df['portfolio_pf'].max():6.2f} | "
+          f"Avg: {results_df['portfolio_pf'].mean():6.2f}")
+    print(f"   Win Rate        | Min: {results_df['portfolio_win_rate'].min():6.1f}% | "
+          f"Max: {results_df['portfolio_win_rate'].max():6.1f}% | "
+          f"Avg: {results_df['portfolio_win_rate'].mean():6.1f}%")
+    print(f"   Annual Return   | Min: {results_df['annual_return'].min():6.1f}% | "
+          f"Max: {results_df['annual_return'].max():6.1f}% | "
+          f"Avg: {results_df['annual_return'].mean():6.1f}%")
+
+    # Positive Sharpe analysis
+    positive_sharpe = results_df[results_df['portfolio_sharpe'] > 0]
+    print(f"\n✅ Portfolios with Positive Sharpe Ratio: {len(positive_sharpe):,}/{len(results_df):,} "
+          f"({len(positive_sharpe)/len(results_df)*100:.1f}%)")
+
+    return top_portfolios
+
+def save_optimization_results(results_df, top_portfolios, portfolio_size=5):
+    """
+    Save portfolio optimization results
+    """
+
+    print(f"\n💾 SAVING PORTFOLIO OPTIMIZATION RESULTS")
+    print("=" * 60)
+
+    data_dir = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/StrategyLab-master/analysis/portfolio_construction/data"
+
+    # Save all portfolio results
+    all_results_file = f"{data_dir}/portfolio_performance_{portfolio_size}ticker_ALL.csv"
+    results_df.to_csv(all_results_file, index=False)
+    print(f"✅ All portfolio results saved: {all_results_file}")
+
+    # Save top performers
+    top_results_file = f"{data_dir}/portfolio_performance_{portfolio_size}ticker_TOP50.csv"
+    top_portfolios.to_csv(top_results_file, index=False)
+    print(f"✅ Top 50 performers saved: {top_results_file}")
+
+    # Save summary report
+    summary_file = f"{data_dir}/portfolio_optimization_summary_{portfolio_size}ticker.txt"
+    with open(summary_file, 'w') as f:
+        f.write(f"PORTFOLIO OPTIMIZATION SUMMARY - {portfolio_size}-TICKER PORTFOLIOS\\n")
+        f.write("=" * 70 + "\\n")
+        f.write(f"Optimization Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n")
+        f.write(f"Total portfolios evaluated: {len(results_df):,}\\n")
+        f.write(f"Portfolio size: {portfolio_size} tickers\\n\\n")
+
+        f.write(f"PERFORMANCE STATISTICS:\\n")
+        f.write(f"  Best Sharpe Ratio: {results_df['portfolio_sharpe'].max():.3f}\\n")
+        f.write(f"  Average Sharpe Ratio: {results_df['portfolio_sharpe'].mean():.3f}\\n")
+        f.write(f"  Best Profit Factor: {results_df['portfolio_pf'].max():.2f}\\n")
+        f.write(f"  Average Profit Factor: {results_df['portfolio_pf'].mean():.2f}\\n")
+        f.write(f"  Portfolios with Positive Sharpe: {len(results_df[results_df['portfolio_sharpe'] > 0]):,} "
+                f"({len(results_df[results_df['portfolio_sharpe'] > 0])/len(results_df)*100:.1f}%)\\n\\n")
+
+        f.write(f"TOP PORTFOLIO:\\n")
+        best = results_df.nlargest(1, 'portfolio_sharpe').iloc[0]
+        f.write(f"  Tickers: {best['tickers']}\\n")
+        f.write(f"  Sharpe Ratio: {best['portfolio_sharpe']:.3f}\\n")
+        f.write(f"  Profit Factor: {best['portfolio_pf']:.2f}\\n")
+        f.write(f"  Win Rate: {best['portfolio_win_rate']:.1f}%\\n")
+        f.write(f"  Annual Return: {best['annual_return']:.2f}%\\n")
+        f.write(f"  Annual Volatility: {best['annual_volatility']:.2f}%\\n")
+        f.write(f"  Max Drawdown: {best['max_drawdown_pct']:.1f}%\\n")
+
+    print(f"✅ Optimization summary saved: {summary_file}")
+
+    print(f"\n🎯 PORTFOLIO OPTIMIZATION COMPLETE!")
+    print(f"📊 Benchmark established for {portfolio_size}-ticker portfolios")
+
+def main():
+    """
+    Execute complete portfolio optimization
+    """
+
+    try:
+        # Step 1: Load valid combinations
+        combinations_df = load_valid_combinations(portfolio_size=5)
+
+        # Step 2: Load trade data
+        trades_df = load_trade_data()
+
+        # Step 3: Optimize portfolios (calculate performance for all)
+        # For initial run, let's process first 10,000 to see results quickly
+        # Then can run full 142K later
+        print(f"\n💡 NOTE: Processing first 10,000 portfolios for quick benchmark")
+        print(f"   (Can process all 142K later for comprehensive analysis)")
+        results_df = optimize_portfolios(combinations_df, trades_df, max_portfolios=10000)
+
+        # Step 4: Analyze top performers
+        top_portfolios = analyze_top_performers(results_df, top_n=50)
+
+        # Step 5: Save results
+        save_optimization_results(results_df, top_portfolios, portfolio_size=5)
+
+        print(f"\n🏆 SUCCESS! Portfolio optimization benchmark established!")
+        print(f"🎯 Ready to extend methodology to 8 and 12 ticker portfolios")
+
+        return results_df, top_portfolios
+
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None, None
+
+if __name__ == "__main__":
+    results_df, top_portfolios = main()
