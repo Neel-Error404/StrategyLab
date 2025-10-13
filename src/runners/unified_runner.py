@@ -510,33 +510,33 @@ class UnifiedBacktesterRunner:
                 'execution_log': self.execution_log
             }
     
-def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str, Any]:
-    """Execute replay mode using BacktesterAdapter."""
-    try:
-        from adapters.backtester.backtester_adapter import BacktesterAdapter
-    except ImportError as exc:
-        raise RuntimeError(f"BacktesterAdapter unavailable: {exc}")
+    def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str, Any]:
+        """Execute replay mode using BacktesterAdapter."""
+        try:
+            from adapters.backtester.backtester_adapter import BacktesterAdapter
+        except ImportError as exc:
+            raise RuntimeError(f"BacktesterAdapter unavailable: {exc}")
 
-    adapter = BacktesterAdapter()
-    replay_result = adapter.run_replay_from_manifest(manifest_path, None, output_dir)
-    output_dir_path = Path(output_dir).resolve()
-    replay_result.setdefault('output_dir', str(output_dir_path))
+        adapter = BacktesterAdapter()
+        replay_result = adapter.run_replay_from_manifest(manifest_path, None, output_dir)
+        output_dir_path = Path(output_dir).resolve()
+        replay_result.setdefault('output_dir', str(output_dir_path))
 
-    return {
-        'status': 'success',
-        'mode': 'replay',
-        'replay': replay_result,
-        'output_dir': str(output_dir_path)
-    }
+        return {
+            'status': 'success',
+            'mode': 'replay',
+            'replay': replay_result,
+            'output_dir': str(output_dir_path)
+        }
 
 
-    def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str], 
+    def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str],
                      optimization_params: Optional[Dict] = None, use_parallel: bool = True,
                      skip_visualization: bool = False) -> Dict[str, Any]:
         """
         Run comprehensive backtesting with analysis and visualization.
         This maintains API compatibility with the original monolithic runner.
-        
+
         Args:
             dates: List of dates or date ranges
             tickers: List of ticker symbols
@@ -546,7 +546,7 @@ def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str,
             skip_visualization: Skip visualization generation
         """
         self.logger.info(f"Running backtest: {len(dates)} dates, {len(tickers)} tickers, {len(strategies)} strategies")
-        
+
         # Convert dates to date ranges if needed
         date_ranges = []
         for date_str in dates:
@@ -554,36 +554,36 @@ def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str,
                 date_ranges.append(date_str)
             else:
                 date_ranges.append(f"{date_str}_to_{date_str}")
-        
-        # Validate data 
+
+        # Validate data
         if not self.validate_data(date_ranges, tickers):
             if getattr(self.config.validation, 'strict_mode', False):
                 raise RuntimeError("Data validation failed in strict mode")
             else:
                 self.logger.warning("Data validation failed, continuing in non-strict mode")
-        
+
         # Create tasks for all strategy-ticker combinations
         tasks = []
         for date_range in date_ranges:
             for strategy_name in strategies:
                 for ticker in tickers:
                     tasks.append((ticker, date_range, strategy_name, optimization_params))
-        
+
         # Execute workflow based on current mode
         mode = getattr(self.config, 'mode', 'backtest')
-        
+
         # Ensure components are initialized for workflow modes
         if self.workflow_manager is None:
             self._init_modular_components()
-        
+
         # Assert components are available (help static analysis)
         assert self.workflow_manager is not None, "Workflow manager should be initialized"
-        
+
         if mode == 'backtest':
             # Full workflow
             return self.workflow_manager.execute_full_workflow(
-                tasks=tasks, 
-                use_parallel=use_parallel, 
+                tasks=tasks,
+                use_parallel=use_parallel,
                 skip_visualization=skip_visualization
             )
         elif mode == 'analyze':
@@ -593,7 +593,7 @@ def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str,
                 use_parallel=use_parallel
             )
         elif mode == 'visualize':
-            # Visualization workflow  
+            # Visualization workflow
             return self.workflow_manager.execute_visualization_workflow(
                 tasks=tasks,
                 use_parallel=use_parallel
