@@ -510,27 +510,27 @@ class UnifiedBacktesterRunner:
                 'execution_log': self.execution_log
             }
     
-def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str, Any]:
-    """Execute replay mode using BacktesterAdapter."""
-    try:
-        from adapters.backtester.backtester_adapter import BacktesterAdapter
-    except ImportError as exc:
-        raise RuntimeError(f"BacktesterAdapter unavailable: {exc}")
+    def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str, Any]:
+        """Execute replay mode using BacktesterAdapter."""
+        try:
+            from adapters.backtester.backtester_adapter import BacktesterAdapter
+        except ImportError as exc:
+            raise RuntimeError(f"BacktesterAdapter unavailable: {exc}")
 
-    adapter = BacktesterAdapter()
-    replay_result = adapter.run_replay_from_manifest(manifest_path, None, output_dir)
-    output_dir_path = Path(output_dir).resolve()
-    replay_result.setdefault('output_dir', str(output_dir_path))
+        adapter = BacktesterAdapter()
+        replay_result = adapter.run_replay_from_manifest(manifest_path, None, output_dir)
+        output_dir_path = Path(output_dir).resolve()
+        replay_result.setdefault('output_dir', str(output_dir_path))
 
-    return {
-        'status': 'success',
-        'mode': 'replay',
-        'replay': replay_result,
-        'output_dir': str(output_dir_path)
-    }
+        return {
+            'status': 'success',
+            'mode': 'replay',
+            'replay': replay_result,
+            'output_dir': str(output_dir_path)
+        }
 
 
-    def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str], 
+    def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str],
                      optimization_params: Optional[Dict] = None, use_parallel: bool = True,
                      skip_visualization: bool = False) -> Dict[str, Any]:
         """
