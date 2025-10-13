@@ -69,6 +69,28 @@ python 09_validation_check.py --config ../../config.yaml
 
 ---
 
+## ✅ Quality Gates & Execution Modes
+
+The generic suite behaves like a regression harness: shared loaders enforce consistent inputs, the YAML schema captures run metadata, and the orchestrator in `analysis/run.py` can replay entire batteries of checks for any strategy without editing code.【F:analysis/generic/modules/config_loader.py†L1-L120】【F:analysis/generic/modules/data_loader.py†L17-L115】【F:analysis/run.py†L1-L188】
+
+| Checkpoint | Primary scripts | What it validates | Adapting to another strategy |
+|------------|-----------------|-------------------|------------------------------|
+| **Data integrity** | `09_validation_check.py`, `modules.data_loader.validate_trade_data` | Confirms required columns, timestamp ordering, and profit consistency before downstream analytics.【F:analysis/generic/scripts/09_validation_check.py†L40-L160】【F:analysis/generic/modules/data_loader.py†L200-L259】 | Point the config to a different `run_id` and merged CSV; the validator will surface schema mismatches instantly. |
+| **Directional bias** | `02_trade_type_analysis.py` | Quantifies buy vs sell profitability, drawdowns, and efficiency deltas so hedging rules can be tuned per strategy.【F:analysis/generic/scripts/02_trade_type_analysis.py†L40-L160】 | Adjust `analysis.generic.modules.trade_type_analysis.config.metrics` or the optional `sample_size` in YAML to focus on the most relevant KPIs. |
+| **Risk protection** | `04_stop_loss_simulation.py` | Sweeps stop-loss thresholds, reports P&L deltas, and highlights saved losses to test capital protection policies.【F:analysis/generic/scripts/04_stop_loss_simulation.py†L47-L160】 | Override `analysis.generic.modules.stop_loss_simulation.config.thresholds` in the config to match the volatility profile of the new strategy. |
+| **Ticker selection** | `05_ticker_ranking.py`, `07_top50_vs_overall.py`, `08_top50_pattern_breakdown.py` | Scores instruments across profitability, drawdown, consistency, and pattern behaviour to create a portfolio-ready whitelist.【F:analysis/generic/scripts/05_ticker_ranking.py†L60-L180】【F:analysis/generic/scripts/07_top50_vs_overall.py†L1-L110】【F:analysis/generic/scripts/08_top50_pattern_breakdown.py†L1-L120】 | Update ranking weights in YAML or feed custom ticker universes; downstream scripts automatically consume the generated CSVs. |
+| **Pattern & regime** | `03_cascade_analysis.py`, `06_risk_adjusted_patterns.py` | Tags cascades vs anti-cascades and measures Sharpe/drawdown per motif to detect behavioural edge or drag.【F:analysis/generic/scripts/03_cascade_analysis.py†L1-L80】【F:analysis/generic/scripts/06_risk_adjusted_patterns.py†L1-L84】 | Enable or disable specific categories via `analysis.generic.modules.cascade_analysis` toggles for different holding styles. |
+
+Run everything hands-free with:
+
+```bash
+python analysis/run.py --config analysis/config.yaml --targets generic
+```
+
+The runner respects module dependencies (for example, ticker ranking before Top-50 comparisons) and writes consolidated logs per execution.【F:analysis/run.py†L41-L188】
+
+---
+
 ## 📊 **Script Details**
 
 ### **01_basic_eda.py**
@@ -78,6 +100,9 @@ python 09_validation_check.py --config ../../config.yaml
 - Trade distribution (Buy vs Sell)
 - Ticker-level performance summary
 - Duration and timing analysis
+
+**Why run it**:
+- First gate that confirms merged trades are numerically sane before deeper studies—win rate, profit factor, and duration checks quickly catch corrupt inputs or broken strategies.【F:analysis/generic/scripts/01_basic_eda.py†L55-L110】
 
 **Outputs**:
 - `output/basic_eda/basic_eda_statistics.json`
@@ -100,6 +125,9 @@ python 01_basic_eda.py --config ../../config.yaml --sample 10000
 - Deep comparison of Buy vs Sell trades across profitability, drawdown, efficiency, and cadence metrics.
 - Optional sampling + metric filters to focus on specific KPIs defined in `analysis/config.yaml`.
 - Generates ticker-level directional bias tables to support hedging and pair selection.
+
+**Why run it**:
+- Surfaces whether the strategy needs hedging or direction-specific throttles by contrasting win rates, profit factors, and drawdowns between buys and sells.【F:analysis/generic/scripts/02_trade_type_analysis.py†L45-L144】
 
 **Outputs**:
 - `directional_summary.csv`
@@ -157,6 +185,9 @@ python 03_cascade_analysis.py --config ../../config.yaml
 - `stop_loss_summary.json`
 - Console summary with optimal threshold + P&L impact.
 
+**Why run it**:
+- Quantifies whether additional risk controls help or hurt by comparing baseline vs simulated P&L and win rates for each threshold sweep.【F:analysis/generic/scripts/04_stop_loss_simulation.py†L47-L160】
+
 **Example**:
 ```powershell
 python 04_stop_loss_simulation.py --config ../../config.yaml
@@ -177,6 +208,9 @@ python 04_stop_loss_simulation.py --config ../../config.yaml
 - `bottom_performers.csv`
 - `ticker_analysis_summary.json`
 
+**Why run it**:
+- Produces a ranked whitelist that portfolio scripts and options replay can consume, balancing profitability, drawdown, consistency, and efficiency metrics.【F:analysis/generic/scripts/05_ticker_ranking.py†L60-L180】
+
 **Example**:
 ```powershell
 python 05_ticker_ranking.py --config ../../config.yaml
@@ -193,6 +227,9 @@ python 05_ticker_ranking.py --config ../../config.yaml
 **Outputs**:
 - `validation_report.md`
 - Console warnings for missing data or suspicious metrics.
+
+**Why run it**:
+- Final gate before portfolio construction—emits Markdown dossiers with sample trades, column coverage, and consecutive-trade reviews so reviewers can sign off on data quality.【F:analysis/generic/scripts/09_validation_check.py†L40-L160】
 
 **Example**:
 ```powershell

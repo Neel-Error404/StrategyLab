@@ -83,6 +83,7 @@ This design allows independent management of:
 - **Replay Engine**: Converts equity trade ledgers into option executions with lifecycle tracking and portfolio-aware risk checks.【F:src/core/options/replay/engine.py†L1-L120】【F:src/core/options/replay/trade_mapper.py†L1-L74】
 - **Hybrid Pricing**: Combines actual Upstox OHLC chains with Black-Scholes synthetic fills, including automatic fallbacks and validation reports.【F:src/core/options/validation/pricing_validator.py†L257-L335】【F:src/core/options/replay/pricing.py†L150-L238】
 - **Operational Reports**: Phase completion manifests document throughput, P&L, and data quality for Phase 3 MVP and Phase 4 production tests.【F:src/core/options/PHASE3_COMPLETE.md†L1-L32】【F:src/core/options/PHASE4_COMPLETE.md†L1-L35】
+- **Hypothesis Lifecycle & Tests**: Follow `src/core/options/README.md` for the six-step hypothesis-to-replay playbook plus the unit and integration checks that keep synthesis deterministic.【F:src/core/options/README.md†L49-L136】
 
 ### **🛡️ Risk Management**
 - **Portfolio-Level Controls**: Position sizing, drawdown limits

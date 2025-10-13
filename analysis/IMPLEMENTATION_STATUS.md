@@ -202,6 +202,8 @@ Phase 3: Script Migration           ██████████████�
 Phase 4: Documentation              ████████████████████ 100% ✅
 Phase 5: Testing (not started)      ░░░░░░░░░░░░░░░░░░░░   0% ⏳
 
+*Manual harness available*: `analysis/run.py` already sequences generic and portfolio modules using the shared config loader, so day-to-day reviews rely on a repeatable entry point even before CI automation lands.【F:analysis/run.py†L1-L188】
+
 Overall: ████████████░░░░░░░  78% (Testing automation outstanding)
 ```
 
