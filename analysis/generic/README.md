@@ -10,11 +10,14 @@
 | Script | Description | Status |
 |--------|-------------|--------|
 | `01_basic_eda.py` | Overall statistics, win rate, profit factor | ✅ Ready |
-| `02_trade_type_analysis.py` | Buy vs Sell comparison | ⏳ To be migrated |
-| `03_cascade_analysis.py` | Sequential trade patterns | ✅ Ready |
-| `04_ticker_ranking.py` | Rank tickers by performance | ⏳ To be migrated |
-| `05_exit_timing.py` | Optimal holding periods | ⏳ To be migrated |
-| `06_stop_loss_sim.py` | Stop loss simulation | ⏳ To be migrated |
+| `02_trade_type_analysis.py` | Directional (buy vs sell) performance deep dive | ✅ Ready |
+| `03_cascade_analysis.py` | Sequential trade pattern tagging & analysis | ✅ Ready |
+| `04_stop_loss_simulation.py` | Percentage stop-loss sweeps & recommendations | ✅ Ready |
+| `05_ticker_ranking.py` | Weighted ranking + filter pipeline for top tickers | ✅ Ready |
+| `06_risk_adjusted_patterns.py` | Risk-adjusted motif analytics & exposure heatmaps | ✅ Ready |
+| `07_top50_vs_overall.py` | Compare Top-50 portfolio vs entire trade universe | ✅ Ready |
+| `08_top50_pattern_breakdown.py` | Drill down into Top-50 constituent behavior | ✅ Ready |
+| `09_validation_check.py` | Runbook of guard-rail checks before portfolio build | ✅ Ready |
 
 ---
 
@@ -48,8 +51,20 @@ cd generic/scripts
 # Basic EDA
 python 01_basic_eda.py --config ../../config.yaml
 
-# Cascade Analysis
+# Directional performance
+python 02_trade_type_analysis.py --config ../../config.yaml
+
+# Cascade Analysis (momentum vs mean-reversion patterns)
 python 03_cascade_analysis.py --config ../../config.yaml
+
+# Stop-loss sweep (thresholds configured in YAML)
+python 04_stop_loss_simulation.py --config ../../config.yaml
+
+# Weighted ticker ranking for portfolio prep
+python 05_ticker_ranking.py --config ../../config.yaml
+
+# Validation guard-rails before downstream workflows
+python 09_validation_check.py --config ../../config.yaml
 ```
 
 ---
@@ -75,6 +90,27 @@ python 01_basic_eda.py --config ../../config.yaml
 
 # With sampling for quick test
 python 01_basic_eda.py --config ../../config.yaml --sample 10000
+```
+
+---
+
+### **02_trade_type_analysis.py**
+
+**What it does**:
+- Deep comparison of Buy vs Sell trades across profitability, drawdown, efficiency, and cadence metrics.
+- Optional sampling + metric filters to focus on specific KPIs defined in `analysis/config.yaml`.
+- Generates ticker-level directional bias tables to support hedging and pair selection.
+
+**Outputs**:
+- `directional_summary.csv`
+- `directional_summary.json`
+- `directional_summary.md`
+- `ticker_bias.csv`
+
+**Example**:
+```powershell
+python 02_trade_type_analysis.py --config ../../config.yaml
+python 02_trade_type_analysis.py --config ../../config.yaml --sample 5000
 ```
 
 ---
@@ -109,6 +145,67 @@ python 03_cascade_analysis.py --config ../../config.yaml
 **Key Insight**: If "trades after a loss" have <45% win rate, consider blocking them!
 
 ---
+
+### **04_stop_loss_simulation.py**
+
+**What it does**:
+- Sweeps configurable stop-loss thresholds, highlights optimal protection levels, and surfaces performance deltas.
+- Supports scenario comparisons (base vs optimal) and prints narrative recommendations.
+
+**Outputs**:
+- `stop_loss_scenarios.csv`
+- `stop_loss_summary.json`
+- Console summary with optimal threshold + P&L impact.
+
+**Example**:
+```powershell
+python 04_stop_loss_simulation.py --config ../../config.yaml
+```
+
+---
+
+### **05_ticker_ranking.py**
+
+**What it does**:
+- Computes composite scores blending profitability, risk, efficiency, and consistency measures.
+- Applies liquidity + minimum trade filters before generating ranked tables and JSON summaries.
+- Produces tiered segments (S/A/B...) that integrate directly with portfolio construction scripts.
+
+**Outputs**:
+- `ticker_scores.csv`
+- `top_performers.csv`
+- `bottom_performers.csv`
+- `ticker_analysis_summary.json`
+
+**Example**:
+```powershell
+python 05_ticker_ranking.py --config ../../config.yaml
+```
+
+---
+
+### **09_validation_check.py**
+
+**What it does**:
+- Runs guard-rail checks (required columns, win-rate sanity, consecutive trade sampling) before handing data to portfolio engines.
+- Generates a Markdown dossier with sample trades to accelerate manual QA.
+
+**Outputs**:
+- `validation_report.md`
+- Console warnings for missing data or suspicious metrics.
+
+**Example**:
+```powershell
+python 09_validation_check.py --config ../../config.yaml
+```
+
+---
+
+### **Additional Modules**
+
+- `06_risk_adjusted_patterns.py`: Heatmaps risk-adjusted motifs (volatility buckets, holding-period cohorts).
+- `07_top50_vs_overall.py`: Benchmarks the curated Top-50 ticker set against the full trade universe.
+- `08_top50_pattern_breakdown.py`: Dissects Top-50 combinations for cascade, sector, and regime behaviour.
 
 ## 🔧 **Requirements**
 

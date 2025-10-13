@@ -48,11 +48,13 @@ Please provide step-by-step setup instructions, recommend appropriate templates,
 
 ### **System Optimization (Latest)**
 - **Cleaned Architecture**: Removed redundant files and streamlined codebase
-- **Dual Configuration System**: 
+- **Dual Configuration System**:
   - `config/config.py` - Broker connections and data provider settings
   - `config/unified_config.py` - Strategy parameters and risk management
-- **Enhanced Data Providers**: Added Binance support for cryptocurrency data
-- **Improved Documentation**: Comprehensive guides and troubleshooting
+- **Derivatives Pipeline**: Phase 1–4 options validation and replay flows are production-tested with hybrid pricing, Upstox ingestion, and full multi-ticker coverage.【F:src/core/options/PHASE4_COMPLETE.md†L1-L24】【F:src/core/options/validation/README.md†L1-L67】
+- **Analysis Migration**: Nine legacy analytics have been ported to the config-driven framework so trade diagnostics, ticker ranking, and validation checks run without hardcoded paths.【F:analysis/generic/scripts/02_trade_type_analysis.py†L1-L41】【F:analysis/generic/scripts/09_validation_check.py†L1-L39】
+- **Enhanced Data Providers**: Binance crypto feed and the Indian equities master pipeline combine broker APIs with YFinance fallbacks for reference data and discovery.【F:src/core/etl/data_provider/binance_provider.py†L21-L92】【F:src/data_tools/indian_equities_master/discovery.py†L7-L33】
+- **Parquet-First Storage**: Unified loader/fetcher modules read and write ticker-first parquet layouts with automatic CSV fallback when needed.【F:src/core/etl/loader.py†L23-L74】【F:src/core/etl/data_fetcher.py†L93-L197】
 
 ### **Configuration Architecture**
 The system uses a **dual configuration approach** for optimal separation of concerns:
@@ -77,6 +79,11 @@ This design allows independent management of:
 - **Live Data Fetching**: Real-time and historical data
 - **Strategy Framework**: Modular, extensible strategy system
 
+### **🧮 Options & Derivatives**
+- **Replay Engine**: Converts equity trade ledgers into option executions with lifecycle tracking and portfolio-aware risk checks.【F:src/core/options/replay/engine.py†L1-L120】【F:src/core/options/replay/trade_mapper.py†L1-L74】
+- **Hybrid Pricing**: Combines actual Upstox OHLC chains with Black-Scholes synthetic fills, including automatic fallbacks and validation reports.【F:src/core/options/validation/pricing_validator.py†L257-L335】【F:src/core/options/replay/pricing.py†L150-L238】
+- **Operational Reports**: Phase completion manifests document throughput, P&L, and data quality for Phase 3 MVP and Phase 4 production tests.【F:src/core/options/PHASE3_COMPLETE.md†L1-L32】【F:src/core/options/PHASE4_COMPLETE.md†L1-L35】
+
 ### **🛡️ Risk Management**
 - **Portfolio-Level Controls**: Position sizing, drawdown limits
 - **Trade-Level Protection**: Stop-loss, take-profit, trailing stops
@@ -88,12 +95,17 @@ This design allows independent management of:
 - **Interactive Charts**: Price action, signals, portfolio performance
 - **Statistical Analysis**: Sharpe ratio, maximum drawdown, win rate
 - **Export Capabilities**: CSV, JSON, PNG formats
+- **Config-Driven Analytics**: Trade type analysis, stop-loss simulation, and validation sweeps run through reusable modules with YAML-controlled inputs.【F:analysis/generic/scripts/04_stop_loss_simulation.py†L1-L44】【F:analysis/generic/modules/config_loader.py†L300-L373】
 
 ### **⚡ Performance**
 - **Parallel Processing**: Multi-core execution
 - **Efficient Data Handling**: Optimized for large datasets
 - **Caching System**: Intelligent data caching
 - **Modular Architecture**: Clean, maintainable codebase
+
+### **₿ Crypto Coverage**
+- **BTC & Top 30 Tokens**: Binance provider ships symbol metadata and fetch routines for Bitcoin pairs and the highest-liquidity USDT listings.【F:src/core/etl/data_provider/binance_provider.py†L21-L122】【F:config/binance_instruments.csv†L13-L70】
+- **Unified Config Templates**: Crypto-friendly defaults control trade file formats, leverage, and data cadence via YAML templates.【F:config/templates/aggressive.yaml†L79-L92】【F:config/unified_config.py†L118-L156】
 
 ---
 
