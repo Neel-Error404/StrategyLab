@@ -1,0 +1,542 @@
+"""
+Data access helpers for the options replay engine.
+
+This module centralises filesystem access for:
+- Equity trade logs produced by the equity backtester
+- Underlying equity price pools
+- Cached option chains and expiry metadata
+
+All loaders perform basic schema validation to guarantee deterministic
+behaviour downstream.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+
+import numpy as np
+import pandas as pd
+
+from src.core.options.data.schemas import (
+    OptionType,
+    OptionContract,
+    ExpiryMetadata,
+    validate_option_ohlc_df,
+)
+from .models import EquityTrade
+
+
+_TIMEFRAME_ALIASES = {
+    "1m": "1minute",
+    "m1": "1minute",
+    "1min": "1minute",
+    "one_minute": "1minute",
+    "5m": "5minute",
+    "15m": "15minute",
+    "30m": "30minute",
+    "60m": "60minute",
+    "1h": "60minute",
+    "2h": "120minute",
+    "day": "1day",
+    "1d": "1day",
+    "daily": "1day",
+    "week": "1week",
+    "1w": "1week",
+}
+
+
+def _normalise_timeframe(label: str) -> str:
+    """Normalise timeframe strings for consistent directory lookups."""
+    raw = str(label).strip().lower()
+    if raw in _TIMEFRAME_ALIASES:
+        return _TIMEFRAME_ALIASES[raw]
+    if raw.endswith("mins"):
+        raw = raw[:-4] + "minute"
+    if raw.endswith("minutes"):
+        raw = raw[:-6] + "minute"
+    if raw.endswith("min"):
+        raw = raw[:-3] + "minute"
+    if raw.endswith("hrs"):
+        raw = raw[:-3] + "hour"
+    if raw.endswith("hours"):
+        raw = raw[:-5] + "hour"
+    if raw.endswith("h"):
+        raw = raw[:-1] + "hour"
+    if raw == "week":
+        raw = "1week"
+    return raw
+
+
+def _timeframe_to_seconds(label: str) -> int:
+    """Convert timeframe label to resolution in seconds."""
+    normalised = _normalise_timeframe(label)
+    if normalised.endswith("minute"):
+        prefix = normalised[:-6] or "1"
+        return int(prefix) * 60
+    if normalised.endswith("hour"):
+        prefix = normalised[:-4] or "1"
+        return int(prefix) * 3600
+    if normalised.endswith("day"):
+        prefix = normalised[:-3] or "1"
+        return int(prefix) * 86400
+    if normalised.endswith("week"):
+        prefix = normalised[:-4] or "1"
+        return int(prefix) * 604800
+    raise ValueError(f"Unsupported timeframe: {label}")
+
+
+def _is_intraday_timeframe(label: str) -> bool:
+    """Return True if timeframe is intraday (< 1 day)."""
+    try:
+        return _timeframe_to_seconds(label) < 86400
+    except ValueError:
+        return False
+
+
+def _align_timestamp_to_timeframe(ts: pd.Timestamp, timeframe: str) -> pd.Timestamp:
+    """
+    Align timestamp to the boundary of the provided timeframe.
+
+    For intraday bars we floor to the bar boundary to ensure we do not
+    introduce lookahead bias. Daily/weekly bars are normalised to midnight.
+    """
+    tz_ts = ts.tz_convert("Asia/Kolkata") if ts.tzinfo else ts.tz_localize("Asia/Kolkata")
+    normalised_tf = _normalise_timeframe(timeframe)
+    if normalised_tf.endswith("minute"):
+        minutes = int(normalised_tf[:-6] or "1")
+        return tz_ts.floor(f"{minutes}T")
+    if normalised_tf.endswith("hour"):
+        hours = int(normalised_tf[:-4] or "1")
+        return tz_ts.floor(f"{hours}H")
+    if normalised_tf.endswith("day"):
+        return tz_ts.normalize()
+    if normalised_tf.endswith("week"):
+        return tz_ts.to_period("W").start_time.tz_localize(tz_ts.tz)
+    return tz_ts
+
+
+def parse_date_range(date_range: str) -> Tuple[pd.Timestamp, pd.Timestamp]:
+    """
+    Parse ``YYYY-MM-DD_to_YYYY-MM-DD`` ranges into start/end timestamps.
+    """
+    if "_to_" not in date_range:
+        raise ValueError(f"Invalid date range format: {date_range}")
+    start_str, end_str = date_range.split("_to_")
+    start = pd.Timestamp(start_str).normalize()
+    end = pd.Timestamp(end_str).normalize()
+    if start > end:
+        raise ValueError(f"Start date {start_str} is after end date {end_str}")
+    return start, end
+
+
+def load_equity_trades_csv(
+    trades_path: Path,
+    tz: str = "Asia/Kolkata",
+    ticker_whitelist: Optional[Iterable[str]] = None,
+) -> pd.DataFrame:
+    """
+    Load and normalise the equity trade log.
+    """
+    if not trades_path.exists():
+        raise FileNotFoundError(f"Equity trades file not found: {trades_path}")
+    df = pd.read_csv(trades_path)
+    column_map = {
+        "Entry Time": "entry_time",
+        "Exit Time": "exit_time",
+        "Entry Price": "entry_price",
+        "Exit Price": "exit_price",
+        "Trade Type": "side",
+        "PnL": "pnl",
+        "Profit (Currency)": "pnl",
+        "ticker": "ticker",
+        "Quantity": "quantity",
+        "quantity": "quantity",
+        "Strategy": "strategy",
+    }
+    for col, new_name in column_map.items():
+        if col in df.columns and new_name not in df.columns:
+            df.rename(columns={col: new_name}, inplace=True)
+    if "pnl" not in df.columns:
+        raise ValueError("Equity trades CSV missing 'PnL'/'Profit (Currency)' column")
+    if "quantity" not in df.columns:
+        # Default to 1 share if not provided
+        df["quantity"] = 1.0
+    if "side" not in df.columns:
+        raise ValueError("Equity trades CSV missing trade side column ('Trade Type' expected)")
+    if "entry_time" not in df.columns or "exit_time" not in df.columns:
+        raise ValueError("Equity trades CSV must contain 'Entry Time'/'Exit Time' columns")
+    if "ticker" not in df.columns:
+        raise ValueError("Equity trades CSV must contain 'ticker' column")
+
+    df = df.copy()
+    df["trade_id"] = df.apply(
+        lambda row: f"{row['ticker']}_{row['entry_time']}_{row.get('strategy', 'unknown')}", axis=1
+    )
+    df["entry_time"] = pd.to_datetime(df["entry_time"])
+    df["exit_time"] = pd.to_datetime(df["exit_time"])
+    df["entry_time"] = df["entry_time"].dt.tz_localize(tz) if df["entry_time"].dt.tz is None else df["entry_time"].dt.tz_convert(tz)
+    df["exit_time"] = df["exit_time"].dt.tz_localize(tz) if df["exit_time"].dt.tz is None else df["exit_time"].dt.tz_convert(tz)
+    df["ticker"] = df["ticker"].str.upper()
+    df["side"] = df["side"].str.upper()
+
+    if ticker_whitelist:
+        whitelist = {ticker.upper() for ticker in ticker_whitelist}
+        df = df[df["ticker"].isin(whitelist)]
+
+    df.sort_values("entry_time", inplace=True)
+    return df.reset_index(drop=True)
+
+
+def load_equity_trades(
+    trades_path: Path,
+    tz: str = "Asia/Kolkata",
+    ticker_whitelist: Optional[Iterable[str]] = None,
+) -> List[EquityTrade]:
+    """
+    Load trades and convert to ``EquityTrade`` objects.
+    """
+    df = load_equity_trades_csv(trades_path, tz=tz, ticker_whitelist=ticker_whitelist)
+    trades = []
+    for _, row in df.iterrows():
+        trades.append(EquityTrade.from_row(row.to_dict(), tz=tz))
+    return trades
+
+
+def locate_equity_data_file(
+    root: Path,
+    date_range: str,
+    timeframe: str,
+    ticker: str,
+) -> Path:
+    """
+    Locate equity data CSV file within the data pools.
+    """
+    date_root = root / date_range
+    if not date_root.exists():
+        # Attempt fallback by scanning available directories that cover the requested range
+        requested_start, requested_end = parse_date_range(date_range)
+        for candidate in sorted(root.iterdir()):
+            if not candidate.is_dir():
+                continue
+            timeframe_dir = candidate / timeframe
+            if not timeframe_dir.exists():
+                continue
+            csv_path = timeframe_dir / f"{ticker}_{candidate.name}.csv"
+            if not csv_path.exists():
+                continue
+            try:
+                candidate_start, candidate_end = parse_date_range(candidate.name)
+            except ValueError:
+                continue
+            if candidate_start <= requested_start and requested_end <= candidate_end:
+                return csv_path
+        raise FileNotFoundError(f"Equity data directory not found: {date_root}")
+    timeframe_dir = date_root / timeframe
+    if not timeframe_dir.exists():
+        raise FileNotFoundError(f"Timeframe directory not found: {timeframe_dir}")
+    expected = timeframe_dir / f"{ticker}_{date_range}.csv"
+    if not expected.exists():
+        raise FileNotFoundError(f"Equity data file not found for {ticker}: {expected}")
+    return expected
+
+
+def load_underlying_data(
+    root: Path,
+    date_range: str,
+    timeframe: str,
+    ticker: str,
+    tz: str = "Asia/Kolkata",
+) -> pd.DataFrame:
+    """
+    Load underlying equity bars as DataFrame, enforcing timestamp ordering.
+    """
+    csv_path = locate_equity_data_file(root, date_range, timeframe, ticker)
+    df = pd.read_csv(csv_path)
+    if "timestamp" not in df.columns:
+        raise ValueError(f"Underlying data missing 'timestamp' column: {csv_path}")
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    if df["timestamp"].dt.tz is None:
+        df["timestamp"] = df["timestamp"].dt.tz_localize(tz)
+    else:
+        df["timestamp"] = df["timestamp"].dt.tz_convert(tz)
+    required_columns = {"open", "high", "low", "close"}
+    missing = required_columns - set(df.columns)
+    if missing:
+        raise ValueError(f"Underlying data missing columns {missing} in {csv_path}")
+    df.sort_values("timestamp", inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
+
+
+def list_option_pool_dirs(options_root: Path) -> List[Path]:
+    """
+    Enumerate date range folders available for option caches.
+    """
+    return sorted([p for p in options_root.glob("*") if p.is_dir()])
+
+
+def _parse_range_from_dir(path: Path) -> Optional[Tuple[pd.Timestamp, pd.Timestamp]]:
+    name = path.name
+    suffix = ""
+    if name.endswith("_back"):
+        name, suffix = name[:-5], "_back"
+    if "_to_" not in name:
+        return None
+    start_str, end_str = name.split("_to_")
+    try:
+        start = pd.Timestamp(start_str).normalize()
+        end = pd.Timestamp(end_str).normalize()
+    except ValueError:
+        return None
+    return start, end
+
+
+def find_option_data_dir(
+    options_root: Path,
+    ticker: str,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+) -> Path:
+    """
+    Locate an option data directory covering the requested period and ticker.
+    """
+    ticker = ticker.upper()
+    for candidate in list_option_pool_dirs(options_root):
+        bounds = _parse_range_from_dir(candidate)
+        if not bounds:
+            continue
+        range_start, range_end = bounds
+        if range_start <= start and end <= range_end:
+            selected = candidate
+            if not candidate.name.endswith('_back'):
+                enriched = candidate.parent / f"{candidate.name}_back"
+                if enriched.exists():
+                    selected = enriched
+            ticker_dir = selected / ticker
+            if ticker_dir.exists():
+                return ticker_dir
+    raise FileNotFoundError(
+        f"No option data directory found for {ticker} covering {start.date()} to {end.date()}"
+    )
+
+
+def load_expiry_metadata(metadata_path: Path) -> ExpiryMetadata:
+    """Load expiry metadata JSON."""
+    data = json.loads(metadata_path.read_text())
+    return ExpiryMetadata.from_dict(data)
+
+
+@dataclass
+class OptionDataStore:
+    """
+    Helper providing access to option chains and metadata for a ticker.
+
+    The store supports multiple cached timeframes (e.g. 1minute, 5minute,
+    1day) and will gracefully fall back to coarser resolutions when higher
+    fidelity data is unavailable.
+    """
+
+    base_dir: Path
+    timeframe: str = "1day"
+    timeframes: Tuple[str, ...] = ()
+    _metadata_cache: Dict[str, ExpiryMetadata] = field(init=False, default_factory=dict)
+    _option_cache: Dict[str, Dict[str, Optional[pd.DataFrame]]] = field(init=False, default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.base_dir = self.base_dir.resolve()
+        configured = self.timeframes if self.timeframes else (self.timeframe,)
+        self.timeframes = self._normalise_timeframes(configured)
+        self.timeframe = self.timeframes[0]
+        self._metadata_cache = {}
+        self._option_cache = {tf: {} for tf in self.timeframes}
+
+    @staticmethod
+    def _normalise_timeframes(timeframes: Sequence[str]) -> Tuple[str, ...]:
+        """Return sorted tuple of unique timeframe labels."""
+        if not timeframes:
+            raise ValueError("OptionDataStore requires at least one timeframe")
+        seen: Dict[str, None] = {}
+        for tf in timeframes:
+            normalised = _normalise_timeframe(tf)
+            if not normalised:
+                continue
+            if normalised not in seen:
+                seen[normalised] = None
+        if not seen:
+            raise ValueError("No valid timeframes supplied to OptionDataStore")
+        ordered = sorted(seen.keys(), key=_timeframe_to_seconds)
+        return tuple(ordered)
+
+    def list_expiries(self) -> List[pd.Timestamp]:
+        """List available expiries for the ticker."""
+        metadata_dir = self.base_dir / "metadata"
+        if not metadata_dir.exists():
+            return []
+        expiries: List[pd.Timestamp] = []
+        for path in metadata_dir.glob("expiry_*.json"):
+            expiry = pd.Timestamp(path.stem.replace("expiry_", "")).tz_localize("Asia/Kolkata")
+            expiries.append(expiry)
+        return sorted(expiries)
+
+    def get_metadata(self, expiry: pd.Timestamp) -> ExpiryMetadata:
+        """Fetch expiry metadata, caching the result."""
+        key = expiry.normalize().strftime("%Y-%m-%d")
+        if key in self._metadata_cache:
+            return self._metadata_cache[key]
+        metadata_path = self.base_dir / "metadata" / f"expiry_{key}.json"
+        if not metadata_path.exists():
+            raise FileNotFoundError(f"Metadata missing for expiry {key}: {metadata_path}")
+        metadata = load_expiry_metadata(metadata_path)
+        self._metadata_cache[key] = metadata
+        return metadata
+
+    def load_chain(
+        self,
+        expiry: pd.Timestamp,
+        timeframe: Optional[str] = None,
+        allow_missing: bool = False,
+    ) -> Optional[pd.DataFrame]:
+        """
+        Load cached option chain for a given expiry/timeframe.
+
+        Args:
+            expiry: Expiry date to load.
+            timeframe: Preferred timeframe label (defaults to most granular configured).
+            allow_missing: If True, returns ``None`` instead of raising when the chain is absent.
+        """
+        key = expiry.normalize().strftime("%Y-%m-%d")
+        requested_tf = _normalise_timeframe(timeframe or self.timeframe)
+        if requested_tf not in self._option_cache:
+            self._option_cache[requested_tf] = {}
+        cache = self._option_cache[requested_tf]
+        if key in cache:
+            return cache[key]
+        chain_path = self.base_dir / requested_tf / f"expiry_{key}.parquet"
+        if not chain_path.exists():
+            if allow_missing:
+                cache[key] = None
+                return None
+            raise FileNotFoundError(f"Option chain missing for expiry {key}: {chain_path}")
+        df = pd.read_parquet(chain_path)
+        validate_option_ohlc_df(df)
+        df = df.copy()
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        if df["timestamp"].dt.tz is None:
+            df["timestamp"] = df["timestamp"].dt.tz_localize("Asia/Kolkata")
+        else:
+            df["timestamp"] = df["timestamp"].dt.tz_convert("Asia/Kolkata")
+        df.sort_values(["timestamp", "strike", "option_type"], inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        cache[key] = df
+        return df
+
+    def get_chain_for_vol(self, expiry: pd.Timestamp) -> Tuple[pd.DataFrame, str]:
+        """
+        Return the coarsest available chain for volatility fitting.
+        """
+        for timeframe in sorted(self.timeframes, key=_timeframe_to_seconds, reverse=True):
+            df = self.load_chain(expiry, timeframe=timeframe, allow_missing=True)
+            if df is not None and not df.empty:
+                return df, timeframe
+        raise FileNotFoundError(f"No option chain available for expiry {expiry.date()} across configured timeframes")
+
+    def find_price_bar(
+        self,
+        expiry: pd.Timestamp,
+        option_type: OptionType,
+        strike: float,
+        timestamp: pd.Timestamp,
+    ) -> Tuple[Optional[pd.Series], Dict[str, object]]:
+        """
+        Locate the most appropriate option bar for the provided timestamp.
+
+        Preference order is the most granular configured timeframe. When no
+        intraday bar exists, we fall back to coarser timeframes while
+        recording the reason for each miss to aid auditability.
+        """
+        attempts: List[Dict[str, object]] = []
+        strike_value = float(strike)
+        for timeframe in self.timeframes:
+            df = self.load_chain(expiry, timeframe=timeframe, allow_missing=True)
+            attempt: Dict[str, object] = {"timeframe": timeframe}
+            if df is None or df.empty:
+                attempt["reason"] = "missing_chain"
+                attempts.append(attempt)
+                continue
+            subset = df[df["option_type"] == option_type.value]
+            if subset.empty:
+                attempt["reason"] = "option_type_unavailable"
+                attempts.append(attempt)
+                continue
+            strike_mask = np.isclose(subset["strike"].astype(float), strike_value, atol=1e-4)
+            subset = subset.loc[strike_mask]
+            if subset.empty:
+                attempt["reason"] = "strike_unavailable"
+                attempts.append(attempt)
+                continue
+            if _is_intraday_timeframe(timeframe):
+                aligned_ts = _align_timestamp_to_timeframe(timestamp, timeframe)
+                matches = subset[subset["timestamp"] == aligned_ts]
+                alignment = "exact"
+                if matches.empty:
+                    # Use the last observed bar prior to the timestamp to avoid lookahead.
+                    matches = subset[subset["timestamp"] <= aligned_ts].sort_values("timestamp")
+                    if matches.empty:
+                        attempt["reason"] = "no_bar_before_timestamp"
+                        attempt["aligned_timestamp"] = aligned_ts.isoformat()
+                        attempts.append(attempt)
+                        continue
+                    alignment = "backfill"
+                row = matches.iloc[-1]
+                metadata = {
+                    "timeframe": timeframe,
+                    "bar_timestamp": row["timestamp"].isoformat(),
+                    "alignment": alignment,
+                    "attempts": attempts + [{"timeframe": timeframe, "status": "selected", "alignment": alignment}],
+                }
+                return row, metadata
+            # Daily/weekly fallback
+            trade_day = timestamp.tz_convert("Asia/Kolkata") if timestamp.tzinfo else timestamp.tz_localize("Asia/Kolkata")
+            trade_day = trade_day.normalize()
+            matches = subset[subset["timestamp"].dt.normalize() == trade_day]
+            if matches.empty:
+                attempt["reason"] = "no_session_match"
+                attempts.append(attempt)
+                continue
+            row = matches.sort_values("timestamp").iloc[-1]
+            metadata = {
+                "timeframe": timeframe,
+                "bar_timestamp": row["timestamp"].isoformat(),
+                "alignment": "session_close",
+                "attempts": attempts + [{"timeframe": timeframe, "status": "selected", "alignment": "session_close"}],
+            }
+            return row, metadata
+        return None, {
+            "reason": "no_actual_bar",
+            "attempts": attempts,
+        }
+
+    def get_nearest_strike(
+        self,
+        expiry: pd.Timestamp,
+        option_type: OptionType,
+        underlying_price: float,
+    ) -> float:
+        """
+        Select the strike closest to the provided underlying price for the given option type.
+        """
+        metadata = self.get_metadata(expiry)
+        strike_list = metadata.call_strikes if option_type == OptionType.CALL else metadata.put_strikes
+        if strike_list:
+            return float(min(strike_list, key=lambda strike: abs(strike - underlying_price)))
+        # Fallback to chain scan if metadata missing strike coverage.
+        chain = self.load_chain(expiry, timeframe=self.timeframe)
+        subset = chain[chain["option_type"] == option_type.value]
+        strikes = subset["strike"].unique()
+        if len(strikes) == 0:
+            raise ValueError(f"No strikes available for {option_type} at expiry {expiry.date()}")
+        return float(min(strikes, key=lambda k: abs(k - underlying_price)))
