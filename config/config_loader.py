@@ -6,6 +6,7 @@ This module provides functionality to load YAML configuration files and substitu
 environment variable placeholders (e.g., ${UPSTOX_CLIENT_ID}) with actual values.
 
 Key Features:
+- Automatic .env file loading for credential management
 - Load YAML configs with environment variable substitution
 - Support for default values: ${VAR_NAME:default_value}
 - Recursive substitution for nested dictionaries
@@ -19,15 +20,32 @@ import yaml
 import logging
 from pathlib import Path
 from typing import Any, Dict, Union
+from dotenv import load_dotenv
 from config.unified_config import BacktestConfig
 
 logger = logging.getLogger(__name__)
+
+# Load .env file on module import (ensures credentials available before any config loading)
+# Look for .env in: 1) backtester root, 2) config directory, 3) parent directory
+_env_paths = [
+    Path(__file__).resolve().parent.parent / '.env',  # backtester/.env
+    Path(__file__).resolve().parent / '.env',         # config/.env
+    Path(__file__).resolve().parent.parent.parent / '.env'  # unified_trading_setup/.env
+]
+
+for _env_path in _env_paths:
+    if _env_path.exists():
+        load_dotenv(_env_path, override=True)
+        logger.info(f'Loaded environment variables from: {_env_path}')
+        break
+else:
+    logger.warning('No .env file found in search paths - broker credentials must be in environment')
 
 
 class ConfigLoader:
     """Load and process configuration files with environment variable substitution."""
     
-    # Pattern to match  or 
+    # Pattern to match ${ENV_VAR} or ${ENV_VAR:default_value}
     ENV_VAR_PATTERN = re.compile(r'\$\{([^}:]+)(?::([^}]*))?\}')
     
     @classmethod
