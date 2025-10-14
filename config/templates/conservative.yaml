@@ -96,8 +96,36 @@ logging:
 broker:
   default_provider: "upstox"
   available_providers: ["upstox", "zerodha", "binance"]
+  
+  # Upstox Configuration (use environment variables for credentials)
+  upstox_client_id: "${UPSTOX_CLIENT_ID}"
+  upstox_client_secret: "${UPSTOX_CLIENT_SECRET}"
+  upstox_redirect_uri: "${UPSTOX_REDIRECT_URI:https://127.0.0.1:5000/}"
+  upstox_auth_url: "https://api.upstox.com/v2/login/authorization/dialog"
+  upstox_token_url: "https://api.upstox.com/v2/login/authorization/token"
+  upstox_historical_api_base: "https://api.upstox.com/v3/historical-candle"
+  upstox_api_version: "v3"
+  upstox_max_days_per_request: 200
+  
+  # Zerodha Configuration (use environment variables for credentials)
+  zerodha_api_key: "${ZERODHA_API_KEY}"
+  zerodha_api_secret: "${ZERODHA_API_SECRET}"
+  zerodha_redirect_uri: "${ZERODHA_REDIRECT_URI:https://127.0.0.1:5000/}"
+  zerodha_segment: "NSE"
+  
+  # Binance Configuration (optional)
+  binance_api_key: "${BINANCE_API_KEY:}"
+  binance_api_secret: "${BINANCE_API_SECRET:}"
+  binance_testnet: true
+  
+  # Token Management
+  token_dir: "config/access_tokens"
   token_refresh_enabled: true
   auto_refresh_minutes: 60
+  
+  # Instruments CSV
+  upstox_instruments_csv: "config/complete.csv"
+  zerodha_instruments_csv: "config/zerodha_instruments.csv"
 
 # Audit compliance configuration (from analysis report)
 compliance:

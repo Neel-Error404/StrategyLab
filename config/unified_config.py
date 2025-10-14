@@ -150,40 +150,112 @@ class BrokerConfig:
     default_provider: str = "upstox"
     available_providers: List[str] = field(default_factory=lambda: ["upstox", "zerodha", "binance"])
     
-    # Broker API Configuration
-    upstox: Dict[str, str] = field(default_factory=lambda: {
-        "api_url": "https://api.upstox.com/v2",
-        "auth_url": "https://api.upstox.com/v2/login/authorization/dialog",
-        "token_url": "https://api.upstox.com/v2/login/authorization/token",
-        "client_id": "",  # Set via environment
-        "client_secret": "",  # Set via environment
-        "redirect_uri": "http://localhost:8080/callback"
+    # Upstox Configuration (full V3 API support)
+    upstox_client_id: str = ""  # Set via environment: ${UPSTOX_CLIENT_ID}
+    upstox_client_secret: str = ""  # Set via environment: ${UPSTOX_CLIENT_SECRET}
+    upstox_redirect_uri: str = "https://127.0.0.1:5000/"
+    upstox_auth_url: str = "https://api.upstox.com/v2/login/authorization/dialog"
+    upstox_token_url: str = "https://api.upstox.com/v2/login/authorization/token"
+    upstox_historical_api_base: str = "https://api.upstox.com/v3/historical-candle"
+    upstox_expiry_api_url: str = "https://api.upstox.com/v2/expired-instruments/expiries"
+    upstox_api_version: str = "v3"
+    upstox_max_days_per_request: int = 200
+    upstox_max_retries: int = 3
+    upstox_retry_delay: int = 5
+    upstox_request_timeout: int = 30
+    
+    # Upstox V3 API timeframe mappings (unit + interval format)
+    upstox_timeframe_mappings: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
+        '1m': {'unit': 'minutes', 'interval': '1'},
+        '2m': {'unit': 'minutes', 'interval': '2'},
+        '3m': {'unit': 'minutes', 'interval': '3'},
+        '5m': {'unit': 'minutes', 'interval': '5'},
+        '10m': {'unit': 'minutes', 'interval': '10'},
+        '15m': {'unit': 'minutes', 'interval': '15'},
+        '30m': {'unit': 'minutes', 'interval': '30'},
+        '1h': {'unit': 'hours', 'interval': '1'},
+        '2h': {'unit': 'hours', 'interval': '2'},
+        'day': {'unit': 'days', 'interval': '1'},
+        'week': {'unit': 'weeks', 'interval': '1'},
+        'month': {'unit': 'months', 'interval': '1'},
+        '1minute': {'unit': 'minutes', 'interval': '1'},  # Legacy
+        '30minute': {'unit': 'minutes', 'interval': '30'}  # Legacy
     })
     
-    zerodha: Dict[str, str] = field(default_factory=lambda: {
-        "api_key": "",  # Set via environment
-        "api_secret": "",  # Set via environment
-        "request_token": "",
-        "access_token": ""
+    upstox_supported_timeframes: List[str] = field(default_factory=lambda: [
+        '1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', 'day', 'week', 'month'
+    ])
+    
+    # Zerodha Configuration
+    zerodha_api_key: str = ""  # Set via environment: ${ZERODHA_API_KEY}
+    zerodha_api_secret: str = ""  # Set via environment: ${ZERODHA_API_SECRET}
+    zerodha_redirect_uri: str = "https://127.0.0.1:5000/"
+    zerodha_segment: str = "NSE"
+    zerodha_max_retries: int = 3
+    zerodha_retry_delay: int = 5
+    zerodha_request_timeout: int = 30
+    
+    zerodha_supported_timeframes: List[str] = field(default_factory=lambda: [
+        'minute', '3minute', '5minute', '10minute', '15minute', '30minute', 'hour', 'day', 'week', 'month'
+    ])
+    
+    zerodha_historical_limits: Dict[str, Dict[str, int]] = field(default_factory=lambda: {
+        'minute': {'days': 60, 'candles_per_request': 60},
+        '3minute': {'days': 100, 'candles_per_request': 100},
+        '5minute': {'days': 100, 'candles_per_request': 100},
+        '15minute': {'days': 200, 'candles_per_request': 200},
+        '30minute': {'days': 200, 'candles_per_request': 200},
+        'hour': {'days': 400, 'candles_per_request': 400},
+        'day': {'days': 2000, 'candles_per_request': 2000},
+        'week': {'days': 2000, 'candles_per_request': 2000},
+        'month': {'days': 2000, 'candles_per_request': 2000}
     })
     
-    binance: Dict[str, str] = field(default_factory=lambda: {
-        "api_key": "",  # Public data doesn't require auth
-        "api_secret": "",
-        "testnet": True
-    })
+    # Binance Configuration
+    binance_api_key: str = ""  # Public data doesn't require auth
+    binance_api_secret: str = ""
+    binance_testnet: bool = True
     
-    # Timeframe mappings for different providers
-    timeframe_mapping: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
-        "upstox": {"1m": "1minute", "5m": "5minute", "15m": "15minute", "1h": "60minute", "1d": "day"},
-        "zerodha": {"1m": "minute", "5m": "5minute", "15m": "15minute", "1h": "60minute", "1d": "day"},
-        "binance": {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "1d": "1d"}
-    })
+    binance_supported_timeframes: List[str] = field(default_factory=lambda: [
+        '1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1M'
+    ])
     
-    # Token management
+    # Token Management (unified across providers)
     token_dir: str = "config/access_tokens"
     token_refresh_enabled: bool = True
     auto_refresh_minutes: int = 60
+    
+    # Standard timeframe mappings for cross-provider compatibility
+    standard_timeframes: Dict[str, Dict[str, Optional[str]]] = field(default_factory=lambda: {
+        '1m': {'upstox': '1minute', 'zerodha': 'minute'},
+        '3m': {'upstox': None, 'zerodha': '3minute'},
+        '5m': {'upstox': None, 'zerodha': '5minute'},
+        '10m': {'upstox': None, 'zerodha': '10minute'},
+        '15m': {'upstox': None, 'zerodha': '15minute'},
+        '30m': {'upstox': '30minute', 'zerodha': '30minute'},
+        '1h': {'upstox': None, 'zerodha': 'hour'},
+        'day': {'upstox': 'day', 'zerodha': 'day'},
+        'week': {'upstox': 'week', 'zerodha': 'week'},
+        'month': {'upstox': 'month', 'zerodha': 'month'}
+    })
+    
+    # Timeframe folder naming convention
+    timeframe_folders: Dict[str, str] = field(default_factory=lambda: {
+        '1m': '1minute',
+        '3m': '3minute',
+        '5m': '5minute',
+        '10m': '10minute',
+        '15m': '15minute',
+        '30m': '30minute',
+        '1h': 'hour',
+        'day': 'day',
+        'week': 'week',
+        'month': 'month'
+    })
+    
+    # Instruments CSV file paths
+    upstox_instruments_csv: str = "config/complete.csv"
+    zerodha_instruments_csv: str = "config/zerodha_instruments.csv"
 
 @dataclass
 class AuditComplianceConfig:
