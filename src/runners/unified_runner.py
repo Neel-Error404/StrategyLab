@@ -431,6 +431,41 @@ class UnifiedBacktesterRunner:
                     raise ValueError('Replay mode requires --manifest (config.replay_manifest)')
                 output_dir = getattr(self.config.output, 'output_dir', 'outputs/parity') if hasattr(self.config, 'output') else 'outputs/parity'
                 results = self._execute_replay_mode(manifest, output_dir)
+            elif mode == 'update':
+                # Incremental pool update mode - calls update_pool_workflow()
+                from src.core.etl.data_fetcher import update_pool_workflow
+                
+                pool_path = getattr(self.config, 'pool_path', None)
+                if not pool_path:
+                    raise ValueError('Update mode requires --pool-path (existing data pool directory)')
+                
+                target_end_date = getattr(self.config, 'target_end_date', None)
+                dry_run = getattr(self.config, 'dry_run', False)
+                validate_only = getattr(self.config, 'validate_only', False)
+                yes_flag = getattr(self.config, 'yes', False)
+                no_backup = getattr(self.config, 'no_backup', False)
+                
+                self.logger.info(f"🔄 Starting incremental pool update for: {pool_path}")
+                self.logger.info(f"   Target end date: {target_end_date or 'today'}")
+                self.logger.info(f"   Dry run: {dry_run}")
+                self.logger.info(f"   Validate only: {validate_only}")
+                
+                success = update_pool_workflow(
+                    pool_path=pool_path,
+                    target_end_date=target_end_date,
+                    provider_name='upstox',  # TODO: make configurable
+                    backup=not no_backup,
+                    dry_run=dry_run,
+                    validate_only=validate_only,
+                    yes_flag=yes_flag
+                )
+                
+                results = {
+                    'status': 'success' if success else 'error',
+                    'mode': 'update',
+                    'pool_path': pool_path,
+                    'message': 'Incremental update completed' if success else 'Incremental update failed'
+                }
             else:
                 # Standard modes that require full modular components initialization
                 self._init_modular_components()

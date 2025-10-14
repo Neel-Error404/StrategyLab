@@ -158,6 +158,9 @@ class DataFetcher:
                     else:
                         filename = f"{ticker}_{start_date.strftime('%Y-%m-%d')}_to_{end_date.strftime('%Y-%m-%d')}.csv"
                         file_path = target_dir / filename
+
+                    # Ensure destination directory still exists (guards against race conditions or external cleanup)
+                    file_path.parent.mkdir(parents=True, exist_ok=True)
                     
                     # Save data with appropriate format
                     if use_ticker_first_storage and use_parquet:
@@ -239,11 +242,154 @@ class DataFetcher:
             'end_date': end_date
         }
 
+def update_pool_workflow(pool_path: str, target_end_date: str = None, provider_name: str = 'upstox',
+                        backup: bool = True, dry_run: bool = False, validate_only: bool = False,
+                        yes_flag: bool = False):
+    """
+    Update existing data pool with incremental data fetch
+
+    Args:
+        pool_path: Path to existing pool directory
+        target_end_date: Target end date (default: today)
+        provider_name: Data provider to use
+        backup: Create backup before merge
+        dry_run: Preview changes without executing
+        validate_only: Only validate pool integrity
+        yes_flag: Skip confirmation prompt (for unattended updates)
+
+    Returns:
+        True if successful, False otherwise
+    """
+    from .pool_inspector import inspect_pool, print_pool_summary
+    from .gap_calculator import calculate_gaps, print_gap_report
+    from .data_merger import merge_parquet_files
+
+    logger = logging.getLogger("DataFetcher")
+
+    print("\n" + "="*70)
+    print(">>> INCREMENTAL POOL UPDATE WORKFLOW")
+    print("="*70)
+
+    try:
+        # Step 1: Inspect pool
+        logger.info("Step 1: Inspecting existing pool...")
+        pool_metadata = inspect_pool(pool_path, validate=True)
+        print_pool_summary(pool_metadata)
+
+        if validate_only:
+            logger.info("✅ Validation complete (--validate-only mode)")
+            return True
+
+        # Step 2: Calculate gaps
+        logger.info("\nStep 2: Calculating gaps...")
+        gap_report = calculate_gaps(pool_metadata, target_end_date=target_end_date)
+        print_gap_report(gap_report)
+
+        if dry_run:
+            logger.info("✅ Dry-run complete (no changes made)")
+            return True
+
+        # Step 3: Confirmation (skip if --yes flag)
+        if not yes_flag:
+            print("\n" + "-"*70)
+            response = input("❓ Proceed with update? (yes/no): ").strip().lower()
+            if response not in ['yes', 'y']:
+                logger.info("❌ Update cancelled by user")
+                return False
+        else:
+            logger.info("Proceeding with update (--yes flag provided)")
+            print()  # Empty line for formatting
+
+        # Step 4: Initialize data fetcher
+        logger.info("\nStep 3: Initializing data fetcher...")
+        fetcher = DataFetcher(provider_name=provider_name)
+
+        # Step 5: Fetch missing data for each ticker/timeframe
+        logger.info("\nStep 4: Fetching missing data...")
+        new_data_map = {}  # (ticker, timeframe) -> DataFrame
+
+        total_gaps = len(gap_report.gaps)
+        for i, ((ticker, timeframe), (gap_start, gap_end)) in enumerate(gap_report.gaps.items(), 1):
+            logger.info(f"   [{i}/{total_gaps}] Fetching {ticker} @ {timeframe} from {gap_start.date()} to {gap_end.date()}")
+
+            try:
+                df = fetcher.provider.fetch_historical_data(ticker, gap_start, gap_end, timeframe)
+
+                if df.empty:
+                    logger.warning(f"   ⚠️  No data returned for {ticker} @ {timeframe}")
+                else:
+                    new_data_map[(ticker, timeframe)] = df
+                    logger.info(f"   ✅ Fetched {len(df):,} records")
+
+            except Exception as e:
+                logger.error(f"   ❌ Error fetching {ticker} @ {timeframe}: {str(e)}")
+
+        # Step 6: Merge data files
+        logger.info(f"\nStep 5: Merging data files...")
+        merge_results = {}
+
+        for (ticker, timeframe), new_df in new_data_map.items():
+            # Find old file path (handle both ticker-first and timeframe-first structures)
+            pool_path_obj = Path(pool_path)
+
+            # Try ticker-first structure first
+            old_file = pool_path_obj / ticker / f"{timeframe}.parquet"
+            if not old_file.exists():
+                # Try timeframe-first structure
+                old_file = pool_path_obj / timeframe / f"{ticker}.parquet"
+
+            if not old_file.exists():
+                logger.error(f"   ❌ Old file not found for {ticker} @ {timeframe}")
+                merge_results[(ticker, timeframe)] = False
+                continue
+
+            try:
+                success = merge_parquet_files(
+                    str(old_file),
+                    new_df,
+                    strategy='append',
+                    backup=backup,
+                    validate=True
+                )
+                merge_results[(ticker, timeframe)] = success
+            except Exception as e:
+                logger.error(f"   ❌ Merge failed for {ticker} @ {timeframe}: {str(e)}")
+                merge_results[(ticker, timeframe)] = False
+
+        # Step 7: Summary
+        successful = sum(1 for v in merge_results.values() if v)
+        failed = len(merge_results) - successful
+
+        print("\n" + "="*70)
+        print("📊 UPDATE SUMMARY")
+        print("="*70)
+        print(f"Total files updated: {len(merge_results)}")
+        print(f"Successful: {successful}")
+        print(f"Failed: {failed}")
+
+        if failed == 0:
+            print(f"\n🎉 Pool update complete!")
+            print(f"   Old range: {pool_metadata.date_range[0]} to {pool_metadata.date_range[1]}")
+            print(f"   New range: {pool_metadata.date_range[0]} to {target_end_date or datetime.now().strftime('%Y-%m-%d')}")
+            print("="*70)
+            return True
+        else:
+            print(f"\n⚠️  Update completed with {failed} failures")
+            print("="*70)
+            return False
+
+    except Exception as e:
+        logger.error(f"❌ Update workflow failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def main(provider=None, timeframe=None, days=None, force_token_refresh=False):
     """
     Main function to run the data fetcher.
     If provider, timeframe, or days are provided, it uses those values; otherwise, it runs interactively.
-    
+
     Args:
         provider: Name of data provider to use (upstox/zerodha)
         timeframe: Comma-separated list of timeframes to process
@@ -323,5 +469,83 @@ def main(provider=None, timeframe=None, days=None, force_token_refresh=False):
         logger.error(f"Error in data fetching: {e}", exc_info=True)
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Data Fetcher - Fetch or update historical market data',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Fetch mode (original behavior)
+  python data_fetcher.py --mode fetch
+  python data_fetcher.py --mode fetch --provider upstox --timeframe 1m,5m --days 7
+
+  # Update mode (incremental update)
+  python data_fetcher.py --mode update --pool-path data/pools/2022-01-01_to_2025-08-31/
+  python data_fetcher.py --mode update --pool-path data/pools/2022-01-01_to_2025-08-31/ --extend-to 2025-10-08
+  python data_fetcher.py --mode update --pool-path data/pools/2022-01-01_to_2025-08-31/ --dry-run
+  python data_fetcher.py --mode update --pool-path data/pools/2022-01-01_to_2025-08-31/ --validate-only
+        """
+    )
+
+    # Mode selection
+    parser.add_argument(
+        '--mode',
+        choices=['fetch', 'update'],
+        default='fetch',
+        help='Operation mode: fetch (new data) or update (incremental)'
+    )
+
+    # Common arguments
+    parser.add_argument('--provider', help='Data provider (upstox/zerodha/binance)')
+    parser.add_argument('--force-token-refresh', action='store_true', help='Force refresh access token')
+
+    # Fetch mode arguments
+    parser.add_argument('--timeframe', help='Comma-separated timeframes (e.g., 1m,5m)')
+    parser.add_argument('--days', type=int, help='Number of days to fetch')
+
+    # Update mode arguments
+    parser.add_argument('--pool-path', help='Path to existing pool to update')
+    parser.add_argument('--extend-to', help='Target end date (YYYY-MM-DD, default: today)')
+    parser.add_argument('--dry-run', action='store_true', help='Preview changes without executing')
+    parser.add_argument('--validate-only', action='store_true', help='Only validate pool integrity')
+    parser.add_argument('--no-backup', action='store_true', help='Skip backup creation')
+    parser.add_argument('--yes', '-y', action='store_true', help='Skip confirmation prompt (for unattended updates)')
+
+    args = parser.parse_args()
+
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
+    if args.mode == 'update':
+        # Update mode workflow
+        if not args.pool_path:
+            print("❌ Error: --pool-path is required for update mode")
+            print("\nExample: python data_fetcher.py --mode update --pool-path data/pools/2022-01-01_to_2025-08-31/")
+            sys.exit(1)
+
+        provider_name = args.provider or 'upstox'
+        success = update_pool_workflow(
+            pool_path=args.pool_path,
+            target_end_date=args.extend_to,
+            provider_name=provider_name,
+            backup=not args.no_backup,
+            dry_run=args.dry_run,
+            validate_only=args.validate_only,
+            yes_flag=args.yes
+        )
+
+        sys.exit(0 if success else 1)
+
+    else:
+        # Fetch mode (original behavior)
+        main(
+            provider=args.provider,
+            timeframe=args.timeframe,
+            days=args.days,
+            force_token_refresh=args.force_token_refresh
+        )
     

@@ -49,14 +49,18 @@ Examples:
   
   # Explicit fetch with parameters
   python unified_runner.py --mode fetch --date-ranges 2024-12-12_to_2025-06-09 --tickers RELIANCE TCS
+  
+  # Incremental pool update
+  python unified_runner.py --mode update --pool-path data/pools/2025-04-01_to_2025-10-08 --dry-run
+  python unified_runner.py --mode update --pool-path data/pools/2025-04-01_to_2025-10-08 --yes
         """
     )
     
     parser.add_argument(
         '--mode',
-        choices=['validate', 'backtest', 'analyze', 'visualize', 'fetch', 'replay'],
+        choices=['validate', 'backtest', 'analyze', 'visualize', 'fetch', 'replay', 'update'],
         required=True,
-        help="Mode to run: 'backtest' (full workflow), 'analyze' (analysis only), 'visualize' (visualization only), 'validate' (data validation), 'fetch' (download market data)"
+        help="Mode to run: 'backtest' (full workflow), 'analyze' (analysis only), 'visualize' (visualization only), 'validate' (data validation), 'fetch' (download market data), 'update' (incremental pool update)"
     )
     
     parser.add_argument(
@@ -151,6 +155,43 @@ Examples:
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
         default='INFO',
         help="Logging level"
+    )
+    
+    # Update mode specific arguments
+    parser.add_argument(
+        '--pool-path',
+        type=str,
+        help="Path to existing data pool directory for update mode (e.g., data/pools/2025-04-01_to_2025-10-08)"
+    )
+    
+    parser.add_argument(
+        '--target-end-date',
+        type=str,
+        help="Target end date for incremental update (default: today, format: YYYY-MM-DD)"
+    )
+    
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help="Preview changes without executing (update mode)"
+    )
+    
+    parser.add_argument(
+        '--validate-only',
+        action='store_true',
+        help="Only validate pool integrity without updating (update mode)"
+    )
+    
+    parser.add_argument(
+        '--yes',
+        action='store_true',
+        help="Skip confirmation prompts (update mode)"
+    )
+    
+    parser.add_argument(
+        '--no-backup',
+        action='store_true',
+        help="Skip backup before merging data (update mode - USE WITH CAUTION)"
     )
     
     return parser
@@ -281,6 +322,20 @@ def load_config_from_args(args) -> BacktestConfig:
     # Validation toggle
     if hasattr(args, 'skip_validation') and args.skip_validation:
         config.validation.enabled = False
+
+    # Update mode specific arguments
+    if hasattr(args, 'pool_path') and args.pool_path:
+        config.pool_path = args.pool_path
+    if hasattr(args, 'target_end_date') and args.target_end_date:
+        config.target_end_date = args.target_end_date
+    if hasattr(args, 'dry_run') and args.dry_run:
+        config.dry_run = True
+    if hasattr(args, 'validate_only') and args.validate_only:
+        config.validate_only = True
+    if hasattr(args, 'yes') and args.yes:
+        config.yes = True
+    if hasattr(args, 'no_backup') and args.no_backup:
+        config.no_backup = True
 
     return config
 
