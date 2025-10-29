@@ -33,7 +33,7 @@ class ExecutionEngine:
     
     def __init__(self, config: BacktestConfig, 
                  risk_manager=None, transaction_costs=None, 
-                 bias_detector=None, options_engine=None):
+                 bias_detector=None):
         self.config = config
         self.logger = logging.getLogger(__name__)
         
@@ -41,7 +41,6 @@ class ExecutionEngine:
         self.risk_manager = risk_manager
         self.transaction_costs = transaction_costs
         self.bias_detector = bias_detector
-        self.options_engine = options_engine
         
     def run_backtest_task(self, args_tuple) -> Dict[str, Any]:
         """
@@ -387,12 +386,7 @@ class ExecutionEngine:
                 risk_metrics = self.risk_manager.calculate_portfolio_risk_metrics(portfolio, returns)
                 metrics.update(risk_metrics)
             
-            # Options calculations if enabled
-            if self.options_engine and self.config.options.enabled:
-                options_metrics = self.options_engine.calculate_options_metrics(
-                    trades, final_df, self.config.options
-                )
-                metrics.update(options_metrics)
+            # Proprietary metrics removed for OSS release
         
         # Update metrics with metadata
         strategy = StrategyFactory.get_strategy(strategy_name)

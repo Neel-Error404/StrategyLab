@@ -148,10 +148,10 @@ class UnifiedBacktesterRunner:
 
         if status == "success":
             self.execution_log['files_created'].append(file_entry)
-            self.logger.info(f"âœ… File created: {file_path} ({file_type})")
+            self.logger.info(f"Ô£à File created: {file_path} ({file_type})")
         else:
             self.execution_log['files_failed'].append(file_entry)
-            self.logger.error(f"âŒ File creation failed: {file_path} ({file_type}) - {error_msg}")
+            self.logger.error(f"ÔØî File creation failed: {file_path} ({file_type}) - {error_msg}")
 
     def _log_task_generation(self, tasks: List, discovery_info: Dict[str, Any] = None):
         """Log task generation with comprehensive details."""
@@ -183,7 +183,7 @@ class UnifiedBacktesterRunner:
 
         self.execution_log['tasks_generated'] = task_info
 
-        self.logger.info(f"ðŸ“‹ Generated {len(tasks)} tasks:")
+        self.logger.info(f"­ƒôï Generated {len(tasks)} tasks:")
         self.logger.info(f"   - Strategies: {len(strategies)} ({list(strategies)})")
         self.logger.info(f"   - Tickers: {len(tickers)} ({list(tickers)})")
         self.logger.info(f"   - Date Ranges: {len(date_ranges)} ({list(date_ranges)})")
@@ -194,7 +194,7 @@ class UnifiedBacktesterRunner:
     def _log_performance_metrics(self, metrics: Dict[str, Any]):
         """Log performance metrics throughout execution."""
         self.execution_log['performance_metrics'].update(metrics)
-        self.logger.info(f"â±ï¸  Performance: {metrics}")
+        self.logger.info(f"ÔÅ¦´©Å  Performance: {metrics}")
 
     def _save_execution_log(self, output_dir: str = None):
         """Save comprehensive execution log to file."""
@@ -235,7 +235,7 @@ class UnifiedBacktesterRunner:
             with open(summary_file, 'w') as f:
                 json.dump(summary, f, indent=2)
 
-            self.logger.info(f"ðŸ“Š Execution logs saved:")
+            self.logger.info(f"­ƒôè Execution logs saved:")
             self.logger.info(f"   - Detailed log: {log_file}")
             self.logger.info(f"   - Summary: {summary_file}")
 
@@ -287,8 +287,8 @@ class UnifiedBacktesterRunner:
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals gracefully."""
         if signum == signal.SIGINT:
-            self.logger.warning("ðŸ›‘ Ctrl+C received - shutting down immediately...")
-            print("\nðŸ›‘ Backtesting interrupted by user")
+            self.logger.warning("­ƒøæ Ctrl+C received - shutting down immediately...")
+            print("\n­ƒøæ Backtesting interrupted by user")
         else:
             self.logger.info(f"Received signal {signum}. Shutting down gracefully...")
         
@@ -431,6 +431,41 @@ class UnifiedBacktesterRunner:
                     raise ValueError('Replay mode requires --manifest (config.replay_manifest)')
                 output_dir = getattr(self.config.output, 'output_dir', 'outputs/parity') if hasattr(self.config, 'output') else 'outputs/parity'
                 results = self._execute_replay_mode(manifest, output_dir)
+            elif mode == 'update':
+                # Incremental pool update mode - calls update_pool_workflow()
+                from src.core.etl.data_fetcher import update_pool_workflow
+                
+                pool_path = getattr(self.config, 'pool_path', None)
+                if not pool_path:
+                    raise ValueError('Update mode requires --pool-path (existing data pool directory)')
+                
+                target_end_date = getattr(self.config, 'target_end_date', None)
+                dry_run = getattr(self.config, 'dry_run', False)
+                validate_only = getattr(self.config, 'validate_only', False)
+                yes_flag = getattr(self.config, 'yes', False)
+                no_backup = getattr(self.config, 'no_backup', False)
+                
+                self.logger.info(f"­ƒöä Starting incremental pool update for: {pool_path}")
+                self.logger.info(f"   Target end date: {target_end_date or 'today'}")
+                self.logger.info(f"   Dry run: {dry_run}")
+                self.logger.info(f"   Validate only: {validate_only}")
+                
+                success = update_pool_workflow(
+                    pool_path=pool_path,
+                    target_end_date=target_end_date,
+                    provider_name='upstox',  # TODO: make configurable
+                    backup=not no_backup,
+                    dry_run=dry_run,
+                    validate_only=validate_only,
+                    yes_flag=yes_flag
+                )
+                
+                results = {
+                    'status': 'success' if success else 'error',
+                    'mode': 'update',
+                    'pool_path': pool_path,
+                    'message': 'Incremental update completed' if success else 'Incremental update failed'
+                }
             else:
                 # Standard modes that require full modular components initialization
                 self._init_modular_components()
@@ -530,147 +565,147 @@ class UnifiedBacktesterRunner:
         }
 
 
-    def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str],
-                     optimization_params: Optional[Dict] = None, use_parallel: bool = True,
-                     skip_visualization: bool = False) -> Dict[str, Any]:
-        """
-        Run comprehensive backtesting with analysis and visualization.
-        This maintains API compatibility with the original monolithic runner.
-
-        Args:
-            dates: List of dates or date ranges
-            tickers: List of ticker symbols
-            strategies: List of strategy names
-            optimization_params: Optional optimization parameters
-            use_parallel: Whether to use parallel processing
-            skip_visualization: Skip visualization generation
-        """
-        self.logger.info(f"Running backtest: {len(dates)} dates, {len(tickers)} tickers, {len(strategies)} strategies")
-
-        # Convert dates to date ranges if needed
-        date_ranges = []
-        for date_str in dates:
-            if '_to_' in date_str:
-                date_ranges.append(date_str)
-            else:
-                date_ranges.append(f"{date_str}_to_{date_str}")
-
-        # Validate data
-        if not self.validate_data(date_ranges, tickers):
-            if getattr(self.config.validation, 'strict_mode', False):
-                raise RuntimeError("Data validation failed in strict mode")
-            else:
-                self.logger.warning("Data validation failed, continuing in non-strict mode")
-
-        # Create tasks for all strategy-ticker combinations
-        tasks = []
-        for date_range in date_ranges:
-            for strategy_name in strategies:
-                for ticker in tickers:
-                    tasks.append((ticker, date_range, strategy_name, optimization_params))
-
-        # Execute workflow based on current mode
-        mode = getattr(self.config, 'mode', 'backtest')
-
-        # Ensure components are initialized for workflow modes
-        if self.workflow_manager is None:
-            self._init_modular_components()
-
-        # Assert components are available (help static analysis)
-        assert self.workflow_manager is not None, "Workflow manager should be initialized"
-
-        if mode == 'backtest':
-            # Full workflow
-            return self.workflow_manager.execute_full_workflow(
-                tasks=tasks,
-                use_parallel=use_parallel,
-                skip_visualization=skip_visualization
-            )
-        elif mode == 'analyze':
-            # Analysis workflow
-            return self.workflow_manager.execute_analysis_workflow(
-                tasks=tasks,
-                use_parallel=use_parallel
-            )
-        elif mode == 'visualize':
-            # Visualization workflow
-            return self.workflow_manager.execute_visualization_workflow(
-                tasks=tasks,
-                use_parallel=use_parallel
-            )
-        elif mode == 'validate':
-            # Validation only
-            return {"validation_passed": self.validate_data(date_ranges, tickers)}
-        else:
-            raise ValueError(f"Unknown mode: {mode}")
-    
-    def validate_data(self, dates: List[str], tickers: List[str]) -> bool:
-        """
-        Comprehensive data validation with bias detection.
-        This maintains API compatibility with the original monolithic runner.
-        """
-        # For simple validation, we can use a lightweight validator without full components
-        if self.task_executor is None:
-            # Simple validation without full components initialization for validate mode
-            from src.runners.components.validator import DataValidator
-            validator = DataValidator()
-            return validator.validate_data(dates, tickers)
+        def run_backtest(self, dates: List[str], tickers: List[str], strategies: List[str], 
+                         optimization_params: Optional[Dict] = None, use_parallel: bool = True,
+                         skip_visualization: bool = False) -> Dict[str, Any]:
+            """
+            Run comprehensive backtesting with analysis and visualization.
+            This maintains API compatibility with the original monolithic runner.
         
-        return self.task_executor.data_validator.validate_data(dates, tickers)
-    
-    def run_backtest_task(self, args_tuple) -> Dict[str, Any]:
-        """
-        Execute individual backtest task.
-        This maintains API compatibility with the original monolithic runner.
-        """
-        # Ensure components are initialized for backtest tasks
-        if self.task_executor is None:
-            self._init_modular_components()
+            Args:
+                dates: List of dates or date ranges
+                tickers: List of ticker symbols
+                strategies: List of strategy names
+                optimization_params: Optional optimization parameters
+                use_parallel: Whether to use parallel processing
+                skip_visualization: Skip visualization generation
+            """
+            self.logger.info(f"Running backtest: {len(dates)} dates, {len(tickers)} tickers, {len(strategies)} strategies")
         
-        # Assert components are available (help static analysis)
-        assert self.task_executor is not None, "Task executor should be initialized"
+            # Convert dates to date ranges if needed
+            date_ranges = []
+            for date_str in dates:
+                if '_to_' in date_str:
+                    date_ranges.append(date_str)
+                else:
+                    date_ranges.append(f"{date_str}_to_{date_str}")
+        
+            # Validate data 
+            if not self.validate_data(date_ranges, tickers):
+                if getattr(self.config.validation, 'strict_mode', False):
+                    raise RuntimeError("Data validation failed in strict mode")
+                else:
+                    self.logger.warning("Data validation failed, continuing in non-strict mode")
+        
+            # Create tasks for all strategy-ticker combinations
+            tasks = []
+            for date_range in date_ranges:
+                for strategy_name in strategies:
+                    for ticker in tickers:
+                        tasks.append((ticker, date_range, strategy_name, optimization_params))
+        
+            # Execute workflow based on current mode
+            mode = getattr(self.config, 'mode', 'backtest')
+        
+            # Ensure components are initialized for workflow modes
+            if self.workflow_manager is None:
+                self._init_modular_components()
+        
+            # Assert components are available (help static analysis)
+            assert self.workflow_manager is not None, "Workflow manager should be initialized"
+        
+            if mode == 'backtest':
+                # Full workflow
+                return self.workflow_manager.execute_full_workflow(
+                    tasks=tasks, 
+                    use_parallel=use_parallel, 
+                    skip_visualization=skip_visualization
+                )
+            elif mode == 'analyze':
+                # Analysis workflow
+                return self.workflow_manager.execute_analysis_workflow(
+                    tasks=tasks,
+                    use_parallel=use_parallel
+                )
+            elif mode == 'visualize':
+                # Visualization workflow  
+                return self.workflow_manager.execute_visualization_workflow(
+                    tasks=tasks,
+                    use_parallel=use_parallel
+                )
+            elif mode == 'validate':
+                # Validation only
+                return {"validation_passed": self.validate_data(date_ranges, tickers)}
+            else:
+                raise ValueError(f"Unknown mode: {mode}")
+    
+        def validate_data(self, dates: List[str], tickers: List[str]) -> bool:
+            """
+            Comprehensive data validation with bias detection.
+            This maintains API compatibility with the original monolithic runner.
+            """
+            # For simple validation, we can use a lightweight validator without full components
+            if self.task_executor is None:
+                # Simple validation without full components initialization for validate mode
+                from src.runners.components.validator import DataValidator
+                validator = DataValidator()
+                return validator.validate_data(dates, tickers)
+        
+            return self.task_executor.data_validator.validate_data(dates, tickers)
+    
+        def run_backtest_task(self, args_tuple) -> Dict[str, Any]:
+            """
+            Execute individual backtest task.
+            This maintains API compatibility with the original monolithic runner.
+            """
+            # Ensure components are initialized for backtest tasks
+            if self.task_executor is None:
+                self._init_modular_components()
+        
+            # Assert components are available (help static analysis)
+            assert self.task_executor is not None, "Task executor should be initialized"
             
-        return self.task_executor.run_backtest_task(args_tuple)
+            return self.task_executor.run_backtest_task(args_tuple)
 
 
-def create_config_from_args() -> BacktestConfig:
-    """Create configuration from command line arguments."""
-    # Use CLI handler to parse arguments and create config
-    cli_handler = CLIHandler()
-    args = cli_handler.parse_arguments()
+    def create_config_from_args() -> BacktestConfig:
+        """Create configuration from command line arguments."""
+        # Use CLI handler to parse arguments and create config
+        cli_handler = CLIHandler()
+        args = cli_handler.parse_arguments()
     
-    # Validate arguments
-    if not cli_handler.validate_arguments(args):
-        sys.exit(1)
-    
-    return cli_handler.load_config(args)
-
-
-def main():
-    """Main entry point for the unified backtester."""
-    try:
-        # Parse command line arguments and create config
-        config = create_config_from_args()
-        
-        # Create and run the unified backtester
-        runner = UnifiedBacktesterRunner(config)
-        results = runner.run()
-        
-        # Exit with appropriate code
-        if results['status'] == 'success':
-            sys.exit(0)
-        else:
+        # Validate arguments
+        if not cli_handler.validate_arguments(args):
             sys.exit(1)
     
-    except KeyboardInterrupt:
-        print("\nðŸ›‘ Backtesting interrupted by user (Ctrl+C)")
-        sys.exit(1)
+        return cli_handler.load_config(args)
+
+
+    def main():
+        """Main entry point for the unified backtester."""
+        try:
+            # Parse command line arguments and create config
+            config = create_config_from_args()
+        
+            # Create and run the unified backtester
+            runner = UnifiedBacktesterRunner(config)
+            results = runner.run()
+        
+            # Exit with appropriate code
+            if results['status'] == 'success':
+                sys.exit(0)
+            else:
+                sys.exit(1)
+    
+        except KeyboardInterrupt:
+            print("\n­ƒøæ Backtesting interrupted by user (Ctrl+C)")
+            sys.exit(1)
             
-    except Exception as e:
-        print(f"Failed to start unified backtester: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        sys.exit(1)
+        except Exception as e:
+            print(f"Failed to start unified backtester: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
+            sys.exit(1)
 
 
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()

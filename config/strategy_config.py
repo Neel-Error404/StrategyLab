@@ -173,8 +173,6 @@ class BacktestConfig:
                 }
             },
             
-            # Options Configuration
-            "options": {
                 "enabled": False,
                 "use_synthetic": True,
                 "pricing_model": "black_scholes",
@@ -310,12 +308,8 @@ class BacktestConfig:
         if self.get('costs.commission.rate') < 0:
             errors.append("Commission rate cannot be negative")
         
-        # Validate options parameters
-        if self.get('options.enabled'):
-            if self.get('options.risk_free_rate') < 0:
                 errors.append("Risk-free rate cannot be negative")
             
-            if self.get('options.volatility.min_volatility') <= 0:
                 errors.append("Minimum volatility must be positive")
         
         return len(errors) == 0, errors

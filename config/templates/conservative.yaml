@@ -45,54 +45,6 @@ transaction:
   market_impact_factor: 0.1
   enable_market_impact: true
 
-options:
-  enabled: false
-  synthetic_enabled: false
-  volatility_model: "black_scholes"
-  interest_rate: 0.05
-  dividend_yield: 0.0
-  days_to_expiry: 30
-  strike_range: 0.1
-  greeks_calculation: false
-
-validation:
-  enabled: true
-  lookahead_bias_check: true
-  survivorship_bias_check: true
-  data_quality_check: true
-  min_data_points: 100
-  max_missing_data_pct: 0.03  # 3% max missing data
-  price_outlier_threshold: 2.5  # 2.5 standard deviations
-
-optimization:
-  enabled: false
-  method: "grid_search"
-  max_iterations: 50
-  cv_folds: 3
-  test_size: 0.2
-  random_state: 42
-
-output:
-  save_trades: true
-  save_metrics: true
-  save_plots: true
-  save_base_data: true
-  output_dir: "outputs"
-  trade_file_format: "csv"
-  base_file_format: "csv"
-  metrics_file_format: "json"
-  plot_format: "png"
-
-logging:
-  level: "INFO"
-  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-  file_enabled: true
-  console_enabled: true
-  log_dir: "logs"
-  max_file_size: "10MB"
-  backup_count: 5
-
-# Infrastructure configuration (absorbed from config.py)
 broker:
   default_provider: "upstox"
   available_providers: ["upstox", "zerodha", "binance"]
@@ -119,3 +71,4 @@ execution:
 # Global settings
 base_dir: "."
 run_id: ""  # Will be auto-generated
+
