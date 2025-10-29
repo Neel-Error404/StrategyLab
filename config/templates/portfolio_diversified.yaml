@@ -53,40 +53,7 @@ transaction:
   market_impact_factor: 0.1
   enable_market_impact: true
 
-options:
-  enabled: false
-
-validation:
-  enabled: true
-  lookahead_bias_check: true
-  survivorship_bias_check: true
-  data_quality_check: true
-  min_data_points: 50
-  max_missing_data_pct: 0.05
-  price_outlier_threshold: 3.0
-
-optimization:
-  enabled: false
-
-output:
-  save_trades: true
-  save_metrics: true
-  save_plots: true
-  save_base_data: true
-  output_dir: "outputs"
-  trade_file_format: "csv"
-  base_file_format: "csv"
-  metrics_file_format: "json"
-  plot_format: "png"
-
-logging:
-  level: "INFO"
-  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-  file_enabled: true
-  console_enabled: true
-  log_dir: "logs"
-
-# Portfolio execution settings
 execution:
   parallel_processing: true
   max_workers: 3
+

@@ -11,7 +11,6 @@ from config.unified_config import (
     BacktestConfig,
     get_conservative_config,
     get_aggressive_config,
-    get_options_config
 )
 from .date_utils import parse_dates
 
@@ -43,10 +42,6 @@ def load_config_from_args(args) -> BacktestConfig:
             config = get_conservative_config()
         elif args.template == 'aggressive':
             config = get_aggressive_config()
-        elif args.template == 'options':
-            config = get_options_config()
-        else:
-            raise ValueError(f"Unknown template: {args.template}")
     else:
         # Use default conservative configuration
         config = get_conservative_config()

@@ -28,7 +28,6 @@ from src.strategies.register_strategies import register_all_strategies
 from src.core.validation.bias_detector import BiasDetector
 from src.core.costs.transaction_models import AdvancedTransactionCosts
 from src.core.risk.risk_manager import RiskManager
-from src.core.options.options_engine import OptionsBacktester
 
 # Import modular validation component
 from src.runners.components.validator import DataValidator
@@ -56,8 +55,7 @@ class TaskExecutor:
         self.risk_manager = None
         self.transaction_costs = None
         self.bias_detector = None
-        self.options_engine = None
-          # Initialize modular data validator
+        # Initialize modular data validator
         self.data_validator = DataValidator(self.logger)
         
         self._initialize_components()
@@ -89,10 +87,6 @@ class TaskExecutor:
                 self.bias_detector = BiasDetector()
                 self.logger.info("Bias detector initialized")
                 
-            # Initialize options engine
-            if self.config.options.enabled:
-                self.options_engine = OptionsBacktester()
-                self.logger.info("Options engine initialized")
                 
         except Exception as e:
             self.logger.error(f"Error initializing task executor components: {e}")

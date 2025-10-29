@@ -32,9 +32,12 @@ Examples:
     
     parser.add_argument(
         '--mode',
-        choices=['validate', 'backtest', 'analyze', 'visualize', 'optimize'],
+        choices=['validate', 'backtest', 'analyze', 'visualize', 'fetch', 'replay', 'update', 'optimize'],
         required=True,
-        help="Mode to run: 'backtest' (full workflow), 'analyze' (analysis only), 'visualize' (visualization only)"
+        help="Mode to run: 'backtest' (full workflow), 'analyze' (analysis only), "
+             "'visualize' (visualization only), 'validate' (data checks), "
+             "'fetch' (download market data), 'replay' (manifest replay), "
+             "'update' (incremental pool maintenance), or 'optimize' (parameter sweeps)."
     )
     
     parser.add_argument(
@@ -45,7 +48,7 @@ Examples:
     
     parser.add_argument(
         '--template',
-        choices=['conservative', 'aggressive', 'options'],
+        choices=['conservative', 'aggressive'],
         help="Use a predefined configuration template"
     )
     
@@ -78,6 +81,38 @@ Examples:
         '--parallel',
         action='store_true',
         help="Enable parallel processing"
+    )
+
+    # Update mode arguments
+    parser.add_argument(
+        '--pool-path',
+        type=str,
+        help="Path to existing data pool directory when using --mode update."
+    )
+    parser.add_argument(
+        '--extend-to',
+        type=str,
+        help="Target end date for update mode (YYYY-MM-DD, defaults to today)."
+    )
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help="Preview changes without modifying any files in update mode."
+    )
+    parser.add_argument(
+        '--validate-only',
+        action='store_true',
+        help="Only validate pool integrity without writing new data in update mode."
+    )
+    parser.add_argument(
+        '--yes',
+        action='store_true',
+        help="Bypass confirmation prompts in update mode."
+    )
+    parser.add_argument(
+        '--no-backup',
+        action='store_true',
+        help="Skip backup creation before merges (update mode only, use with caution)."
     )
     
     parser.add_argument(

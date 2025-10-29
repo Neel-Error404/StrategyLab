@@ -1,42 +1,41 @@
-# 🚀 Strategy Lab - Trading Backtester
+﻿# StrategyLab Backtester (Equities V2)
 
-A **production-ready, modular backtesting system** for algorithmic trading strategies with real broker integration, comprehensive analysis, and AI-assisted configuration.
+A production-ready, modular backtesting system for equities strategies with broker integration, incremental data management, and parity/precision validation tooling.
 
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Brokers](https://img.shields.io/badge/Brokers-Zerodha%20%7C%20Upstox%20%7C%20Binance-orange.svg)](docs/BROKER_SETUP.md)
 
 ---
 
-## ✨ **Quick Start with AI Assistant**
+## Quick Start (AI Assistant Prompt)
 
-**🤖 Use this prompt with any AI model (ChatGPT, Claude, Gemini) for personalized setup assistance:**
+Use the prompt below with your preferred LLM for guided setup:
 
 ```
 I'm setting up an algorithmic trading backtester. Please help me configure it based on my requirements.
 
 SYSTEM INFO:
-- Repository: https://github.com/yourusername/StrategyLab  (→ Fork before use)
-- Language: Python 3.9+
+- Repository: https://github.com/yourusername/StrategyLab (Fork before use)
+- Language: Python 3.10+
 - Supported Brokers: Zerodha Kite API, Upstox API, Binance API
 - Architecture: Modular, production-ready with real-time data
 
 MY REQUIREMENTS:
-[Describe your trading style, risk tolerance, preferred broker, strategies of interest]
+[Describe trading style, risk tolerance, preferred broker, strategies of interest]
 
 AVAILABLE DOCUMENTATION:
-- Setup Guide: docs/SETUP_GUIDE.md (Installation, dependencies, environment)
+- Setup Guide: docs/SETUP_GUIDE.md (installation, dependencies, environment)
 - Broker Setup: docs/BROKER_SETUP.md (API keys, authentication, data fetching)
-- Strategy Guide: docs/STRATEGY_GUIDE.md (Custom strategy development)
-- Template Guide: docs/TEMPLATE_GUIDE.md (Risk templates, YAML configuration)
-- CLI Reference: docs/CLI_REFERENCE.md (All command-line options)
-- Output Guide: docs/OUTPUT_GUIDE.md (Understanding results, visualizations)
+- Strategy Guide: docs/STRATEGY_GUIDE.md (custom strategy development)
+- Template Guide: docs/TEMPLATE_GUIDE.md (risk templates, YAML configuration)
+- CLI Reference: docs/CLI_REFERENCE.md (all command-line options)
+- Output Guide: docs/OUTPUT_GUIDE.md (understanding results, visualisations)
 
 CONFIGURATION TEMPLATES:
 - minimal.yaml: Ultra-safe learning (5% max position)
 - conservative.yaml: Low-risk trading (15% max position)
 - aggressive.yaml: High-risk trading (20% max position)
-- options.yaml: Options trading strategies
 - portfolio_diversified.yaml: Multi-ticker portfolio
 
 Please provide step-by-step setup instructions, recommend appropriate templates, and suggest CLI commands based on my requirements.
@@ -44,236 +43,101 @@ Please provide step-by-step setup instructions, recommend appropriate templates,
 
 ---
 
-## 🆕 **Recent Updates & Improvements**
+## Recent Updates (V2 Equities Release)
 
-### **System Optimization (Latest)**
-- **Cleaned Architecture**: Removed redundant files and streamlined codebase
-- **Dual Configuration System**: 
-  - `config/config.py` - Broker connections and data provider settings
-  - `config/unified_config.py` - Strategy parameters and risk management
-- **Enhanced Data Providers**: Added Binance support for cryptocurrency data
-- **Improved Documentation**: Comprehensive guides and troubleshooting
-
-### **Configuration Architecture**
-The system uses a **dual configuration approach** for optimal separation of concerns:
-
-```
-📋 config/config.py          # Broker API credentials, data connections
-📋 config/unified_config.py   # Trading strategies, risk parameters
-📁 config/templates/          # Pre-built risk management templates
-```
-
-This design allows independent management of:
-- **Infrastructure** (brokers, authentication, data sources)
-- **Trading Logic** (strategies, risk rules, portfolio settings)
+- Incremental parquet updates via `--mode update`, avoiding full re-fetches.
+- Parity and precision validation modules align live vs. backtest signals.
+- UTF-8 sanitised codebase with proprietary options stack removed for OSS release.
+- Environment-aware YAML config loader with `.env` support.
 
 ---
 
-## 🎯 **Core Features**
-
-### **📊 Trading System**
-- **Real Broker Integration**: Zerodha Kite, Upstox, & Binance APIs
-- **Multi-Timeframe Support**: 1min to monthly data
-- **Live Data Fetching**: Real-time and historical data
-- **Strategy Framework**: Modular, extensible strategy system
-
-### **🛡️ Risk Management**
-- **Portfolio-Level Controls**: Position sizing, drawdown limits
-- **Trade-Level Protection**: Stop-loss, take-profit, trailing stops
-- **Risk Templates**: Pre-configured risk profiles
-- **Real-Time Monitoring**: Live risk assessment
-
-### **📈 Analysis & Visualization**
-- **Comprehensive Reports**: Performance metrics, trade analysis
-- **Interactive Charts**: Price action, signals, portfolio performance
-- **Statistical Analysis**: Sharpe ratio, maximum drawdown, win rate
-- **Export Capabilities**: CSV, JSON, PNG formats
-
-### **⚡ Performance**
-- **Parallel Processing**: Multi-core execution
-- **Efficient Data Handling**: Optimized for large datasets
-- **Caching System**: Intelligent data caching
-- **Modular Architecture**: Clean, maintainable codebase
-
----
-
-## 🚀 **30-Second Setup**
+## Installation
 
 ```bash
-# 1. Clone and Install
-git clone <repository-url>
-cd backtester
+python -m venv .venv
+.venv\Scripts\activate            # Windows
+# source .venv/bin/activate        # macOS/Linux
 pip install -r requirements.txt
-
-# 2. Run with sample data
-python src/runners/unified_runner.py --mode backtest --date-ranges 2025-06-06_to_2025-06-07 --tickers RELIANCE
-
-# 3. Set up broker (optional, for live data)
-# See docs/BROKER_SETUP.md for API key setup
 ```
 
----
-
-## 📚 **Documentation Guide**
-
-### **🎯 For Different User Types**
-
-| **User Type** | **Start Here** | **Key Documents** |
-|---------------|----------------|-------------------|
-| **First-time user** | `docs/SETUP_GUIDE.md` | Setup → Broker → CLI Reference |
-| **Strategy developer** | `docs/STRATEGY_GUIDE.md` | Strategy → Template → Output |
-| **Risk manager** | `docs/TEMPLATE_GUIDE.md` | Template → CLI Reference → Output |
-| **Data analyst** | `docs/OUTPUT_GUIDE.md` | Output → CLI Reference → Setup |
-
-### **📋 Essential Documentation**
-
-- **📖 [Setup Guide](docs/SETUP_GUIDE.md)**: Installation, dependencies, environment setup
-- **🔑 [Broker Setup](docs/BROKER_SETUP.md)**: API keys, authentication, data fetching
-- **⚙️ [CLI Reference](docs/CLI_REFERENCE.md)**: Complete command-line interface guide
-- **🎯 [Strategy Guide](docs/STRATEGY_GUIDE.md)**: Custom strategy development
-- **📊 [Template Guide](docs/TEMPLATE_GUIDE.md)**: Risk templates and YAML configuration
-- **📈 [Output Guide](docs/OUTPUT_GUIDE.md)**: Understanding results and visualizations
-- **🔧 [Troubleshooting](docs/TROUBLESHOOTING.md)**: Common issues and solutions
+Optional: copy `.env.example` to `.env` (create the file if it does not exist) and populate broker credentials.
 
 ---
 
-## 🎮 **CLI Examples**
+## Command Overview
+
+| Mode | Purpose | Example |
+| --- | --- | --- |
+| `validate` | Run data and bias validation | `python src/runners/unified_runner.py --mode validate --dates 2024-01-03` |
+| `backtest` | Full workflow (backtest + analysis + viz) | `python src/runners/unified_runner.py --mode backtest --date-ranges 2024-01-01_to_2024-01-15 --tickers RELIANCE TCS` |
+| `analyze` | Backtest + analysis only | `python src/runners/unified_runner.py --mode analyze --date-ranges 2024-01-01_to_2024-01-15` |
+| `visualize` | Backtest + visualisation only | `python src/runners/unified_runner.py --mode visualize --date-ranges 2024-01-01_to_2024-01-15` |
+| `fetch` | Pull fresh market data | `python src/runners/unified_runner.py --mode fetch --date-ranges 2024-01-01_to_2024-01-05 --tickers RELIANCE` |
+| `update` | Incrementally extend an existing pool | `python src/runners/unified_runner.py --mode update --pool-path data/pools/2024-01-01_to_2024-06-30 --dry-run` |
+| `replay` | Run stored manifest through replay engine | `python src/runners/unified_runner.py --mode replay --manifest manifest.json` |
+| `optimize` | Strategy parameter search (WIP) | `python src/runners/unified_runner.py --mode optimize --strategy mse` |
+
+The `update` mode shares logic with `src/core/etl/data_fetcher.py`:
 
 ```bash
-# ⚡ MINIMAL USAGE - Auto-discover tickers from data pools
-python src/runners/unified_runner.py --mode backtest --date-ranges 2024-01-01_to_2024-12-31
-python src/runners/unified_runner.py --mode analyze --date-ranges 2024-01-01_to_2024-12-31
-python src/runners/unified_runner.py --mode visualize --date-ranges 2024-01-01_to_2024-12-31
-python src/runners/unified_runner.py --mode validate --date-ranges 2024-01-01_to_2024-12-31
+python src/core/etl/data_fetcher.py --mode update --pool-path data/pools/2024-01-01_to_2024-06-30 --extend-to 2024-08-31 --yes
+```
 
-# 🎯 INTERACTIVE FETCH - No arguments needed
-python src/runners/unified_runner.py --mode fetch
+Key flags: `--dry-run`, `--validate-only`, `--no-backup` (use with caution).
 
-# 🎯 SPECIFIC TICKERS - Override auto-discovery
-python src/runners/unified_runner.py --mode backtest --date-ranges 2024-01-01_to_2024-12-31 --tickers RELIANCE TCS
+---
 
-# 🚀 FULL CONTROL - All advanced features available
-python src/runners/unified_runner.py \
-  --mode backtest \
-  --template aggressive \
-  --date-ranges 2024-01-01_to_2024-12-31 \
-  --tickers RELIANCE TCS INFY \
-  --strategies sma_crossover bollinger_bands \
-  --parallel \
-  --max-workers 4
+## Validation Tooling
 
-# 📊 EXPLICIT FETCH - With specific parameters
-python src/runners/unified_runner.py \
-  --mode fetch \
-  --date-ranges 2024-01-01_to_2024-01-31 \
-  --tickers RELIANCE TCS
+| Module | Description |
+| --- | --- |
+| `src/core/validation/config_parity_validator.py` | Ensures critical config parity between live and backtest |
+| `src/core/validation/signal_parity_validator.py` | Compares signal streams and generates parity reports |
+| `src/core/validation/precision_validator.py` | Enforces price/quantity precision and PnL rounding |
 
-# 🔧 CUSTOM CONFIGURATION
-python src/runners/unified_runner.py \
-  --mode backtest \
-  --config my_custom_config.yaml \
-  --date-ranges 2024-01-01_to_2024-12-31 \
-  --parallel --max-workers 6 --skip-validation
+Run targeted suites:
+
+```bash
+.venv\Scripts\python.exe -m pytest tests/test_backtest_live_parity.py tests/test_precision_validation.py -q
 ```
 
 ---
 
-## Utilities
+## Data Pools & Incremental Updates
 
-- `src/scripts/compare_broker_vs_strategy.py`
-  - Compares broker order CSVs to strategy trades from a run directory with entry/exit tolerances; writes audit JSONs.
-  - Example:
-    - `python -m src.scripts.compare_broker_vs_strategy --orders broker_orders.csv --run-dir outputs/<RUN>/<STRAT>/<RANGE> --start 2025-08-26 --end 2025-09-04 --entry-tol 20 --exit-tol 20 --exit-enforce true`
+1. Inspect pool: `python src/core/etl/pool_inspector.py --pool-path data/pools/2024-01-01_to_2024-06-30`
+2. Calculate gaps: `python src/core/etl/gap_calculator.py --pool-path ...`
+3. Fetch/update with `data_fetcher.py` or runner `--mode update`.
 
-- `src/scripts/monitor_progress.py`
-  - Monitors a `historical_data/progress.json` file for long-running data jobs; prints live progress.
+Small sample metadata lives in `data/indian_equities_master.csv`. Large historical data is intentionally excluded from the repository.
 
-## 🏗️ **Project Structure** (Optimized & Clean)
+---
 
-```
-backtester/
-├── 📁 src/                     # Core modular system
-│   ├── strategies/             # Trading strategies (MSE, SMA, Bollinger, etc.)
-│   ├── core/                   # Analysis, risk, ETL, data processing
-│   │   ├── etl/                # Data fetching and provider management
-│   │   ├── risk/               # Risk management engine
-│   │   ├── analysis/           # Performance analysis and visualization
-│   │   └── output/             # Three-file output system
-│   └── runners/                # Execution engines and CLI handlers
-├── 📁 config/                  # Dual configuration system
-│   ├── config.py               # Broker connections & data providers
-│   ├── unified_config.py       # Strategy & risk parameters
-│   ├── templates/              # Pre-built risk templates
-│   └── access_tokens/          # Broker API credentials (user-created)
-├── 📁 docs/                    # Comprehensive documentation
-├── 📁 data/pools/              # Market data storage (auto-created)
-├── 📁 outputs/                 # Results and reports (auto-created)
-├── 📋 CLAUDE.md                # Claude Code integration guide
-└── 📋 requirements.txt         # Python dependencies
+## Configuration Loader
+
+`config/config_loader.py` loads YAML files with environment substitution:
+
+```python
+from config.config_loader import ConfigLoader
+config = ConfigLoader.load_yaml('config/templates/conservative.yaml')
 ```
 
-### **Key Architecture Improvements**
-- **Clean Modular Design**: Separated ETL, risk, analysis, and output systems
-- **Dual Configuration**: Infrastructure vs trading logic separation
-- **Specialized Data Pullers**: Different tools for different data requirements
-- **Removed Legacy Files**: Cleaned ~14 empty/redundant files for optimal maintainability
+Supported syntax: `${UPSTOX_CLIENT_ID}` or `${UPSTOX_CLIENT_ID:demo}` (default fallback).
 
 ---
 
-## 🤝 **Getting Help**
+## Release Checklist (V2)
 
-### **AI-Powered Assistance**
-Use the prompt at the top with any AI model for personalized help.
+- [x] Options infrastructure and large datasets removed
+- [x] Incremental parquet update workflow documented
+- [x] Parity/precision pytest suites green (`59 passed`)
+- [x] README/notes updated for equities-only release
 
-### **Documentation Flow**
-1. **Setup Issues**: `docs/SETUP_GUIDE.md` → `docs/TROUBLESHOOTING.md`
-2. **Broker Problems**: `docs/BROKER_SETUP.md` → AI prompt with broker details
-3. **Strategy Questions**: `docs/STRATEGY_GUIDE.md` → AI prompt with strategy requirements
-4. **Configuration Help**: `docs/TEMPLATE_GUIDE.md` → AI prompt with risk preferences
-
-### **Common Use Cases**
-- **"I want to test a strategy"**: Use `docs/CLI_REFERENCE.md` + AI prompt
-- **"I need to connect my broker"**: Use `docs/BROKER_SETUP.md`
-- **"I don't understand the results"**: Use `docs/OUTPUT_GUIDE.md`
-- **"I want custom risk settings"**: Use `docs/TEMPLATE_GUIDE.md` + AI prompt
+See `docs/strategylab_v2_phase0_audit.md` for the full decision history.
 
 ---
 
-## 🎯 **Templates Overview**
+## License
 
-| Template | Risk Level | Max Position | Use Case |
-|----------|------------|-------------|----------|
-| `minimal` | Ultra-safe | 5% | Learning, testing |
-| `conservative` | Low | 15% | Stable income |
-| `aggressive` | High | 20% | Growth focused |
-| `options` | Moderate | 15% | Options strategies |
-| `portfolio_diversified` | Balanced | 15% | Multi-asset |
-
----
-
-## 🔧 **Production Features**
-
-- **🔄 Live Data Integration**: Real-time market data
-- **🛡️ Risk Management**: Multi-level protection
-- **📊 Performance Analytics**: Comprehensive metrics
-- **⚡ Parallel Processing**: High-performance execution
-- **💾 Data Persistence**: Reliable storage
-- **📈 Visualization**: Professional charts
-- **🔍 Monitoring**: System health checks
-
----
-
-## 📄 **License**
-
-StrategyLab is released under the MIT License – see the [LICENSE](./LICENSE) file for details.
-
----
-
-## 🚀 **Ready to Start?**
-
-1. **🔥 Try the 5-minute setup above**
-2. **🤖 Use the AI prompt for personalized help**
-3. **📚 Browse the documentation**
-4. **💬 Join our community for support**
-
-**Happy Trading! 📈**
+Released under the MIT License. See [LICENSE](LICENSE) for details.

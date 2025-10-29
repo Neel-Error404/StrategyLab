@@ -1,4 +1,4 @@
-# config/unified_config.py
+﻿# config/unified_config.py
 """
 Unified Configuration System for Backtester
 
@@ -74,18 +74,6 @@ class TransactionConfig:
     enable_market_impact: bool = True
     
 @dataclass
-class OptionsConfig:
-    """Configuration for options trading."""
-    enabled: bool = False
-    synthetic_enabled: bool = True
-    volatility_model: str = "black_scholes"  # black_scholes, heston
-    interest_rate: float = 0.05
-    dividend_yield: float = 0.0
-    days_to_expiry: int = 30
-    strike_range: float = 0.1  # 10% around current price
-    greeks_calculation: bool = True
-    
-@dataclass
 class ValidationConfig:
     """Configuration for data validation and bias detection."""
     enabled: bool = True
@@ -150,46 +138,118 @@ class BrokerConfig:
     default_provider: str = "upstox"
     available_providers: List[str] = field(default_factory=lambda: ["upstox", "zerodha", "binance"])
     
-    # Broker API Configuration
-    upstox: Dict[str, str] = field(default_factory=lambda: {
-        "api_url": "https://api.upstox.com/v2",
-        "auth_url": "https://api.upstox.com/v2/login/authorization/dialog",
-        "token_url": "https://api.upstox.com/v2/login/authorization/token",
-        "client_id": "",  # Set via environment
-        "client_secret": "",  # Set via environment
-        "redirect_uri": "http://localhost:8080/callback"
+    # Upstox Configuration (full V3 API support)
+    upstox_client_id: str = ""  # Set via environment: ${UPSTOX_CLIENT_ID}
+    upstox_client_secret: str = ""  # Set via environment: ${UPSTOX_CLIENT_SECRET}
+    upstox_redirect_uri: str = "https://127.0.0.1:5000/"
+    upstox_auth_url: str = "https://api.upstox.com/v2/login/authorization/dialog"
+    upstox_token_url: str = "https://api.upstox.com/v2/login/authorization/token"
+    upstox_historical_api_base: str = "https://api.upstox.com/v3/historical-candle"
+    upstox_expiry_api_url: str = "https://api.upstox.com/v2/expired-instruments/expiries"
+    upstox_api_version: str = "v3"
+    upstox_max_days_per_request: int = 200
+    upstox_max_retries: int = 3
+    upstox_retry_delay: int = 5
+    upstox_request_timeout: int = 30
+    
+    # Upstox V3 API timeframe mappings (unit + interval format)
+    upstox_timeframe_mappings: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
+        '1m': {'unit': 'minutes', 'interval': '1'},
+        '2m': {'unit': 'minutes', 'interval': '2'},
+        '3m': {'unit': 'minutes', 'interval': '3'},
+        '5m': {'unit': 'minutes', 'interval': '5'},
+        '10m': {'unit': 'minutes', 'interval': '10'},
+        '15m': {'unit': 'minutes', 'interval': '15'},
+        '30m': {'unit': 'minutes', 'interval': '30'},
+        '1h': {'unit': 'hours', 'interval': '1'},
+        '2h': {'unit': 'hours', 'interval': '2'},
+        'day': {'unit': 'days', 'interval': '1'},
+        'week': {'unit': 'weeks', 'interval': '1'},
+        'month': {'unit': 'months', 'interval': '1'},
+        '1minute': {'unit': 'minutes', 'interval': '1'},  # Legacy
+        '30minute': {'unit': 'minutes', 'interval': '30'}  # Legacy
     })
     
-    zerodha: Dict[str, str] = field(default_factory=lambda: {
-        "api_key": "",  # Set via environment
-        "api_secret": "",  # Set via environment
-        "request_token": "",
-        "access_token": ""
+    upstox_supported_timeframes: List[str] = field(default_factory=lambda: [
+        '1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', 'day', 'week', 'month'
+    ])
+    
+    # Zerodha Configuration
+    zerodha_api_key: str = ""  # Set via environment: ${ZERODHA_API_KEY}
+    zerodha_api_secret: str = ""  # Set via environment: ${ZERODHA_API_SECRET}
+    zerodha_redirect_uri: str = "https://127.0.0.1:5000/"
+    zerodha_segment: str = "NSE"
+    zerodha_max_retries: int = 3
+    zerodha_retry_delay: int = 5
+    zerodha_request_timeout: int = 30
+    
+    zerodha_supported_timeframes: List[str] = field(default_factory=lambda: [
+        'minute', '3minute', '5minute', '10minute', '15minute', '30minute', 'hour', 'day', 'week', 'month'
+    ])
+    
+    zerodha_historical_limits: Dict[str, Dict[str, int]] = field(default_factory=lambda: {
+        'minute': {'days': 60, 'candles_per_request': 60},
+        '3minute': {'days': 100, 'candles_per_request': 100},
+        '5minute': {'days': 100, 'candles_per_request': 100},
+        '15minute': {'days': 200, 'candles_per_request': 200},
+        '30minute': {'days': 200, 'candles_per_request': 200},
+        'hour': {'days': 400, 'candles_per_request': 400},
+        'day': {'days': 2000, 'candles_per_request': 2000},
+        'week': {'days': 2000, 'candles_per_request': 2000},
+        'month': {'days': 2000, 'candles_per_request': 2000}
     })
     
-    binance: Dict[str, str] = field(default_factory=lambda: {
-        "api_key": "",  # Public data doesn't require auth
-        "api_secret": "",
-        "testnet": True
-    })
+    # Binance Configuration
+    binance_api_key: str = ""  # Public data doesn't require auth
+    binance_api_secret: str = ""
+    binance_testnet: bool = True
     
-    # Timeframe mappings for different providers
-    timeframe_mapping: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
-        "upstox": {"1m": "1minute", "5m": "5minute", "15m": "15minute", "1h": "60minute", "1d": "day"},
-        "zerodha": {"1m": "minute", "5m": "5minute", "15m": "15minute", "1h": "60minute", "1d": "day"},
-        "binance": {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "1d": "1d"}
-    })
+    binance_supported_timeframes: List[str] = field(default_factory=lambda: [
+        '1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1M'
+    ])
     
-    # Token management
+    # Token Management (unified across providers)
     token_dir: str = "config/access_tokens"
     token_refresh_enabled: bool = True
     auto_refresh_minutes: int = 60
+    
+    # Standard timeframe mappings for cross-provider compatibility
+    standard_timeframes: Dict[str, Dict[str, Optional[str]]] = field(default_factory=lambda: {
+        '1m': {'upstox': '1minute', 'zerodha': 'minute'},
+        '3m': {'upstox': None, 'zerodha': '3minute'},
+        '5m': {'upstox': None, 'zerodha': '5minute'},
+        '10m': {'upstox': None, 'zerodha': '10minute'},
+        '15m': {'upstox': None, 'zerodha': '15minute'},
+        '30m': {'upstox': '30minute', 'zerodha': '30minute'},
+        '1h': {'upstox': None, 'zerodha': 'hour'},
+        'day': {'upstox': 'day', 'zerodha': 'day'},
+        'week': {'upstox': 'week', 'zerodha': 'week'},
+        'month': {'upstox': 'month', 'zerodha': 'month'}
+    })
+    
+    # Timeframe folder naming convention
+    timeframe_folders: Dict[str, str] = field(default_factory=lambda: {
+        '1m': '1minute',
+        '3m': '3minute',
+        '5m': '5minute',
+        '10m': '10minute',
+        '15m': '15minute',
+        '30m': '30minute',
+        '1h': 'hour',
+        'day': 'day',
+        'week': 'week',
+        'month': 'month'
+    })
+    
+    # Instruments CSV file paths
+    upstox_instruments_csv: str = "config/complete.csv"
+    zerodha_instruments_csv: str = "config/zerodha_instruments.csv"
 
 @dataclass
 class AuditComplianceConfig:
     """Configuration for audit compliance requirements."""
     # From analysis report - enforce audit requirements
-    warmup_minutes: int = 525  # Always 525 min (35×15-min bars)
+    warmup_minutes: int = 525  # Always 525 min (35├ù15-min bars)
     use_previous_bar: bool = True  # Always previous bar
     enable_two_bar_rule: bool = True  # Always two-bar rule
     cascade_prevention: bool = True  # Default enabled
@@ -227,7 +287,6 @@ class BacktestConfig:
     strategy: StrategyConfig = field(default_factory=StrategyConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
     transaction: TransactionConfig = field(default_factory=TransactionConfig)
-    options: OptionsConfig = field(default_factory=OptionsConfig)
     validation: ValidationConfig = field(default_factory=ValidationConfig)
     optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
@@ -365,10 +424,7 @@ class BacktestConfig:
         if 'risk' in data:
             config_kwargs['risk'] = RiskConfig(**data['risk'])
         if 'transaction' in data:
-            config_kwargs['transaction'] = TransactionConfig(**data['transaction'])
-        if 'options' in data:
-            config_kwargs['options'] = OptionsConfig(**data['options'])
-        if 'validation' in data:
+            config_kwargs['transaction'] = TransactionConfig(**data['transaction'])\n        if 'validation' in data:
             config_kwargs['validation'] = ValidationConfig(**data['validation'])
         if 'optimization' in data:
             config_kwargs['optimization'] = OptimizationConfig(**data['optimization'])
@@ -385,7 +441,7 @@ class BacktestConfig:
             
         # Add any remaining top-level keys
         for key, value in data.items():
-            if key not in ['data', 'strategy', 'risk', 'transaction', 'options', 'validation', 
+            if key not in ['data', 'strategy', 'risk', 'transaction', 'validation', 
                           'optimization', 'execution', 'output', 'logging', 'broker', 'compliance']:
                 config_kwargs[key] = value
                 
@@ -442,17 +498,7 @@ class ConfigBuilder:
             take_profit_pct=0.15,    # 15%
             position_timeout_minutes=480
         )
-        return self
-        
-    def with_options_enabled(self, **kwargs) -> 'ConfigBuilder':
-        """Enable options trading with configuration."""
-        self.config.options.enabled = True
-        for key, value in kwargs.items():
-            if hasattr(self.config.options, key):
-                setattr(self.config.options, key, value)
-        return self
-    
-    def with_validation_config(self, **kwargs) -> 'ConfigBuilder':
+        return self\ndef with_validation_config(self, **kwargs) -> 'ConfigBuilder':
         """Configure validation settings."""
         for key, value in kwargs.items():
             if hasattr(self.config.validation, key):
@@ -486,10 +532,7 @@ def get_aggressive_config() -> BacktestConfig:
     """Get an aggressive trading configuration."""
     return ConfigBuilder().with_aggressive_risk().build()
 
-def get_options_config() -> BacktestConfig:
-    """Get a configuration with options trading enabled."""
     return (ConfigBuilder()
-            .with_options_enabled(synthetic_enabled=True, greeks_calculation=True)
             .build())
 
 def get_debug_config() -> BacktestConfig:

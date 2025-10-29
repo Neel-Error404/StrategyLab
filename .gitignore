@@ -111,8 +111,6 @@ data/**/*.zip
 
 # Output and Results
 outputs/**
-!outputs/phase4_backtest/
-!outputs/phase4_backtest/**
 results/
 backtests/
 *.png
