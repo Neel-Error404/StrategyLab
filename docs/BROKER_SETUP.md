@@ -9,7 +9,7 @@ Connect your broker account for:
 - **Paper trading** (test strategies safely)
 - **Live trading** (execute real trades)
 
-**Supported Brokers**: Zerodha Kite, Upstox
+**Supported Brokers**: Zerodha Kite, Upstox, Binance (Crypto)
 
 ---
 
@@ -62,6 +62,170 @@ export UPSTOX_API_KEY="your_api_key"
 export UPSTOX_API_SECRET="your_api_secret"
 export UPSTOX_REDIRECT_URI="https://127.0.0.1:5000/"
 ```
+
+---
+
+## 🪙 **Binance (Cryptocurrency)**
+
+### **Overview**
+Binance integration provides access to **35+ cryptocurrencies** for backtesting without requiring API keys for historical data.
+
+**Supported Assets**: BTC, ETH, XRP, BNB, SOL, DOGE, ADA, TRX, AVAX, SHIB, UNI, LINK, AAVE, and more
+
+**Key Features**:
+- ✅ No API key required for historical data
+- ✅ 24/7 trading support (crypto markets never close)
+- ✅ Multiple timeframes: 1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M
+- ✅ 5+ years of historical data available
+- ✅ Direct API access (no authentication needed)
+
+### **Step 1: Fetch Crypto Data**
+
+**Short Symbol Format** (auto-converts to USDT pairs):
+```bash
+# Fetch Bitcoin data (BTC → BTCUSDT)
+python src/runners/unified_runner.py --mode fetch --tickers BTC ETH --timeframes 1m,1h --date-ranges 2024-01-01_to_2024-12-31
+
+# Fetch multiple cryptos (last 30 days)
+python src/runners/unified_runner.py --mode fetch --tickers BTC ETH XRP --timeframes 5m --days 30
+```
+
+**Full Symbol Format** (explicit USDT pairs):
+```bash
+# Fetch with full symbol names
+python src/runners/unified_runner.py --mode fetch --tickers BTCUSDT ETHUSDT SOLUSDT --timeframes 1h --days 90
+```
+
+### **Step 2: Backtest Crypto Strategies**
+
+```bash
+# Backtest Bitcoin with conservative template
+python src/runners/unified_runner.py --mode backtest --template conservative --date-ranges 2024-01-01_to_2024-12-31 --tickers BTCUSDT
+
+# Multi-crypto portfolio backtest
+python src/runners/unified_runner.py --mode backtest --template aggressive --date-ranges 2024-Q1 --tickers BTC ETH BNB SOL
+
+# 24/7 trading analysis (no market hour filters)
+python src/runners/unified_runner.py --mode analyze --date-ranges 2024-01-01_to_2024-06-30 --tickers BTCUSDT ETHUSDT
+```
+
+### **Step 3: Rate Limits & Best Practices**
+
+**Rate Limiting**:
+- Binance allows 6,000 weight units per minute
+- System uses 0.1s delay between requests (safe default)
+- Large date ranges automatically chunked (6+ months → monthly chunks)
+
+**Data Management**:
+```bash
+# Check existing crypto data
+ls data/pools/*/1minute/BTC*.parquet
+
+# Incremental updates (only fetch new data)
+python src/runners/unified_runner.py --mode update --pool-path data/pools/2024-01-01_to_2024-12-31 --extend-to 2025-01-31
+```
+
+### **Supported Cryptocurrencies**
+
+| Symbol | Name | Market Cap Rank | Notes |
+|--------|------|-----------------|-------|
+| **BTC** | Bitcoin | #1 | Most liquid, 5+ years data |
+| **ETH** | Ethereum | #2 | Smart contract leader |
+| **BNB** | Binance Coin | #4 | Exchange token |
+| **SOL** | Solana | #5 | High-performance chain |
+| **XRP** | Ripple | #6 | Cross-border payments |
+| **DOGE** | Dogecoin | #8 | Meme coin, high volatility |
+| **ADA** | Cardano | #9 | Academic blockchain |
+| **AVAX** | Avalanche | #10 | DeFi platform |
+| **SHIB** | Shiba Inu | #11 | Meme token |
+| **TRX** | Tron | #12 | Entertainment blockchain |
+
+*Full list: 35+ major cryptocurrencies supported (see `src/core/etl/data_provider/binance_provider.py`)*
+
+### **Crypto vs Equity Differences**
+
+| Feature | Equities | Crypto |
+|---------|----------|--------|
+| **Trading Hours** | 9:15-15:30 IST (Mon-Fri) | 24/7/365 |
+| **Weekends** | Closed | Open |
+| **Timeframes** | 1m, 5m, 15m, 1h, 1d | 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M |
+| **Volatility** | Moderate (2-5%) | High (5-20%+) |
+| **Liquidity** | Business hours peak | Global, continuous |
+| **Settlement** | T+2 | Instant |
+
+### **Configuration (Optional)**
+
+**No configuration needed for backtesting!** For live trading or advanced features:
+
+```python
+# config/config.py (optional)
+BROKER_CONFIG = {
+    'binance': {
+        'enabled': True,
+        'api_key': None,  # Not required for historical data
+        'api_secret': None,  # Not required for historical data
+        'testnet': False,
+        'timeout': 30
+    }
+}
+```
+
+### **Troubleshooting**
+
+**"Symbol not found" error**:
+```bash
+# Use correct format
+✅ Correct: BTC or BTCUSDT
+❌ Wrong: Bitcoin, BTC-USD, BTC/USDT
+```
+
+**"Rate limit exceeded"**:
+- System automatically handles rate limiting
+- If issues persist, increase delay in `binance_provider.py` (line ~150)
+
+**"No data returned"**:
+- Verify ticker symbol exists on Binance Spot market
+- Check date range (Binance data starts ~2017 for BTC)
+- Some tokens have limited history
+
+### **Example: Complete Crypto Backtest Workflow**
+
+```bash
+# Step 1: Fetch 1 year of BTC + ETH data
+python src/runners/unified_runner.py --mode fetch --tickers BTC ETH --timeframes 1m,1h --date-ranges 2024-01-01_to_2024-12-31
+
+# Step 2: Run backtest with conservative template
+python src/runners/unified_runner.py --mode backtest --template conservative --date-ranges 2024-01-01_to_2024-12-31 --tickers BTCUSDT ETHUSDT
+
+# Step 3: Analyze results
+python src/runners/unified_runner.py --mode analyze --date-ranges 2024-01-01_to_2024-12-31 --tickers BTCUSDT ETHUSDT
+
+# Step 4: Generate visualizations
+python src/runners/unified_runner.py --mode visualize --date-ranges 2024-01-01_to_2024-12-31 --tickers BTCUSDT ETHUSDT
+```
+
+**Expected Output**:
+```
+📊 Bitcoin (BTCUSDT)
+   - Total Trades: 245
+   - Win Rate: 52.3%
+   - Sharpe Ratio: 1.45
+   - Max Drawdown: -18.2%
+
+📊 Ethereum (ETHUSDT)
+   - Total Trades: 312
+   - Win Rate: 48.7%
+   - Sharpe Ratio: 1.22
+   - Max Drawdown: -22.5%
+```
+
+### **Pro Tips**
+
+1. **Start with longer timeframes** (1h, 4h) - crypto is very noisy on 1-minute
+2. **Use smaller position sizes** - crypto volatility is 3-5x higher than equities
+3. **Test across bull and bear markets** - crypto correlation to BTC dominance
+4. **Weekend data included** - crypto trades 24/7, unlike equities
+5. **Consider stablecoins** - USDT, USDC for low-volatility pairs
 
 ---
 
