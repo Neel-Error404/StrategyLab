@@ -121,6 +121,15 @@ Comprehensive feature list for the StrategyLab Backtesting System
 
 ## Analysis Framework (V2)
 
+### Analysis Orchestration System
+- **Main Orchestrator**: `analysis/run.py` coordinates all 22+ analysis modules
+- **YAML Configuration**: Template-based analysis configs with module registry
+- **Trade Merging**: Automatic multi-ticker trade aggregation
+- **Module Registry**: Generic (9 scripts), Portfolio (7 scripts), Optimization (6+ scripts)
+- **Output Routing**: Separate directories for CSV artifacts, JSON reports, run logs
+- **Sample Configs**: Pre-configured templates in `analysis/configs/`
+- **Complete Documentation**: `analysis/README.md` with usage examples
+
 ### Generic Analysis Suite (Strategy-Agnostic)
 1. **Basic EDA**: Foundation statistics (win rate, profit factor, Sharpe per ticker)
 2. **Trade Type Analysis**: Directional bias detection (long vs short performance)
@@ -203,8 +212,12 @@ Comprehensive feature list for the StrategyLab Backtesting System
 
 ### Binance Integration
 - **Public API**: No authentication required for historical data
-- **Cryptocurrency Support**: Full crypto market coverage
-- **Historical Data**: Comprehensive historical OHLCV data
+- **Cryptocurrency Support**: 35+ cryptocurrencies (BTC, ETH, XRP, BNB, SOL, DOGE, ADA, TRX, AVAX, SHIB, UNI, LINK, AAVE, and more)
+- **24/7 Trading**: Continuous market support (crypto markets never close)
+- **Multi-Timeframe Support**: 1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M intervals
+- **Historical Data**: 5+ years of comprehensive historical OHLCV data
+- **Zero Authentication**: Backtest any crypto without API keys
+- **Complete Documentation**: 165-line setup guide in docs/BROKER_SETUP.md
 
 ---
 
@@ -455,7 +468,7 @@ Comprehensive feature list for the StrategyLab Backtesting System
 
 **Strategies**: 4 built-in + custom template
 
-**Analysis Scripts**: 16 (9 generic + 7 portfolio)
+**Analysis Scripts**: 22+ (9 generic + 7 portfolio + 6+ optimization)
 
 **Configuration Templates**: 5
 

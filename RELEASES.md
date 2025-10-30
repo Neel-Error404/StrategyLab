@@ -4,6 +4,131 @@ Complete version history and release notes for the StrategyLab Backtesting Syste
 
 ---
 
+## Version 2.1 (Documentation & Analysis Enhancement) - October 2025
+
+**Release Date**: October 30, 2025
+**Codename**: "Documentation v2.1"
+**Git Tag**: `v2.1.0-docs`
+**Commit**: TBD
+
+### Overview
+Documentation-focused release that comprehensively documents previously undocumented cryptocurrency support and analysis orchestration system. Enhances FEATURES.md and ARCHITECTURE.md with detailed v2.1 additions.
+
+### 🚀 Major Enhancements
+
+#### 1. Cryptocurrency Documentation (NEW)
+Complete documentation for Binance integration and cryptocurrency backtesting:
+
+**BROKER_SETUP.md Enhancement** (+165 lines):
+- Comprehensive Binance setup guide
+- 35+ supported cryptocurrencies (BTC, ETH, XRP, BNB, SOL, DOGE, ADA, TRX, AVAX, SHIB, UNI, LINK, AAVE, and more)
+- Zero authentication required for historical data
+- 24/7 trading support (crypto markets never close)
+- Multi-timeframe support: 1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M
+- 5+ years of historical OHLCV data
+- Complete workflow examples
+
+**README.md Enhancement** (+20 lines):
+- Cryptocurrency examples section
+- Quick-start commands for Bitcoin backtesting
+- Crypto portfolio construction examples
+
+#### 2. Analysis Toolkit Documentation (NEW)
+Complete documentation for the 22+ script analysis orchestration system:
+
+**analysis/README.md** (NEW - 37 lines):
+- Comprehensive analysis toolkit guide
+- Generic analysis overview (9 modules)
+- Portfolio construction overview (7 modules)
+- Strategy optimization overview (6+ modules)
+- Usage examples with parquet pools
+- Output structure documentation
+
+**analysis/configs/** (NEW):
+- `qa_phase4.1_config.yaml`: Complete analysis configuration example (146 lines)
+- `config_with_paths.yaml`: Pre-configured template with resolved paths (100 lines)
+- Module registry documentation
+- YAML schema examples
+
+**RELEASE_CHECKLIST.md** (NEW - 24 lines):
+- V2 pre-flight checks
+- Test suite validation
+- Documentation packaging
+- Publishing workflow
+
+#### 3. Architecture Documentation Enhancement (ENHANCED)
+**ARCHITECTURE.md** (+80 lines):
+- New "Analysis Orchestration System" section
+- `analysis/run.py` architecture flow diagram
+- YAML configuration system documentation
+- Trade merger architecture
+- Module registry (22+ modules: 9 generic + 7 portfolio + 6+ optimization)
+- Output routing architecture
+- Strategy optimization suite documentation
+
+#### 4. Features Documentation Enhancement (ENHANCED)
+**FEATURES.md** (+15 lines):
+- Enhanced Binance Integration section
+  - 35+ cryptocurrency list
+  - 24/7 trading capability
+  - Multi-timeframe support details
+  - Zero authentication feature
+- New "Analysis Orchestration System" subsection
+  - Main orchestrator documentation
+  - YAML configuration system
+  - Trade merging functionality
+  - Module registry details
+- Updated analysis scripts count: 16 → 22+
+
+### 📝 Documentation Additions Summary
+
+**New Files**:
+- `analysis/README.md` (37 lines)
+- `analysis/configs/qa_phase4.1_config.yaml` (146 lines)
+- `analysis/configs/config_with_paths.yaml` (100 lines)
+- `docs/RELEASE_CHECKLIST.md` (24 lines)
+
+**Enhanced Files**:
+- `docs/BROKER_SETUP.md` (+165 lines): Binance cryptocurrency guide
+- `README.md` (+20 lines): Cryptocurrency examples
+- `ARCHITECTURE.md` (+80 lines): Analysis orchestration architecture
+- `FEATURES.md` (+15 lines): Enhanced crypto and analysis sections
+
+**Total Documentation Added**: ~587 lines across 8 files
+
+### 🎯 What Was Previously Undocumented
+
+1. **Cryptocurrency Support**: Binance integration existed but had ZERO user-facing documentation
+2. **Analysis Orchestrator**: 22+ scripts existed but orchestration system was undocumented
+3. **YAML Configuration**: Analysis config system existed but no templates or examples
+4. **Strategy Optimization**: 6+ optimization scripts existed but were undocumented
+
+### ⚡ Impact
+
+**Discoverability**: Users can now easily discover and use:
+- Cryptocurrency backtesting (35+ cryptos)
+- Complete analysis orchestration system
+- YAML-based analysis configuration
+- Strategy optimization workflows
+
+**Completeness**: Documentation now matches code reality:
+- All 22+ analysis scripts documented
+- All 3 broker integrations fully documented
+- Complete architecture visibility
+
+**Onboarding**: New users can:
+- Quickly start with crypto backtesting (no API keys required)
+- Configure analysis workflows via YAML templates
+- Understand complete system architecture
+
+### 🔗 Related Pull Requests
+
+- **PR #12**: Repository documentation review (FEATURES.md, ARCHITECTURE.md, RELEASES.md, RELEASE_NOTES.md)
+  - Merged: October 30, 2025
+  - Added foundational documentation structure
+
+---
+
 ## Version 2.0 (Equities Release) - October 2025
 
 **Release Date**: October 29, 2025

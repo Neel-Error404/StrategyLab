@@ -1,5 +1,100 @@
 # Strategy Lab - Release Notes
 
+## v2.1 (October 2025) - Documentation & Analysis Enhancement 📚
+
+**The Complete Documentation Release**
+
+### ✨ **Headline Features**
+
+#### **Cryptocurrency Documentation** 🪙
+Complete Binance integration guide - now fully documented:
+- **35+ Cryptocurrencies**: BTC, ETH, XRP, BNB, SOL, DOGE, ADA, TRX, AVAX, SHIB, UNI, LINK, AAVE, and more
+- **Zero Authentication**: No API keys required for backtesting
+- **24/7 Trading**: Continuous market support (crypto never closes)
+- **165-Line Guide**: Comprehensive setup in docs/BROKER_SETUP.md
+- **Multi-Timeframe**: 1m, 5m, 15m, 1h, 4h, 1d, 1w, 1M intervals
+- **5+ Years History**: Complete OHLCV data available
+
+#### **Analysis Orchestration Documentation** 🎯
+Complete analysis system now fully documented:
+- **22+ Analysis Scripts**: 9 generic + 7 portfolio + 6+ optimization (previously 16 documented)
+- **Main Orchestrator**: `analysis/run.py` (445 lines) coordinates all modules
+- **YAML Configuration**: Template-based analysis configs with module registry
+- **Trade Merging**: Automatic multi-ticker CSV aggregation
+- **Complete Architecture**: Flow diagrams and module documentation
+- **Ready-to-Use Configs**: Pre-configured templates in `analysis/configs/`
+
+#### **Enhanced Documentation** 📖
+Major documentation additions across the system:
+- **FEATURES.md**: Enhanced crypto and analysis sections (+15 lines)
+- **ARCHITECTURE.md**: Complete analysis orchestration architecture (+80 lines)
+- **RELEASES.md**: V2.1 release documentation (+130 lines)
+- **analysis/README.md**: NEW - Comprehensive analysis guide (37 lines)
+- **RELEASE_CHECKLIST.md**: NEW - V2 release workflow (24 lines)
+
+### 📊 **What Was Previously Undocumented**
+
+**Cryptocurrency Support**:
+- ❌ Before: Binance mentioned in badges but ZERO user docs
+- ✅ Now: 165-line comprehensive guide with examples
+
+**Analysis Orchestrator**:
+- ❌ Before: 22+ scripts existed but no orchestration docs
+- ✅ Now: Complete architecture with YAML config system
+
+**Strategy Optimization**:
+- ❌ Before: 6+ optimization scripts undocumented
+- ✅ Now: Complete suite documented with workflows
+
+### 🎯 **Impact**
+
+**Discoverability**: Users can now:
+- ✅ Quickly start with crypto backtesting (no API keys!)
+- ✅ Configure analysis workflows via YAML
+- ✅ Understand complete system architecture
+- ✅ Access all 22+ analysis scripts
+
+**Completeness**: Documentation now matches code:
+- ✅ All 3 broker integrations fully documented
+- ✅ All 22+ analysis scripts documented
+- ✅ Complete architecture visibility
+- ✅ No hidden features
+
+### 📦 **Documentation Additions**
+
+**New Files** (4):
+- `analysis/README.md` (37 lines)
+- `analysis/configs/qa_phase4.1_config.yaml` (146 lines)
+- `analysis/configs/config_with_paths.yaml` (100 lines)
+- `docs/RELEASE_CHECKLIST.md` (24 lines)
+
+**Enhanced Files** (4):
+- `docs/BROKER_SETUP.md` (+165 lines)
+- `README.md` (+20 lines)
+- `ARCHITECTURE.md` (+80 lines)
+- `FEATURES.md` (+15 lines)
+
+**Total**: ~587 lines of documentation added
+
+### 🚀 **Quick Start Examples (NEW)**
+
+**Crypto Backtesting**:
+```bash
+# Fetch Bitcoin data (no API key required!)
+python src/runners/unified_runner.py --mode fetch --tickers BTC ETH --timeframes 1h --days 90
+
+# Backtest crypto portfolio
+python src/runners/unified_runner.py --mode backtest --template aggressive --date-ranges 2024-01-01_to_2024-12-31 --tickers BTCUSDT ETHUSDT
+```
+
+**Analysis Orchestration**:
+```bash
+# Run complete analysis with YAML config
+python analysis/run.py --config analysis/configs/qa_phase4.1_config.yaml --targets generic,portfolio
+```
+
+---
+
 ## v2.0 (October 2025) - Equities V2 Release 🚀
 
 **The Production-Ready Trading System**
@@ -15,8 +110,9 @@ Complete parity and precision validation ensuring your backtest matches live tra
 
 #### **Advanced Analysis Framework** 📊
 Professional-grade portfolio construction and strategy optimization:
-- **9 Generic Analysis Scripts**: Win rate, profit factor, Sharpe ratio, and more
-- **7 Portfolio Construction Scripts**: Sector diversification, correlation analysis, optimal weights
+- **22+ Analysis Scripts**: 9 generic + 7 portfolio + 6+ optimization
+- **Generic Analysis**: Win rate, profit factor, Sharpe ratio, and more
+- **Portfolio Construction**: Sector diversification, correlation analysis, optimal weights
 - **Phase 1 Complete**: Best portfolio identified (Sharpe 0.826, 5 tickers)
 - **220 Pages of Documentation**: Complete methodology and workflow guides
 
@@ -76,7 +172,7 @@ Production-ready data pipeline for NSE/BSE:
 **Added**:
 - ✅ Validation framework (4 modules)
 - ✅ Test suites (59 tests)
-- ✅ Advanced analysis (16 scripts)
+- ✅ Advanced analysis (22+ scripts)
 - ✅ Portfolio construction system
 - ✅ Incremental data updates
 - ✅ Indian equities master pipeline
@@ -106,10 +202,10 @@ Production-ready data pipeline for NSE/BSE:
 
 ### 📦 **What's Included**
 
-- **Brokers**: Upstox, Zerodha, Binance
+- **Brokers**: Upstox, Zerodha, Binance (35+ cryptocurrencies)
 - **Strategies**: 4 built-in (MSE, SMA, SMA Crossover, Bollinger Bands)
 - **Templates**: 5 risk profiles (minimal, conservative, aggressive, portfolio, debug)
-- **Analysis**: 16 scripts (9 generic + 7 portfolio)
+- **Analysis**: 22+ scripts (9 generic + 7 portfolio + 6+ optimization)
 - **Tests**: 59 passing tests
 - **Docs**: ~220 pages across 25+ documents
 - **Code**: ~15,000 lines of Python

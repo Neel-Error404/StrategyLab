@@ -333,6 +333,84 @@ execute_backtest(strategy, data, config):
 - `metrics_calculator.py`: Performance metrics
 - `visualizer.py`: Chart generation
 
+#### Analysis Orchestration System
+
+**`analysis/run.py`** (445 lines)
+**Purpose**: Main orchestrator for all analysis workflows
+
+**Architecture**:
+```python
+Orchestrator (run.py)
+    │
+    ├── Config Loader (YAML-based configuration)
+    │   ├── Load run metadata (run_id, strategy, date_range)
+    │   ├── Load data source paths
+    │   └── Load module registry (generic, portfolio, optimization)
+    │
+    ├── Trade Merger (Multi-ticker aggregation)
+    │   ├── Auto-detect trade source (strategy_trades vs risk_approved)
+    │   ├── Merge per-ticker CSVs into unified dataset
+    │   └── Output: all_trades_merged.csv
+    │
+    ├── Module Executor (22+ registered modules)
+    │   ├── Generic Analysis (9 modules)
+    │   ├── Portfolio Construction (7 modules)
+    │   └── Strategy Optimization (6+ modules)
+    │
+    └── Output Router
+        ├── CSV artifacts → analysis/output/{strategy}/{run_id}/
+        ├── JSON reports → analysis/reports/{strategy}/{run_id}/
+        └── Run logs → analysis/run_logs/{timestamp}.log
+```
+
+**YAML Configuration System**:
+```yaml
+# analysis/configs/example_config.yaml
+run:
+  run_id: "20251024_095707"
+  strategy: "mse"
+  trade_source: "strategy_trades"
+
+data_sources:
+  strategy_trades_dir: "outputs/{run_id}/mse/{date_range}/data/strategy_trades"
+  base_data_dir: "outputs/{run_id}/mse/{date_range}/data/base_data"
+
+analysis:
+  generic:
+    enabled: true
+    modules:
+      basic_eda:
+        enabled: true
+        config:
+          include_ticker_breakdown: true
+  portfolio:
+    enabled: true
+    modules:
+      portfolio_optimizer:
+        enabled: true
+        config:
+          top_n: 50
+```
+
+**Key Features**:
+- **Module Registry**: Dynamic module discovery and execution
+- **Trade Merging**: Automatic multi-ticker CSV aggregation
+- **Config Validation**: YAML schema validation on load
+- **Output Routing**: Organized directory structure for artifacts
+- **Run Logging**: Complete audit trail with timestamps
+- **Documentation**: Comprehensive guide in `analysis/README.md`
+
+**Strategy Optimization Suite**:
+**Location**: `analysis/strategy_optimization/scripts/`
+
+**Scripts** (6+):
+1. Exit threshold optimization (50-95% MACD range)
+2. Entry signal analysis (MACD strength filters)
+3. Combined optimization (joint entry + exit)
+4. Parameter grid search
+5. Walk-forward analysis
+6. Out-of-sample validation
+
 ### 5. Validation Framework
 
 #### Config Parity Validator
