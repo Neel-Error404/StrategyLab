@@ -16,7 +16,7 @@ validation:
   # Date range for organizing fetched data
   # Format: YYYY-MM-DD_to_YYYY-MM-DD
   # If null, auto-generates from start_date/end_date below
-  date_range: "2025-04-01_to_2025-10-08"
+  date_range: "2025-04-01_to_2025-10-24"
 
   # Equity data pool path (for reference price lookups)
   # If null, auto-detects latest pool from data/pools/
@@ -28,7 +28,7 @@ validation:
     months: 6
     # Specific dates (leave empty to auto-fetch latest 6 months)
     start_date: "2025-04-01"  # Reference date lower bound (used for reference price lookup)
-    end_date: null    # "2025-10-08" or null for today
+    end_date: "2025-10-24"    # Explicit upper bound for current refresh
 
   # Expiry types to include
   expiry_types:

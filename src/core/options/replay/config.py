@@ -154,12 +154,120 @@ class ActualPricingConfig:
 
 
 @dataclass(frozen=True)
+class BrokerageChargesConfig:
+    """Brokerage charge parameters per executed order."""
+
+    flat_per_order: Optional[float]
+    pct_of_premium: Optional[float]
+    max_per_order: Optional[float]
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "BrokerageChargesConfig":
+        def _as_optional_float(value: Any) -> Optional[float]:
+            if value is None:
+                return None
+            converted = float(value)
+            return converted if converted >= 0 else None
+
+        flat = _as_optional_float(data.get("flat_per_order", 20.0))
+        pct = _as_optional_float(data.get("pct_of_premium"))
+        cap = _as_optional_float(data.get("max_per_order"))
+        return BrokerageChargesConfig(
+            flat_per_order=flat,
+            pct_of_premium=pct,
+            max_per_order=cap,
+        )
+
+
+@dataclass(frozen=True)
+class TransactionCostConfig:
+    """
+    Deterministic transaction cost parameters for option trades.
+    """
+
+    enabled: bool
+    default_exchange: str
+    brokerage: BrokerageChargesConfig
+    exchange_transaction_rates: Dict[str, float]
+    stt_sell_rate: float
+    stt_exercise_rate: float
+    stamp_buy_rate: float
+    sebi_rate: float
+    sebi_minimum: float
+    clearing_rate: float
+    gst_rate: float
+    gst_apply_to: Tuple[str, ...]
+    rounding_precision: int
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "TransactionCostConfig":
+        enabled = bool(data.get("enabled", False))
+        brokerage_cfg = BrokerageChargesConfig.from_dict(data.get("brokerage", {}))
+        exchange_rates_raw = data.get(
+            "exchange_transaction_rate",
+            {"NSE": 0.0003503, "BSE": 0.000325},
+        )
+        exchange_rates = {
+            str(name).upper(): float(rate)
+            for name, rate in (exchange_rates_raw or {}).items()
+        }
+        if not exchange_rates:
+            exchange_rates = {"NSE": 0.0}
+        default_exchange = str(data.get("exchange", "NSE")).upper()
+        if default_exchange not in exchange_rates:
+            exchange_rates.setdefault(default_exchange, 0.0)
+        gst_cfg = data.get("gst", {})
+        gst_apply = tuple(
+            str(component).lower()
+            for component in gst_cfg.get("include_components", ["brokerage", "exchange_transaction"])
+        )
+        return TransactionCostConfig(
+            enabled=enabled,
+            default_exchange=default_exchange,
+            brokerage=brokerage_cfg,
+            exchange_transaction_rates=exchange_rates,
+            stt_sell_rate=float(data.get("stt", {}).get("sell_premium_rate", 0.001)),
+            stt_exercise_rate=float(data.get("stt", {}).get("exercise_intrinsic_rate", 0.00125)),
+            stamp_buy_rate=float(data.get("stamp_duty_buy_rate", 0.00003)),
+            sebi_rate=float(data.get("sebi", {}).get("rate", 0.000001)),
+            sebi_minimum=float(data.get("sebi", {}).get("minimum", 10.0)),
+            clearing_rate=float(data.get("clearing_rate", 0.0)),
+            gst_rate=float(gst_cfg.get("rate", 0.18)),
+            gst_apply_to=gst_apply,
+            rounding_precision=int(data.get("rounding_precision", 2)),
+        )
+
+
+@dataclass(frozen=True)
+class SlippageConfig:
+    """Simple slippage assumptions applied per leg."""
+
+    enabled: bool
+    mode: str
+    per_side_bps: float
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "SlippageConfig":
+        enabled = bool(data.get("enabled", False))
+        mode = str(data.get("mode", "bps")).lower()
+        if mode != "bps":
+            raise ValueError("pricing.slippage.mode currently supports only 'bps'")
+        return SlippageConfig(
+            enabled=enabled,
+            mode=mode,
+            per_side_bps=float(data.get("per_side_bps", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
 class PricingConfig:
     """Unified pricing configuration."""
 
     mode: str
     synthetic: SyntheticPricingConfig
     actual: ActualPricingConfig
+    costs: TransactionCostConfig
+    slippage: SlippageConfig
 
     @staticmethod
     def from_dict(data: Dict[str, Any], base_dir: Path) -> "PricingConfig":
@@ -170,7 +278,35 @@ class PricingConfig:
             raise ValueError(f"Unsupported pricing mode: {mode}")
         synthetic = SyntheticPricingConfig.from_dict(data.get("synthetic", {}))
         actual = ActualPricingConfig.from_dict(data.get("actual", {}), base_dir)
-        return PricingConfig(mode=mode, synthetic=synthetic, actual=actual)
+        costs = TransactionCostConfig.from_dict(data.get("costs", {}))
+        slippage = SlippageConfig.from_dict(data.get("slippage", {}))
+        return PricingConfig(
+            mode=mode,
+            synthetic=synthetic,
+            actual=actual,
+            costs=costs,
+            slippage=slippage,
+        )
+
+
+@dataclass(frozen=True)
+class DeltaSelectionConfig:
+    target: float
+    tolerance: float
+    volatility: float
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "DeltaSelectionConfig":
+        target = float(data.get("target", 0.3))
+        tolerance = float(data.get("tolerance", 0.05))
+        volatility = float(data.get("volatility", 0.25))
+        if target <= 0 or target >= 1:
+            raise ValueError("strike_selection.delta.target must be between 0 and 1")
+        if tolerance <= 0 or tolerance >= 1:
+            raise ValueError("strike_selection.delta.tolerance must be between 0 and 1")
+        if volatility <= 0:
+            raise ValueError("strike_selection.delta.volatility must be positive")
+        return DeltaSelectionConfig(target=target, tolerance=tolerance, volatility=volatility)
 
 
 @dataclass(frozen=True)
@@ -178,7 +314,7 @@ class StrikeSelectionConfig:
     """Strike selection behaviour."""
 
     method: str
-    delta: Dict[str, Any] = field(default_factory=dict)
+    delta: DeltaSelectionConfig | None = None
     moneyness: Dict[str, Any] = field(default_factory=dict)
     premium_pct: Dict[str, Any] = field(default_factory=dict)
 
@@ -189,9 +325,12 @@ class StrikeSelectionConfig:
         method = str(data["method"]).lower()
         if method not in {"atm", "delta", "moneyness", "premium_pct"}:
             raise ValueError(f"Unsupported strike selection method: {method}")
+        delta_cfg = None
+        if "delta" in data:
+            delta_cfg = DeltaSelectionConfig.from_dict(data["delta"])
         return StrikeSelectionConfig(
             method=method,
-            delta=dict(data.get("delta", {})),
+            delta=delta_cfg,
             moneyness=dict(data.get("moneyness", {})),
             premium_pct=dict(data.get("premium_pct", {})),
         )
@@ -437,6 +576,21 @@ class RiskKillSwitchConfig:
 
 
 @dataclass(frozen=True)
+class AssignmentRiskConfig:
+    enabled: bool
+    dte_hours_threshold: float
+    intrinsic_buffer: float
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "AssignmentRiskConfig":
+        return AssignmentRiskConfig(
+            enabled=bool(data.get("enabled", True)),
+            dte_hours_threshold=float(data.get("dte_hours_threshold", 24.0)),
+            intrinsic_buffer=float(data.get("intrinsic_buffer", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
 class RiskConfig:
     initial_portfolio_value: float
     max_portfolio_allocation: float
@@ -445,6 +599,7 @@ class RiskConfig:
     max_drawdown_pct: float
     stop_trading_on_drawdown: bool
     kill_switch: RiskKillSwitchConfig
+    assignment_risk: AssignmentRiskConfig
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "RiskConfig":
@@ -466,6 +621,7 @@ class RiskConfig:
         if not 0.0 <= max_position <= 1.0:
             raise ValueError("risk.max_position_size_per_trade must be between 0 and 1")
         kill_switch = RiskKillSwitchConfig.from_dict(data.get("kill_switch", {}))
+        assignment_risk = AssignmentRiskConfig.from_dict(data.get("assignment_risk", {}))
         return RiskConfig(
             initial_portfolio_value=float(data["initial_portfolio_value"]),
             max_portfolio_allocation=max_alloc,
@@ -474,6 +630,7 @@ class RiskConfig:
             max_drawdown_pct=float(data["max_drawdown_pct"]),
             stop_trading_on_drawdown=bool(data.get("stop_trading_on_drawdown", False)),
             kill_switch=kill_switch,
+            assignment_risk=assignment_risk,
         )
 
 
@@ -500,6 +657,8 @@ class OutputFilesConfig:
     comparison: bool
     position_lifecycle: bool
     pricing_validation: bool
+    health_cards: bool
+    lifecycle_summary: bool
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "OutputFilesConfig":
@@ -510,6 +669,8 @@ class OutputFilesConfig:
             comparison=bool(data.get("comparison", True)),
             position_lifecycle=bool(data.get("position_lifecycle", True)),
             pricing_validation=bool(data.get("pricing_validation", True)),
+            health_cards=bool(data.get("health_cards", True)),
+            lifecycle_summary=bool(data.get("lifecycle_summary", True)),
         )
 
 
@@ -544,6 +705,86 @@ class OutputConfig:
             files=OutputFilesConfig.from_dict(data.get("files", {})),
             formats=OutputFormatsConfig.from_dict(data.get("formats", {})),
             compress=bool(data.get("compress", False)),
+        )
+
+
+@dataclass(frozen=True)
+class ControlBoardSLOConfig:
+    """
+    Service-level objectives for the options control board.
+    Thresholds represent the point at which the board should raise warn/fail states.
+    """
+
+    assignment_warn_count: int
+    assignment_fail_count: int
+    liquidity_warn_count: int
+    liquidity_fail_count: int
+    pricing_fallback_warn_pct: float
+    pricing_fallback_fail_pct: float
+    warning_log_warn_count: int
+    warning_log_fail_count: int
+    risk_event_warn_count: int
+    risk_event_fail_count: int
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "ControlBoardSLOConfig":
+        return ControlBoardSLOConfig(
+            assignment_warn_count=int(data.get("assignment_warn_count", 3)),
+            assignment_fail_count=int(data.get("assignment_fail_count", 8)),
+            liquidity_warn_count=int(data.get("liquidity_warn_count", 5)),
+            liquidity_fail_count=int(data.get("liquidity_fail_count", 15)),
+            pricing_fallback_warn_pct=float(data.get("pricing_fallback_warn_pct", 0.20)),
+            pricing_fallback_fail_pct=float(data.get("pricing_fallback_fail_pct", 0.35)),
+            warning_log_warn_count=int(data.get("warning_log_warn_count", 10)),
+            warning_log_fail_count=int(data.get("warning_log_fail_count", 30)),
+            risk_event_warn_count=int(data.get("risk_event_warn_count", 5)),
+            risk_event_fail_count=int(data.get("risk_event_fail_count", 15)),
+        )
+
+
+@dataclass(frozen=True)
+class ControlBoardConfig:
+    enabled: bool
+    output_formats: Tuple[str, ...]
+    archive_dir: Path
+    slo: ControlBoardSLOConfig
+
+    @staticmethod
+    def from_dict(
+        data: Dict[str, Any],
+        base_dir: Path,
+    ) -> "ControlBoardConfig":
+        enabled = bool(data.get("enabled", True))
+
+        raw_formats = data.get("output_formats", ["json", "markdown"])
+        if isinstance(raw_formats, str):
+            raw_formats = [raw_formats]
+        normalised: List[str] = []
+        for item in raw_formats:
+            token = str(item).strip().lower()
+            if not token:
+                continue
+            if token == "both":
+                normalised = ["json", "markdown"]
+                break
+            if token not in {"json", "markdown"}:
+                raise ValueError(f"Unsupported control_board output format: {token}")
+            if token not in normalised:
+                normalised.append(token)
+        if not normalised:
+            normalised = ["json"]
+
+        archive_dir = _ensure_path(
+            data.get("archive_dir", "outputs/control_board_archive"),
+            base_dir,
+        )
+
+        slo_cfg = ControlBoardSLOConfig.from_dict(data.get("slo", {}))
+        return ControlBoardConfig(
+            enabled=enabled,
+            output_formats=tuple(normalised),
+            archive_dir=archive_dir,
+            slo=slo_cfg,
         )
 
 
@@ -635,6 +876,32 @@ class ValidationConfig:
 
 
 @dataclass(frozen=True)
+class ReadinessConfig:
+    min_ready_ratio: float
+    max_blocked: int
+    max_synthetic_ratio: float
+    allow_needs_attention: bool
+    synthetic_warn_ratio: float
+    synthetic_info_ratio: float
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> "ReadinessConfig":
+        max_syn = float(data.get("max_synthetic_ratio", 0.3))
+        warn = data.get("synthetic_warn_ratio")
+        info = data.get("synthetic_info_ratio")
+        synthetic_warn = float(warn) if warn is not None else min(max_syn * 0.6, max_syn)
+        synthetic_info = float(info) if info is not None else min(max_syn * 0.3, synthetic_warn)
+        return ReadinessConfig(
+            min_ready_ratio=float(data.get("min_ready_ratio", 0.8)),
+            max_blocked=int(data.get("max_blocked", 0)),
+            max_synthetic_ratio=max_syn,
+            allow_needs_attention=bool(data.get("allow_needs_attention", True)),
+            synthetic_warn_ratio=synthetic_warn,
+            synthetic_info_ratio=synthetic_info,
+        )
+
+
+@dataclass(frozen=True)
 class OptionsReplayConfig:
     """
     Root configuration object used by the replay engine.
@@ -656,9 +923,11 @@ class OptionsReplayConfig:
     logging: LoggingConfig
     performance: PerformanceConfig
     validation: ValidationConfig
+    readiness: "ReadinessConfig"
+    control_board: "ControlBoardConfig"
+    repo_root: Path
     experimental: Dict[str, Any] = field(default_factory=dict)
     raw: Dict[str, Any] = field(default_factory=dict)
-
     config_hash: str = field(init=False)
 
     def __post_init__(self):  # pragma: no cover - dataclass hook
@@ -716,6 +985,8 @@ class OptionsReplayConfig:
         logging_cfg = LoggingConfig.from_dict(data.get("logging", {}), base_dir)
         performance = PerformanceConfig.from_dict(data.get("performance", {}))
         validation = ValidationConfig.from_dict(data.get("validation", {}))
+        readiness = ReadinessConfig.from_dict(data.get("readiness", {}))
+        control_board = ControlBoardConfig.from_dict(data.get("control_board", {}), base_dir)
         experimental = dict(data.get("experimental", {}))
 
         return OptionsReplayConfig(
@@ -735,6 +1006,9 @@ class OptionsReplayConfig:
             logging=logging_cfg,
             performance=performance,
             validation=validation,
+            readiness=readiness,
+            control_board=control_board,
+            repo_root=base_dir,
             experimental=experimental,
             raw=data,
         )

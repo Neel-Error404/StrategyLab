@@ -321,7 +321,11 @@ class ValidateModeHandler(ModeHandler):
         for strategy in strategies:
             try:
                 # Test strategy creation
-                strategy_instance = StrategyFactory.get_strategy(strategy)
+                strategy_instance = StrategyFactory.get_strategy(
+                    strategy,
+                    parameters=None,
+                    strategy_config=getattr(self.config, 'strategy', None)
+                )
                 if strategy_instance is None:
                     strategy_results['invalid_strategies'] += 1
                     strategy_results['execution_tests'][strategy] = 'creation_failed'

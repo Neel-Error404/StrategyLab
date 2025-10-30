@@ -364,7 +364,9 @@ class UnifiedBacktesterRunner:
         for strategy in strategies:
             for date_range in date_ranges:
                 for ticker in tickers:
-                    optimization_params = {}  # TODO: Extract from config if needed
+                    optimization_params = None
+                    if getattr(self.config.optimization, 'enabled', False):
+                        optimization_params = getattr(self.config, 'optimization_params', None) or {}
                     tasks.append((ticker, date_range, strategy, optimization_params))
 
         # Log comprehensive task generation details

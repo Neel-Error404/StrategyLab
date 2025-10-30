@@ -5,23 +5,69 @@ Orchestrates fetching options data from Upstox and storing in structured format.
 """
 
 import json
-import pandas as pd
-from datetime import datetime, date, timedelta
-from pathlib import Path
 import logging
-from typing import List, Optional
-from tqdm import tqdm
 import sys
+from datetime import date, datetime, timedelta
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple
+
+import pandas as pd
+from tqdm import tqdm
 
 # Add repository root to Python path so `src.*` imports resolve
 REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from src.core.options.validation.upstox_options_api import UpstoxOptionsAPI
-from src.core.options.validation.data_storage import OptionsDataStorage
+from src.core.options.data.schemas import VALIDATION_DATE_RANGE, VALIDATION_TICKERS
 from src.core.options.validation.config_loader import get_validation_config
-from src.core.options.data.schemas import VALIDATION_TICKERS, VALIDATION_DATE_RANGE
+from src.core.options.validation.data_storage import OptionsDataStorage
+from src.core.options.validation.upstox_options_api import UpstoxOptionsAPI
+
+
+def _load_coverage_report(path: Path) -> Dict[str, Dict[str, List[Tuple[date, date]]]]:
+    """
+    Convert a coverage JSON report into ticker -> timeframe -> list of date ranges.
+    """
+    payload = json.loads(path.read_text())
+    mapping: Dict[str, Dict[str, List[Tuple[date, date]]]] = {}
+
+    plan_entries = payload.get("fetch_plan", [])
+    if plan_entries:
+        for entry in plan_entries:
+            ticker = entry.get("ticker")
+            timeframe = entry.get("timeframe")
+            if not ticker or not timeframe:
+                continue
+            ranges = entry.get("ranges", [])
+            for item in ranges:
+                start = item.get("start")
+                end = item.get("end")
+                if not start or not end:
+                    continue
+                start_date = date.fromisoformat(start)
+                end_date = date.fromisoformat(end)
+                mapping.setdefault(ticker, {}).setdefault(timeframe, []).append(
+                    (start_date, end_date)
+                )
+
+    # Backwards compatibility: fall back to per-expiry lists if fetch_plan absent.
+    if not mapping:
+        for entry in payload.get("summaries", []):
+            ticker = entry.get("ticker")
+            timeframe = entry.get("timeframe")
+            if not ticker or not timeframe:
+                continue
+            missing = [
+                date.fromisoformat(token)
+                for token in entry.get("missing_expiries", [])
+            ]
+            if missing:
+                ranges = [(token, token) for token in missing]
+                mapping.setdefault(ticker, {}).setdefault(timeframe, []).extend(ranges)
+
+    return mapping
+
 
 def configure_logging(level: str, log_to_file: bool, log_file: Optional[str]) -> None:
     """
@@ -91,6 +137,7 @@ class OptionsDataFetcher:
             retry_backoff_factor=self.config.retry_backoff_factor
         )
         self.storage = OptionsDataStorage(base_dir=base_dir)
+        self.fetch_records: List[Dict[str, object]] = []
 
         # FIX Issue #3: Use config equity_pool, then param, then auto-detect
         if equity_data_dir is None:
@@ -255,7 +302,10 @@ class OptionsDataFetcher:
         exclude_dte_below: Optional[int] = None,
         exclude_dte_above: Optional[int] = None,
         start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        end_date: Optional[date] = None,
+        target_expiries: Optional[Sequence[date]] = None,
+        as_of: Optional[date] = None,
+        max_history_months: int = 6,
     ):
         """
         Fetch all options data for a ticker.
@@ -268,6 +318,9 @@ class OptionsDataFetcher:
             min_open_interest: Minimum OI to include - defaults from config
             start_date: Only fetch expiries after this date (optional)
             end_date: Only fetch expiries before this date (optional)
+            target_expiries: Restrict fetch to the provided expiry dates (optional)
+            as_of: Explicit as-of date for history window (defaults to today)
+            max_history_months: Maximum trailing months to download (default: 6)
         """
         # FIX Issue #6: Use config defaults if not specified
         if timeframe is None:
@@ -285,6 +338,14 @@ class OptionsDataFetcher:
         if exclude_dte_above is None:
             exclude_dte_above = self.config.exclude_dte_above
         max_strikes = self.config.max_strikes
+
+        if as_of is None:
+            as_of = datetime.utcnow().date()
+        history_start = (pd.Timestamp(as_of) - pd.DateOffset(months=max_history_months)).date()
+        if start_date is None:
+            start_date = history_start
+        if end_date is None:
+            end_date = as_of
 
         self.logger.info(f"=" * 80)
         self.logger.info(f"Fetching options data for {ticker}")
@@ -306,6 +367,16 @@ class OptionsDataFetcher:
         if end_date:
             expiries = [exp for exp in expiries if exp <= end_date]
             self.logger.info(f"Filtered to {len(expiries)} expiries before {end_date}")
+
+        if target_expiries:
+            target_set = {exp for exp in target_expiries if start_date <= exp <= end_date}
+            if not target_set:
+                self.logger.info("No target expiries fall within requested window; skipping.")
+                return
+            expiries = [exp for exp in expiries if exp in target_set]
+            self.logger.info(
+                f"Filtered to {len(expiries)} expiries from coverage request"
+            )
 
         # Limit for testing
         if max_expiries:
@@ -360,7 +431,7 @@ class OptionsDataFetcher:
         max_strikes: Optional[int],
         exclude_dte_below: Optional[int],
         exclude_dte_above: Optional[int]
-    ):
+    ) -> int:
         """
         Fetch and save data for a single expiry.
 
@@ -375,7 +446,7 @@ class OptionsDataFetcher:
         existing = self.storage.load_expiry_data(ticker, expiry, timeframe, self.date_range)
         if existing is not None and not existing.empty:
             self.logger.info(f"Data already exists for {ticker} {expiry}, skipping")
-            return
+            return 0
 
         # Get reference price (1 month before expiry or at start of data range)
         # Use a date when the options were likely already trading
@@ -415,7 +486,7 @@ class OptionsDataFetcher:
 
         if df.empty:
             self.logger.warning(f"No data fetched for {ticker} {expiry}")
-            return
+            return 0
 
         # Log summary
         num_strikes = df['strike'].nunique()
@@ -437,12 +508,27 @@ class OptionsDataFetcher:
         )
 
         self.logger.info(f"Saved data for {ticker} {expiry}")
+        self.fetch_records.append(
+            {
+                "ticker": ticker,
+                "expiry": expiry.isoformat(),
+                "timeframe": timeframe,
+                "rows": num_bars,
+                "strikes": num_strikes,
+                "start_timestamp": df["timestamp"].min().isoformat(),
+                "end_timestamp": df["timestamp"].max().isoformat(),
+            }
+        )
+        return num_bars
 
     def fetch_validation_dataset(
         self,
         tickers: Optional[List[str]] = None,
         timeframe: Optional[str] = None,
-        max_expiries_per_ticker: Optional[int] = None
+        max_expiries_per_ticker: Optional[int] = None,
+        coverage_map: Optional[Dict[str, Dict[str, List[date]]]] = None,
+        as_of: Optional[date] = None,
+        max_history_months: int = 6,
     ):
         """
         Fetch validation dataset for multiple tickers.
@@ -451,6 +537,9 @@ class OptionsDataFetcher:
             tickers: List of tickers (default: from config or VALIDATION_TICKERS)
             timeframe: Data timeframe (default: from config)
             max_expiries_per_ticker: Limit expiries per ticker (for testing)
+            coverage_map: Optional coverage manifest of missing expiries
+            as_of: Override as-of date for audit window
+            max_history_months: Trailing months to download
         """
         # FIX Issue #6: Use config defaults if not specified
         if tickers is None:
@@ -465,25 +554,62 @@ class OptionsDataFetcher:
         self.logger.info(f"# Date Range: {self.date_range}")
         self.logger.info(f"{'#' * 80}\n")
 
+        as_of = as_of or datetime.utcnow().date()
+
         # Determine date range for expiries
         # Parse date range string: "2025-04-01_to_2025-10-08"
         start_str, end_str = self.date_range.split("_to_")
-        start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+        configured_start = datetime.strptime(start_str, '%Y-%m-%d').date()
+        configured_end = datetime.strptime(end_str, '%Y-%m-%d').date()
 
         for i, ticker in enumerate(tickers, 1):
             self.logger.info(f"\n{'*' * 80}")
             self.logger.info(f"* Ticker {i}/{len(tickers)}: {ticker}")
             self.logger.info(f"{'*' * 80}")
 
+            missing_ranges: Optional[Sequence[Tuple[date, date]]] = None
+            if coverage_map:
+                missing_ranges = coverage_map.get(ticker, {}).get(timeframe, [])
+                if missing_ranges:
+                    self.logger.info(
+                        "Coverage requires fetching %d missing ranges.",
+                        len(missing_ranges),
+                    )
+                else:
+                    self.logger.info("No missing ranges reported; skipping fetch.")
+                    continue
+
             try:
-                self.fetch_ticker_data(
-                    ticker=ticker,
-                    timeframe=timeframe,
-                    max_expiries=max_expiries_per_ticker,
-                    start_date=start_date,
-                    end_date=end_date
-                )
+                if missing_ranges:
+                    for idx, (range_start, range_end) in enumerate(missing_ranges, start=1):
+                        self.logger.info(
+                            "Fetching range %d/%d: %s -> %s",
+                            idx,
+                            len(missing_ranges),
+                            range_start,
+                            range_end,
+                        )
+                        self.fetch_ticker_data(
+                            ticker=ticker,
+                            timeframe=timeframe,
+                            max_expiries=max_expiries_per_ticker,
+                            start_date=max(range_start, configured_start),
+                            end_date=min(range_end, configured_end, as_of),
+                            target_expiries=None,
+                            as_of=as_of,
+                            max_history_months=max_history_months,
+                        )
+                else:
+                    self.fetch_ticker_data(
+                        ticker=ticker,
+                        timeframe=timeframe,
+                        max_expiries=max_expiries_per_ticker,
+                        start_date=configured_start,
+                        end_date=min(configured_end, as_of),
+                        target_expiries=None,
+                        as_of=as_of,
+                        max_history_months=max_history_months,
+                    )
             except Exception as e:
                 self.logger.error(f"Failed to fetch {ticker}: {e}", exc_info=True)
                 continue
@@ -508,15 +634,23 @@ class OptionsDataFetcher:
             for timeframe, tf_stats in ticker_stats['timeframes'].items():
                 self.logger.info(f"    {timeframe}: {tf_stats['expiries_count']} expiries")
 
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
         # Persist summary if configured
         output_dir = self.config.output_dir
         if output_dir:
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
-            summary_file = output_path / f"fetch_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            summary_file = output_path / f"fetch_summary_{timestamp}.json"
             with open(summary_file, 'w', encoding='utf-8') as f:
                 json.dump(stats, f, indent=2)
             self.logger.info(f"\nSummary saved to {summary_file}")
+
+            if self.fetch_records:
+                log_df = pd.DataFrame(self.fetch_records)
+                log_file = output_path / f"fetch_log_{timestamp}.csv"
+                log_df.to_csv(log_file, index=False)
+                self.logger.info(f"Fetch log saved to {log_file}")
 
         self.logger.info(f"\n{'=' * 80}\n")
 
@@ -533,6 +667,9 @@ def main():
     parser.add_argument('--config', type=str, default=None, help='Path to validation config (default: auto-detect)')
     parser.add_argument('--log-level', type=str, default=None, choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
                         help='Logging level (default: from config or INFO)')
+    parser.add_argument('--coverage-report', type=str, help='Coverage report JSON produced by data_coverage.py')
+    parser.add_argument('--history-months', type=int, default=6, help='Trailing months of expiries to fetch (default: 6)')
+    parser.add_argument('--as-of', type=str, help='As-of date for history window (YYYY-MM-DD)')
 
     args = parser.parse_args()
 
@@ -550,19 +687,60 @@ def main():
     # FIX Issue #6: Load config first to get defaults
     fetcher = OptionsDataFetcher(config_path=args.config)
 
+    coverage_map: Optional[Dict[str, Dict[str, List[date]]]] = None
+    if args.coverage_report:
+        coverage_path = Path(args.coverage_report)
+        if not coverage_path.exists():
+            raise SystemExit(f"Coverage report not found: {coverage_path}")
+        coverage_map = _load_coverage_report(coverage_path)
+
+    as_of_date = date.fromisoformat(args.as_of) if args.as_of else None
+
     if args.all:
         # Fetch all validation tickers (tickers come from config)
         fetcher.fetch_validation_dataset(
             timeframe=args.timeframe,  # None = use config default
-            max_expiries_per_ticker=args.max_expiries
+            max_expiries_per_ticker=args.max_expiries,
+            coverage_map=coverage_map,
+            as_of=as_of_date,
+            max_history_months=args.history_months,
         )
     else:
         # Fetch single ticker (default to RELIANCE if not specified)
-        ticker = args.ticker or 'RELIANCE'
+        ticker = (args.ticker or 'RELIANCE').upper()
+        timeframe = args.timeframe or fetcher.config.timeframe
+        missing_expiries: Optional[Sequence[date]] = None
+        if coverage_map:
+            missing_expiries = coverage_map.get(ticker, {}).get(timeframe, [])
+            if missing_expiries:
+                logging.getLogger(__name__).info(
+                    "Coverage requires fetching %d missing expiries for %s [%s].",
+                    len(missing_expiries),
+                    ticker,
+                    timeframe,
+                )
+            else:
+                logging.getLogger(__name__).info(
+                    "No missing expiries reported for %s [%s]; skipping fetch.",
+                    ticker,
+                    timeframe,
+                )
+                return
+
+        # Derive date window from configured range
+        start_str, end_str = fetcher.date_range.split("_to_")
+        configured_start = datetime.strptime(start_str, '%Y-%m-%d').date()
+        configured_end = datetime.strptime(end_str, '%Y-%m-%d').date()
+
         fetcher.fetch_ticker_data(
             ticker=ticker,
-            timeframe=args.timeframe,  # None = use config default
-            max_expiries=args.max_expiries
+            timeframe=timeframe,
+            max_expiries=args.max_expiries,
+            start_date=configured_start,
+            end_date=min(configured_end, as_of_date or datetime.utcnow().date()),
+            target_expiries=missing_expiries,
+            as_of=as_of_date,
+            max_history_months=args.history_months,
         )
 
         # Print summary

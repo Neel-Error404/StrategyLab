@@ -1,5 +1,6 @@
 instrument_key,exchange_token,tradingsymbol,name,last_price,expiry,strike,tick_size,lot_size,instrument_type,option_type,exchange
 NSE_INDEX|Nifty 50,17,Nifty 50,Nifty 50,24194.5,,,,,INDEX,,NSE_INDEX
+NSE_INDEX|Nifty 50,17,NIFTY,Nifty 50,24194.5,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|NIFTY100 EQL Wgt,,NIFTY100 EQL Wgt,NIFTY100 EQL Wgt,31638.8,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|NIFTY50 EQL Wgt,,NIFTY50 EQL Wgt,NIFTY50 EQL Wgt,29989.95,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|NiftyM150Momntm50,,NiftyM150Momntm50,NiftyM150Momntm50,63102.85,,,,,INDEX,,NSE_INDEX
@@ -11,6 +12,7 @@ NSE_INDEX|NIFTY TOTAL MKT,,NIFTY TOTAL MKT,NIFTY TOTAL MKT,12721,,,,,INDEX,,NSE_
 NSE_INDEX|Nifty Serv Sector,30,Nifty Serv Sector,Nifty Serv Sector,32065.25,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|Nifty100 Liq 15,21,Nifty100 Liq 15,Nifty100 Liq 15,6324.6,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|Nifty Bank,28,Nifty Bank,Nifty Bank,52191.5,,,,,INDEX,,NSE_INDEX
+NSE_INDEX|Nifty Bank,28,BANKNIFTY,Nifty Bank,52191.5,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|Nifty Next 50,20,Nifty Next 50,Nifty Next 50,69522.25,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|NIFTY AlphaLowVol,,NIFTY AlphaLowVol,NIFTY AlphaLowVol,27702.6,,,,,INDEX,,NSE_INDEX
 NSE_INDEX|Nifty Energy,11,Nifty Energy,Nifty Energy,36722.2,,,,,INDEX,,NSE_INDEX

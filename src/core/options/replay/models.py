@@ -16,6 +16,7 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from src.core.options.data.schemas import OptionType
+from src.core.options.pricing.costs import TradeCostSummary
 
 
 def ensure_timestamp(value: pd.Timestamp | datetime | str, tz: str = "Asia/Kolkata") -> pd.Timestamp:
@@ -118,6 +119,11 @@ class OptionPositionSnapshot:
     dte: float
     greeks: Dict[str, float]
     pricing_mode: str
+    position_value: float = 0.0
+    unrealized_pnl: float = 0.0
+    delta_exposure: float = 0.0
+    gamma_exposure: float = 0.0
+    theta_exposure: float = 0.0
 
 
 @dataclass
@@ -133,9 +139,21 @@ class ReplayTradeResult:
     lifecycle: List[OptionPositionSnapshot]
     realized_pnl: float
     return_pct: float
+    costs: TradeCostSummary
+    net_realized_pnl: float
+    net_return_pct: float
     max_drawdown_pct: Optional[float]
+    mtm_equity_curve: List[Dict[str, object]] = field(default_factory=list)
+    lifecycle_metrics: Dict[str, float] = field(default_factory=dict)
     risk_flags: List[str] = field(default_factory=list)
     pricing_fallbacks: List[str] = field(default_factory=list)
+    mapping_metadata: Dict[str, object] = field(default_factory=dict)
+    exit_override_reason: Optional[str] = None
+    exit_override_details: Dict[str, object] = field(default_factory=dict)
+    exit_override_timestamp: Optional[pd.Timestamp] = None
+    forced_close: bool = False
+    forced_close_reason: Optional[str] = None
+    expiry_forced_close: bool = False
 
 
 @dataclass
@@ -146,6 +164,7 @@ class RiskEvent:
     event_type: str
     message: str
     details: Dict[str, object] = field(default_factory=dict)
+    severity: str = "info"
 
 
 @dataclass

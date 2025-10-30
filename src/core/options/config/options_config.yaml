@@ -4,7 +4,7 @@
 # Input Sources
 inputs:
   # Path to equity trades CSV (must include ticker column)
-  equity_trades_path: "outputs/20251006_024924/mse/2022-01-01_to_2025-08-31/data/all_trades_merged.csv"
+  equity_trades_path: "data/equity_trades_options_real.csv"
 
   # Directory containing equity data pools (timeframe folders inside)
   equity_data_root: "data/pools"
@@ -13,9 +13,8 @@ inputs:
   options_data_root: "data/pools/options"
 
   # Timeframes to use for replay
-  underlying_timeframe: "1minute"
+  underlying_timeframe: "5minute"
   options_timeframe:
-    - "1minute"
     - "5minute"
     - "1day"
 
@@ -61,10 +60,42 @@ pricing:
     # Data source
     cache_dir: "src/core/options/data/cache"
 
+  # Transaction cost model
+  costs:
+    enabled: true
+    exchange: "NSE"
+    brokerage:
+      flat_per_order: 20.0
+      pct_of_premium: null
+      max_per_order: null
+    exchange_transaction_rate:
+      NSE: 0.0003503
+      BSE: 0.000325
+    stt:
+      sell_premium_rate: 0.001
+      exercise_intrinsic_rate: 0.00125
+    stamp_duty_buy_rate: 0.00003
+    sebi:
+      rate: 0.000001
+      minimum: 10.0
+    clearing_rate: 0.0
+    gst:
+      rate: 0.18
+      include_components:
+        - brokerage
+        - exchange_transaction
+    rounding_precision: 2
+
+  # Slippage assumptions
+  slippage:
+    enabled: true
+    mode: "bps"
+    per_side_bps: 5.0
+
 # Strike Selection Strategy
 strike_selection:
   # Method: atm | delta | moneyness | premium_pct
-  method: "atm"
+  method: "delta"
 
   # ATM: Select strike closest to underlying price
   # (No additional parameters needed)
@@ -73,6 +104,7 @@ strike_selection:
   delta:
     target: 0.30  # Target delta (0.30 = 30-delta option)
     tolerance: 0.05  # Accept strikes within ±5 delta
+    volatility: 0.25  # Implied volatility assumption for selection
 
   # Moneyness-based selection (if method = moneyness)
   moneyness:
@@ -165,7 +197,7 @@ position_management:
     # Force close before expiry (avoid assignment)
     force_close_before_expiry:
       enabled: true
-      hours_before: 24  # Close 1 day (24 hours) before expiry
+      hours_before: 1  # Close 1 hour before expiry for intraday replay
 
     # Independent options exits (override equity signal if triggered)
     stop_loss:
@@ -190,16 +222,16 @@ position_management:
 # Liquidity Filters (for actual data mode)
 liquidity:
   # Minimum open interest
-  min_open_interest: 100
+  min_open_interest: 0
 
   # Maximum bid-ask spread (as % of mid)
-  max_spread_pct: 0.10  # 10%
+  max_spread_pct: -1  # disable spread check for historical data without bid/ask
 
   # Minimum daily volume
-  min_volume: 10
+  min_volume: 0
 
   # If filters fail, what to do?
-  on_filter_fail: "skip_trade"  # skip_trade | use_synthetic | ignore_filters
+  on_filter_fail: "ignore_filters"  # skip_trade | use_synthetic | ignore_filters
 
 # Greeks Calculation
 greeks:
@@ -229,7 +261,7 @@ risk:
   max_concurrent_positions: 10
 
   # Position size limits
-  max_position_size_per_trade: 0.05  # 5% of portfolio
+  max_position_size_per_trade: 0.5  # allow up to 50% for sample validation
 
   # Drawdown limits
   max_drawdown_pct: 0.25  # 25%
@@ -241,6 +273,10 @@ risk:
     max_intraday_loss_pct: 0.12  # Stop run if intraday loss exceeds 12%
     max_single_trade_loss_pct: 0.06  # Reject trades if projected loss >6%
     reason_codes: true  # Emit structured reason codes when triggered
+  assignment_risk:
+    enabled: true
+    dte_hours_threshold: 6
+    intrinsic_buffer: 0.0
 
 # Data Quality Tracking
 data_quality:
@@ -266,6 +302,8 @@ output:
     comparison: true          # comparison_equity_vs_options.csv
     position_lifecycle: true  # position_lifecycle.csv (Greeks evolution)
     pricing_validation: true  # pricing_validation.csv (if hybrid mode)
+    health_cards: true        # options_health_cards.csv
+    lifecycle_summary: true   # options_lifecycle_summary.csv
 
   # File formats
   formats:
@@ -332,25 +370,31 @@ validation:
   # Action on validation failure
   on_failure: "raise_error"  # raise_error | log_warning | continue
 
+readiness:
+  # Minimum fraction of trades that must be fully backed by actual data
+  min_ready_ratio: 0.75
+
+  # Maximum number of blocked trades (missing data) allowed before aborting
+  max_blocked: 0
+
+  # Maximum synthetic fallback ratio tolerated before aborting
+  max_synthetic_ratio: 0.35
+
+  # Allow runs to proceed if trades require synthetic pricing (will warn)
+  allow_needs_attention: true
+
+  # Warn when synthetic ratio exceeds this threshold (but below hard max)
+  synthetic_warn_ratio: 0.25
+
+  # Informational alert when synthetic ratio exceeds this threshold
+  synthetic_info_ratio: 0.10
+
 # Experimental Features (Not Yet Implemented)
 experimental:
   # IV surface modeling (future)
   iv_surface:
     enabled: false
     method: "ssvi"  # SSVI, SVI, cubic spline
-
-  # Transaction costs modeling
-  transaction_costs:
-    enabled: false
-    brokerage_per_lot: 20  # ₹20 per lot
-    stt: 0.0005  # 0.05% on premium
-    exchange_charges: 0.00005
-
-  # Slippage modeling
-  slippage:
-    enabled: false
-    model: "fixed_pct"  # fixed_pct | volume_based
-    fixed_pct: 0.001  # 0.1% slippage
 
 # Templates
 # Users can create custom configs based on this template

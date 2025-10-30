@@ -3,6 +3,10 @@ from typing import Dict, Any, Type, Optional, List, Set
 import logging
 import inspect
 from .strategy_base import StrategyBase
+try:
+    from config.unified_config import StrategyConfig  # type: ignore
+except Exception:
+    StrategyConfig = None  # Fallback when config module unavailable
 
 class StrategyFactory:
     """
@@ -221,13 +225,19 @@ class StrategyFactory:
         return info
 
     @classmethod
-    def get_strategy(cls, name: str, parameters=None):
+    def get_strategy(
+        cls,
+        name: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        strategy_config: Optional["StrategyConfig"] = None,
+    ):
         """
         Get a strategy instance by name.
 
         Args:
             name: The name of the strategy to get
             parameters: Optional parameters to pass to the strategy constructor
+            strategy_config: Optional StrategyConfig providing defaults and risk profile
 
         Returns:
             An instance of the requested strategy
@@ -239,7 +249,12 @@ class StrategyFactory:
 
         strategy_class = cls._strategies[name]
         try:
-            return strategy_class(name, parameters)
+            instance = strategy_class(name, None, strategy_config)
+
+            if parameters:
+                instance.parameters.update(parameters)
+
+            return instance
         except Exception as e:
             logging.error(f"Error creating strategy '{name}': {e}")
             return None

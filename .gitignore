@@ -111,8 +111,6 @@ data/**/*.zip
 
 # Output and Results
 outputs/**
-!outputs/phase4_backtest/
-!outputs/phase4_backtest/**
 results/
 backtests/
 *.png
@@ -266,7 +264,6 @@ model_performance/
 
 # Keep these files (explicitly not ignored)
 !README.md
-!CLAUDE.md
 !requirements.txt
 !config/config.py
 !config/unified_config.py
@@ -277,9 +274,6 @@ model_performance/
 docs/CRITICAL_STRATEGY_IMPLEMENTATION_GUIDE.md
 docs/TASKS.md
 !src/
-!comprehensive_data_puller.py
-!mse_data_puller.py
-!mse_data_utils.py
 
 # Keep small sample data files for testing (if needed)
 !data/samples/
@@ -287,22 +281,6 @@ docs/TASKS.md
 
 # Keep configuration templates
 !config/templates/
-
-# ==========================================
-# CLAUDE CODE INTEGRATION
-# ==========================================
-
-# Keep Claude Code configuration
-!.claude/
-!.claude/**
-
-# ==========================================
-# GITHUB INTEGRATION
-# ==========================================
-
-# Keep GitHub workflows and templates
-!.github/
-!.github/**
 
 # ==========================================
 # NOTES
@@ -317,3 +295,91 @@ docs/TASKS.md
 # 2. Clean repository: Exclude generated outputs and temporary files
 # 3. Development: Allow essential files while ignoring build artifacts
 # 4. Flexibility: Easy to modify for specific deployment needs
+
+# ==========================================
+# RELEASE HYGIENE EXTRAS
+# ==========================================
+.claude/
+.worktrees/
+candles/
+hist_data/
+temp_*/
+temp_*.py
+Backtesting System Audit Report.txt
+COMPREHENSIVE_*.md
+QA_*.md
+IMPLEMENTATION_*.md
+PHASE_*.md
+PHASES_*.md
+AGENTS.md
+analysis/output/
+analysis/run_logs/
+data/options/
+data/equity_trades_options*.csv
+scripts/options_control_board_quicklook.py
+src/core/options/
+tests/options/
+tests/phase4_circuit_breaker/
+tests/qa/
+tests/run_phase4_backtest.py
+tests/test_2025_data_*.py
+tests/test_backtester_adapter.py
+tests/test_config_loader.py
+tests/test_data_loading.py
+tests/test_enhanced_output_orchestrator.py
+tests/test_live_adapter*.py
+tests/test_phase3_integration.py
+tests/test_signal_parity.py
+tests/validate_signal_parity.py
+utils/merge_trades.py
+src/strategies/example_mse_strategy.py
+README_START_HERE.md
+START_HERE_READING_GUIDE.md
+USER_REVIEW_ANALYSIS_COMPLETE.md
+YOUR_UNDERSTANDING_SUMMARY.md
+
+# Added by cleanup script 2025-10-15
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+.virtualenv/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Data files (optional - uncomment if needed)
+# *.csv
+# *.parquet
+# data/pools/
+
+# Archive directories (already archived)
+archive/

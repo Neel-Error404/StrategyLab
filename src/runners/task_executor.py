@@ -2,36 +2,24 @@
 """
 Task Executor Module for Unified Backtester
 
-Handles parallel/sequential execution of backtest tasks.
-Includes validation, risk management, transaction costs, and bias detection.
+Thin orchestration layer that now delegates execution to the rich ExecutionEngine
+while maintaining parallelism and legacy interfaces.
 """
 
 import logging
-import pandas as pd
-import numpy as np
-from datetime import datetime
 from multiprocessing import Pool, cpu_count
 import signal
 from pathlib import Path
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Optional
 
-# Core system imports
-from src.core.etl.loader import load_base_data, load_multi_timeframe_data
-from src.core.strat_stats.strategy_executor import extract_trades
-from src.core.strat_stats.statistics import (
-    calculate_metrics,
-    calculate_advanced_metrics,
-    calculate_returns_series
-)
-from src.strategies.strategy_factory import StrategyFactory
+from src.core.etl.loader import load_base_data
 from src.strategies.register_strategies import register_all_strategies
 from src.core.validation.bias_detector import BiasDetector
 from src.core.costs.transaction_models import AdvancedTransactionCosts
 from src.core.risk.risk_manager import RiskManager
 from src.core.options.options_engine import OptionsBacktester
-
-# Import modular validation component
 from src.runners.components.validator import DataValidator
+from src.runners.workflow.execution_engine import ExecutionEngine
 
 
 def init_worker_process():
@@ -61,6 +49,14 @@ class TaskExecutor:
         self.data_validator = DataValidator(self.logger)
         
         self._initialize_components()
+        self.execution_engine = ExecutionEngine(
+            config,
+            risk_manager=self.risk_manager,
+            transaction_costs=self.transaction_costs,
+            bias_detector=self.bias_detector,
+            options_engine=self.options_engine,
+            data_validator=self.data_validator
+        )
     
     def _initialize_components(self):
         """Initialize task execution components."""
@@ -161,149 +157,9 @@ class TaskExecutor:
     
     def run_backtest_task(self, args_tuple) -> Dict[str, Any]:
         """
-        Execute a single backtest task.
+        Execute a single backtest task via the consolidated execution engine.
         """
-        ticker, date_range, strategy_name, optimization_params = args_tuple
-        
-        self.logger.info(f"Processing {ticker} with {strategy_name} for {date_range}")
-        
-        try:
-            # Get strategy instance first to check timeframe requirements
-            strategy = StrategyFactory.get_strategy(strategy_name)
-            if strategy is None:
-                self.logger.error(f"Strategy '{strategy_name}' not found")
-                return {}
-            
-            # Load data based on strategy requirements
-            if hasattr(strategy, 'required_timeframes') and len(strategy.required_timeframes) > 1:
-                # Multi-timeframe strategy - use new loader
-                self.logger.info(f"Loading multi-timeframe data for {strategy_name}: {strategy.required_timeframes}")
-                data = load_multi_timeframe_data(date_range, ticker, strategy.required_timeframes)
-                if not data:
-                    self.logger.warning(f"No multi-timeframe data found for {ticker} in {date_range}")
-                    return {}
-                base_df = data  # Keep as dict for multi-timeframe strategies
-            else:
-                # Single timeframe strategy - use legacy loader
-                base_df = load_base_data(date_range, ticker)
-                if base_df is None or base_df.empty:
-                    self.logger.warning(f"No data found for {ticker} in {date_range}")
-                    return {}
-            
-            # Validate market data using modular validator
-            if isinstance(base_df, dict):
-                # Multi-timeframe data - validate each timeframe
-                for timeframe, df in base_df.items():
-                    validation_result = self.data_validator.validate_market_data(df)
-                    if not validation_result['is_valid']:
-                        self.logger.error(f"Data validation failed for {ticker} {timeframe} in {date_range}: {validation_result['issues']}")
-                        return {}
-                    
-                    # Log validation warnings if any
-                    if validation_result['warnings']:
-                        for warning in validation_result['warnings']:
-                            self.logger.warning(f"Data validation warning for {ticker} {timeframe}: {warning}")
-            else:
-                # Single timeframe data
-                validation_result = self.data_validator.validate_market_data(base_df)
-                if not validation_result['is_valid']:
-                    self.logger.error(f"Data validation failed for {ticker} in {date_range}: {validation_result['issues']}")
-                    return {}
-                
-                # Log validation warnings if any
-                if validation_result['warnings']:
-                    for warning in validation_result['warnings']:
-                        self.logger.warning(f"Data validation warning for {ticker}: {warning}")
-            
-            # Execute strategy
-            final_df = strategy.execute(base_df, ticker, date_range)
-            if final_df is None or final_df.empty:
-                self.logger.warning(f"Strategy returned no data for {ticker} in {date_range}")
-                return {}
-            
-            # Extract trades
-            trades = extract_trades(final_df)
-            strategy_trades = trades.copy() if trades else []
-            
-            # Apply transaction costs
-            if trades and self.transaction_costs:
-                trades = self._apply_transaction_costs(trades, base_df)
-                strategy_trades = self._apply_transaction_costs(strategy_trades.copy(), base_df)
-            
-            # Apply risk management
-            risk_report = {}
-            if trades and self.risk_manager:
-                trades, risk_report = self._apply_risk_management(trades, ticker, base_df)
-            
-            # Calculate metrics
-            if trades:
-                basic_metrics = calculate_metrics(trades, final_df)
-                advanced_metrics = calculate_advanced_metrics(trades)
-                metrics = {**basic_metrics, **advanced_metrics}
-            else:
-                metrics = calculate_advanced_metrics([])
-            
-            # Add metadata
-            metrics.update({
-                "ticker": ticker,
-                "strategy": strategy_name,
-                "date_range": date_range
-            })
-            
-            return {
-                'ticker': ticker,
-                'strategy': strategy_name,
-                'date_range': date_range,
-                'trades': trades,
-                'strategy_trades': strategy_trades,
-                'metrics': metrics,
-                'risk_report': risk_report,
-                'base_data': final_df
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error in backtest task for {ticker} with {strategy_name} on {date_range}: {e}")
-            return {}
-    
-    def _apply_transaction_costs(self, trades: List[Dict], market_data: pd.DataFrame) -> List[Dict]:
-        """Apply transaction costs to trades."""
-        if not self.transaction_costs:
-            return trades
-        
-        # Simplified transaction cost application
-        enhanced_trades = []
-        for trade in trades:
-            # Apply costs (simplified)
-            cost = abs(trade.get('PnL', 0)) * 0.001  # 0.1% cost
-            trade['PnL'] = trade.get('PnL', 0) - cost
-            enhanced_trades.append(trade)
-        
-        return enhanced_trades
-    
-    def _apply_risk_management(self, trades: List[Dict], ticker: str, market_data: pd.DataFrame) -> Tuple[List[Dict], Dict]:
-        """Apply risk management to trades."""
-        if not self.risk_manager:
-            return trades, {}
-        
-        # Simplified risk management
-        approved_trades = []
-        rejected_count = 0
-        
-        for trade in trades:
-            # Simple position size check
-            position_size = abs(trade.get('size', 100))
-            if position_size <= 1000:  # Max position size
-                approved_trades.append(trade)
-            else:
-                rejected_count += 1
-        
-        risk_report = {
-            'original_trade_count': len(trades),
-            'approved_trade_count': len(approved_trades),
-            'rejected_trade_count': rejected_count
-        }
-        
-        return approved_trades, risk_report
+        return self.execution_engine.run_backtest_task(args_tuple)
     
     def validate_data(self, dates: List[str], tickers: List[str]) -> bool:
         """Validate data availability and quality."""

@@ -1,50 +1,28 @@
-# Strategy Lab - Release Notes
+﻿# StrategyLab Equities V2 Release Notes
 
-## v0.05 (June 2025) - Initial Public Release 🧪
+## Highlights
+- Incremental parquet updates with data validation (`--mode update`).
+- Config parity and precision validator modules with accompanying pytest suites.
+- Sanitised OSS footprint: options stack and large data pools removed; UTF-8 codebase.
+- Environment-aware YAML loader for broker credentials and templates.
 
-### ✨ **Core Laboratory Features**
-- **AI-Assisted Configuration**: Smart prompts for personalized setup
-- **Real Broker Integration**: Zerodha Kite & Upstox API support
-- **Multi-Mode Experiments**: Full backtest, analysis-only, visualization-only
-- **Risk Management**: Pre-configured templates (minimal, conservative, aggressive)
-- **Comprehensive Analysis**: Performance metrics, trade analysis, visualizations
-- **Production Ready**: Parallel processing, data validation, error handling
+## Tested
+- `.venv\Scripts\python.exe -m pytest tests/test_backtest_live_parity.py tests/test_precision_validation.py -q`
+- Python 3.10 virtual environment on Windows.
 
-### 📊 **Supported Assets**
-- **Stocks**: RELIANCE, TCS, INFY, HDFCBANK, ICICIBANK, ITC
-- **Strategies**: MSE (Mean Squared Error), SMA (Simple Moving Average)
-- **Timeframes**: 1-minute to daily data
-- **Date Ranges**: 6-month historical data available
+## Known Limitations
+- Options trading infrastructure intentionally excluded from this release.
+- Sample datasets limited to metadata (`data/indian_equities_master.csv`). Supply your own historical candles.
+- `optimize` mode remains experimental.
 
-### 🎯 **User Experience**
-- **30-second setup**: Clone → Install → Run
-- **AI-first documentation**: Comprehensive guides with AI assistant prompts
-- **Template system**: Risk profiles for different trading styles
-- **Error guidance**: Clear troubleshooting and help system
+## Upgrade Notes
+1. Pull latest `release/strategylab-v2` branch.
+2. Install dependencies in a fresh venv: `pip install -r requirements.txt`.
+3. Populate `.env` with broker credentials or export environment variables.
+4. Use the new update workflow to extend existing pools instead of full re-fetches.
 
-### 🛡️ **Risk & Compliance**
-- **Position sizing controls**: Configurable limits (5%-20%)
-- **Drawdown protection**: Portfolio-level risk management
-- **Trade validation**: Real-time risk assessment
-- **Transparent reporting**: Complete audit trail
+See `docs/strategylab_v2_phase0_audit.md` and `docs/TASKS.md` for full change history.
 
-### 🔧 **Technical**
-- **Python 3.9+**: Modern, maintainable codebase
-- **Modular architecture**: Clean separation of concerns
-- **Comprehensive logging**: Debug and audit capabilities
-- **Data validation**: Quality checks and error detection
 
----
 
-*Built with ❤️ for traders who believe in data-driven decisions*
 
-### 🚀 **What's Next?**
-This release establishes a solid foundation. Future improvements will be driven by user feedback and traction:
-
-- Interactive web interface
-- Natural language command interface
-- Advanced strategy marketplace
-- Real-time trading capabilities
-- Community features
-
-**Feedback Welcome!** Share your experience to help shape the roadmap.

@@ -20,8 +20,18 @@ from src.core.options.pricing.synthetic_engine import (
 )
 from src.core.options.data.schemas import OptionType
 from src.core.options.replay.config import OptionsReplayConfig
+from src.core.options.pricing.costs import LegCostBreakdown, OptionTransactionCostModel
 from .models import OptionContractSpec, PricingEvent, OptionPositionSnapshot
 from .data_loader import OptionDataStore
+
+
+class LiquidityFilterError(Exception):
+    """Raised when liquidity filters request skipping a trade."""
+
+    def __init__(self, reasons: List[str], metadata: Dict[str, object]) -> None:
+        super().__init__(";".join(reasons))
+        self.reasons = reasons
+        self.metadata = metadata
 
 
 def _time_to_expiry(expiry: pd.Timestamp, timestamp: pd.Timestamp) -> float:
@@ -91,6 +101,8 @@ class HybridPricingEngine:
         self.synthetic_engine.set_underlying_data(underlying_data)
         self.black_scholes = BlackScholesEngine(risk_free_rate=synthetic_cfg.risk_free_rate)
         self._pricing_cache: Dict[str, PricingContext] = {}
+        self._liquidity_cfg = config.liquidity
+        self._cost_model = OptionTransactionCostModel(config.pricing.costs, config.pricing.slippage)
 
     def _ensure_context(self, expiry: pd.Timestamp) -> PricingContext:
         key = expiry.normalize().strftime("%Y-%m-%d")
@@ -106,12 +118,45 @@ class HybridPricingEngine:
         self._pricing_cache[key] = ctx
         return ctx
 
+    def _check_liquidity(self, row: pd.Series) -> List[str]:
+        failures: List[str] = []
+        cfg = self._liquidity_cfg
+
+        oi = row.get("open_interest")
+        if pd.isna(oi):
+            failures.append("open_interest_missing")
+        elif oi < cfg.min_open_interest:
+            failures.append("open_interest_below_min")
+
+        volume = row.get("volume")
+        if pd.isna(volume):
+            failures.append("volume_missing")
+        elif volume < cfg.min_volume:
+            failures.append("volume_below_min")
+
+        max_spread = cfg.max_spread_pct
+        if max_spread is not None and max_spread >= 0:
+            bid = row.get("bid")
+            ask = row.get("ask")
+            spread_ratio: Optional[float] = None
+            if not pd.isna(bid) and not pd.isna(ask) and bid > 0 and ask > 0:
+                mid = (bid + ask) / 2.0
+                if mid > 0:
+                    spread_ratio = (ask - bid) / mid
+            if spread_ratio is None:
+                failures.append("bid_ask_missing")
+            elif spread_ratio > max_spread:
+                failures.append("spread_above_max")
+
+        return failures
+
     def _extract_actual_price(
         self,
         context: PricingContext,
         contract: OptionContractSpec,
         timestamp: pd.Timestamp,
-    ) -> Tuple[Optional[float], Dict[str, str]]:
+        allow_skip: bool,
+    ) -> Tuple[Optional[float], Dict[str, object]]:
         row, metadata = self.option_store.find_price_bar(
             expiry=contract.expiry,
             option_type=contract.option_type,
@@ -132,6 +177,26 @@ class HybridPricingEngine:
         }
         if "attempts" in metadata:
             meta["attempts"] = metadata["attempts"]
+
+        liquidity_failures = self._check_liquidity(row)
+        if liquidity_failures:
+            meta["liquidity_failures"] = liquidity_failures
+            behavior = self._liquidity_cfg.on_filter_fail
+            if behavior == "ignore_filters":
+                pass
+            elif behavior == "use_synthetic":
+                meta["reason"] = "liquidity_violation"
+                return None, meta
+            elif behavior == "skip_trade" and allow_skip:
+                meta["reason"] = "liquidity_violation_skip"
+                raise LiquidityFilterError(liquidity_failures, meta)
+            else:
+                # During lifecycle pricing we fall back to synthetic rather than skipping the trade.
+                meta["reason"] = "liquidity_violation"
+                return None, meta
+        else:
+            meta["liquidity_failures"] = []
+
         return price, meta
 
     def _compute_synthetic(
@@ -165,6 +230,7 @@ class HybridPricingEngine:
         contract: OptionContractSpec,
         timestamp: pd.Timestamp,
         underlying_price: float,
+        allow_skip: bool = True,
     ) -> Tuple[PricingEvent, Optional[str]]:
         """
         Compute price at a given timestamp for the provided contract.
@@ -180,9 +246,14 @@ class HybridPricingEngine:
         fallback_reason: Optional[str] = None
         actual_meta: Dict[str, object] = {}
         actual_price: Optional[float] = None
+        time_to_expiry = max(_time_to_expiry(contract.expiry, timestamp), 1e-6)
+        dte_days = time_to_expiry * 365.0
 
         if self.config.pricing.mode in {"actual", "hybrid"}:
-            actual_price, actual_meta = self._extract_actual_price(ctx, contract, timestamp)
+            try:
+                actual_price, actual_meta = self._extract_actual_price(ctx, contract, timestamp, allow_skip)
+            except LiquidityFilterError:
+                raise
             if actual_price is not None:
                 pricing_mode = "actual"
             else:
@@ -202,12 +273,12 @@ class HybridPricingEngine:
             "vol_source_timeframe": ctx.source_timeframe,
             "actual_details": actual_meta,
             "fallback_reason": fallback_reason,
+            "time_to_expiry_days": float(dte_days),
         }
 
         if actual_price is not None:
             price_used = float(actual_price)
             # Attempt implied volatility inversion for auditability.
-            time_to_expiry = max(_time_to_expiry(contract.expiry, timestamp), 1e-6)
             bs_type = _option_type_to_label(contract.option_type)
             try:
                 implied_vol = self.black_scholes.calculate_implied_volatility(
@@ -223,6 +294,8 @@ class HybridPricingEngine:
             if np.isnan(implied_vol):
                 implied_vol = float(sigma)
             notes["actual_price"] = price_used
+            notes["implied_vol_observed"] = float(implied_vol)
+            notes["calibration_error"] = float(price_used - synthetic_price)
         event = PricingEvent(
             timestamp=timestamp,
             price=float(price_used),
@@ -232,6 +305,28 @@ class HybridPricingEngine:
             notes=notes,
         )
         return event, fallback_reason
+
+    def compute_leg_costs(
+        self,
+        *,
+        price: float,
+        quantity: int,
+        side: str,
+        exchange: Optional[str] = None,
+        intrinsic_value: Optional[float] = None,
+        exercised: bool = False,
+    ) -> LegCostBreakdown:
+        """
+        Calculate transaction costs for a single execution leg.
+        """
+        premium_turnover = max(float(price) * float(quantity), 0.0)
+        return self._cost_model.calculate_leg_costs(
+            premium_turnover=premium_turnover,
+            side=side,
+            exchange=exchange,
+            intrinsic_value=intrinsic_value,
+            exercised=exercised,
+        )
 
     def price_path(
         self,
@@ -250,20 +345,45 @@ class HybridPricingEngine:
         greeks_to_compute = [metric.lower() for metric in self.config.greeks.metrics]
 
         for ts, spot in zip(timestamps, underlying_prices):
-            event, fallback = self.price(contract, ts, spot)
+            try:
+                event, fallback = self.price(contract, ts, spot, allow_skip=False)
+            except LiquidityFilterError as exc:
+                ctx = self._ensure_context(contract.expiry)
+                synthetic_price, sigma = self._compute_synthetic(ctx, contract, ts, spot)
+                event = PricingEvent(
+                    timestamp=ts,
+                    price=float(synthetic_price),
+                    pricing_mode="synthetic",
+                    implied_vol=float(sigma),
+                    underlying_price=float(spot),
+                    notes={
+                        "synthetic_price": float(synthetic_price),
+                        "synthetic_vol": float(sigma),
+                        "vol_source_timeframe": ctx.source_timeframe,
+                        "actual_details": {
+                            "liquidity_failures": exc.reasons,
+                            "source": "actual_cache",
+                            "reason": "liquidity_violation",
+                        },
+                        "fallback_reason": "liquidity_violation",
+                    },
+                )
+                fallback = "liquidity_violation"
             if fallback:
                 fallbacks.append(fallback)
             greeks: Dict[str, float] = {}
             if include_greeks:
                 time_to_expiry = max(_time_to_expiry(contract.expiry, ts), 1e-6)
                 bs_type = _option_type_to_label(contract.option_type)
-                sigma = float(event.notes.get("synthetic_vol", self.config.pricing.synthetic.vol_floor))
+                sigma_source = event.implied_vol
+                if sigma_source is None or np.isnan(sigma_source):
+                    sigma_source = float(event.notes.get("synthetic_vol", self.config.pricing.synthetic.vol_floor))
                 greeks_all = self.black_scholes.calculate_greeks(
                     S=float(spot),
                     K=float(contract.strike),
                     T=time_to_expiry,
                     r=self.config.pricing.synthetic.risk_free_rate,
-                    sigma=sigma,
+                    sigma=float(sigma_source),
                     option_type=bs_type,
                 )
                 for metric in greeks_to_compute:

@@ -26,6 +26,7 @@ from src.core.strat_stats.statistics import (
     calculate_returns_series
 )
 from src.strategies.strategy_factory import StrategyFactory
+from src.runners.components.validator import DataValidator
 
 
 class ExecutionEngine:
@@ -33,7 +34,8 @@ class ExecutionEngine:
     
     def __init__(self, config: BacktestConfig, 
                  risk_manager=None, transaction_costs=None, 
-                 bias_detector=None, options_engine=None):
+                 bias_detector=None, options_engine=None,
+                 data_validator: Optional[DataValidator] = None):
         self.config = config
         self.logger = logging.getLogger(__name__)
         
@@ -42,6 +44,7 @@ class ExecutionEngine:
         self.transaction_costs = transaction_costs
         self.bias_detector = bias_detector
         self.options_engine = options_engine
+        self.data_validator = data_validator
         
     def run_backtest_task(self, args_tuple) -> Dict[str, Any]:
         """
@@ -53,7 +56,11 @@ class ExecutionEngine:
         self.logger.info(f"Processing {ticker} with {strategy_name} for {date_range}")
         try:
             # Get strategy instance first to check timeframe requirements
-            strategy = StrategyFactory.get_strategy(strategy_name)
+            strategy = StrategyFactory.get_strategy(
+                strategy_name,
+                parameters=None,
+                strategy_config=getattr(self.config, 'strategy', None)
+            )
             if strategy is None:
                 self.logger.error(f"Strategy '{strategy_name}' not found")
                 return {}
@@ -72,6 +79,11 @@ class ExecutionEngine:
                 base_df = load_base_data(date_range, ticker)
                 if base_df is None or base_df.empty:
                     self.logger.warning(f"No data found for {ticker} in {date_range}")
+                    return {}
+
+            # Data validation prior to strategy execution
+            if self.config.validation.enabled and self.data_validator:
+                if not self._validate_market_data(base_df, ticker, date_range):
                     return {}
             
             # Parse date range for metadata
@@ -129,6 +141,41 @@ class ExecutionEngine:
             self.logger.error(f"Error in backtest task for {ticker} with {strategy_name} on {date_range}: {e}", 
                             exc_info=True)
             return {}
+
+    def _validate_market_data(self, market_data: Any, ticker: str, date_range: str) -> bool:
+        """Run data validation across single or multi-timeframe inputs."""
+        try:
+            if isinstance(market_data, dict):
+                for timeframe, df in market_data.items():
+                    result = self.data_validator.validate_market_data(df, ticker)
+                    if not result["is_valid"]:
+                        self.logger.error(
+                            f"Data validation failed for {ticker} {timeframe} in {date_range}: {result['issues']}"
+                        )
+                        return False
+                    self._log_validation_warnings(result, ticker, timeframe)
+            else:
+                result = self.data_validator.validate_market_data(market_data, ticker)
+                if not result["is_valid"]:
+                    self.logger.error(
+                        f"Data validation failed for {ticker} in {date_range}: {result['issues']}"
+                    )
+                    return False
+                self._log_validation_warnings(result, ticker, None)
+            return True
+        except Exception as exc:
+            self.logger.error(f"Error during data validation for {ticker} in {date_range}: {exc}")
+            return False
+
+    def _log_validation_warnings(self, validation_result: Dict[str, Any], ticker: str, timeframe: Optional[str]):
+        """Emit validator warnings with context."""
+        if not validation_result.get("warnings"):
+            return
+        for warning in validation_result["warnings"]:
+            if timeframe:
+                self.logger.warning(f"Data validation warning for {ticker} {timeframe}: {warning}")
+            else:
+                self.logger.warning(f"Data validation warning for {ticker}: {warning}")
     
     def _parse_date_range_metadata(self, date_range: str) -> Dict[str, Any]:
         """Parse date range string and extract metadata."""
@@ -395,7 +442,11 @@ class ExecutionEngine:
                 metrics.update(options_metrics)
         
         # Update metrics with metadata
-        strategy = StrategyFactory.get_strategy(strategy_name)
+        strategy = StrategyFactory.get_strategy(
+            strategy_name,
+            parameters=None,
+            strategy_config=getattr(self.config, 'strategy', None)
+        )
         metrics.update(date_range_meta)
         metrics["Parameters"] = str(strategy.parameters) if strategy else "Unknown"
         metrics["ticker"] = ticker

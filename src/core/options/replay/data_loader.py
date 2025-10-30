@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -425,16 +425,56 @@ class OptionDataStore:
         ordered = sorted(seen.keys(), key=_timeframe_to_seconds)
         return tuple(ordered)
 
-    def list_expiries(self) -> List[pd.Timestamp]:
-        """List available expiries for the ticker."""
+    def list_expiries(self, *, require_data: bool = False) -> List[pd.Timestamp]:
+        """
+        List available expiries for the ticker.
+
+        Args:
+            require_data: When True, only return expiries that have cached
+                chains for the store's primary timeframe.
+        """
         metadata_dir = self.base_dir / "metadata"
         if not metadata_dir.exists():
             return []
+        primary_timeframe_dir = self.base_dir / self.timeframe if require_data else None
         expiries: List[pd.Timestamp] = []
         for path in metadata_dir.glob("expiry_*.json"):
-            expiry = pd.Timestamp(path.stem.replace("expiry_", "")).tz_localize("Asia/Kolkata")
+            expiry_token = path.stem.replace("expiry_", "")
+            expiry = pd.Timestamp(expiry_token).tz_localize("Asia/Kolkata")
+            if require_data and primary_timeframe_dir is not None:
+                chain_path = primary_timeframe_dir / f"expiry_{expiry_token}.parquet"
+                if not chain_path.exists():
+                    continue
             expiries.append(expiry)
         return sorted(expiries)
+
+    def coverage_bounds(self) -> Tuple[Optional[date], Optional[date]]:
+        """
+        Return the earliest and latest expiry dates that have data across all configured timeframes.
+        """
+        metadata_dir = self.base_dir / "metadata"
+        if not metadata_dir.exists():
+            return None, None
+
+        aligned_dates: List[date] = []
+        for path in metadata_dir.glob("expiry_*.json"):
+            expiry_token = path.stem.replace("expiry_", "")
+            try:
+                expiry_date = date.fromisoformat(expiry_token)
+            except ValueError:
+                continue
+            has_all = True
+            for timeframe in self.timeframes:
+                chain_path = self.base_dir / timeframe / f"expiry_{expiry_token}.parquet"
+                if not chain_path.exists():
+                    has_all = False
+                    break
+            if has_all:
+                aligned_dates.append(expiry_date)
+
+        if not aligned_dates:
+            return None, None
+        return min(aligned_dates), max(aligned_dates)
 
     def get_metadata(self, expiry: pd.Timestamp) -> ExpiryMetadata:
         """Fetch expiry metadata, caching the result."""

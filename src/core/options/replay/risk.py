@@ -28,12 +28,28 @@ class RiskManager:
     Stateful risk manager enforcing portfolio and kill-switch rules.
     """
 
+    _SEVERITY_MAP = {
+        "entry_registered": "info",
+        "entry_rejected": "warning",
+        "exit_missing_position": "warning",
+        "position_closed": "info",
+        "mtm_delta_warning": "warning",
+        "theta_decay_warning": "warning",
+        "mtm_drawdown_warning": "warning",
+        "assignment_risk": "warning",
+        "risk_alert": "warning",
+        "kill_switch": "error",
+        "kill_switch_status": "info",
+    }
+
     def __init__(self, config: RiskConfig):
         self.config = config
         self.initial_capital = float(config.initial_portfolio_value)
         self.open_positions: Dict[str, OpenPosition] = {}
         self.ticker_allocations: Dict[str, float] = defaultdict(float)
         self.ticker_realized_pnl: Dict[str, float] = defaultdict(float)
+        self.ticker_mtm_metrics: Dict[str, Dict[str, float]] = defaultdict(lambda: defaultdict(float))
+        self.ticker_assignment_flags: Dict[str, int] = defaultdict(int)
         self.realized_pnl: float = 0.0
         self.max_equity: float = self.initial_capital
         self.min_equity: float = self.initial_capital
@@ -41,6 +57,7 @@ class RiskManager:
         self.kill_switch_reason: str | None = None
         self.kill_switch_timestamp: Optional[pd.Timestamp] = None
         self.risk_events: List[RiskEvent] = []
+        self.kill_switch_status_logged: bool = False
 
     @property
     def deployed_capital(self) -> float:
@@ -50,13 +67,22 @@ class RiskManager:
     def current_equity(self) -> float:
         return self.initial_capital + self.realized_pnl
 
-    def _record_event(self, event_type: str, message: str, details: Dict[str, object]) -> None:
+    def _record_event(
+        self,
+        event_type: str,
+        message: str,
+        details: Dict[str, object],
+        *,
+        severity: Optional[str] = None,
+    ) -> None:
+        event_severity = severity or self._SEVERITY_MAP.get(event_type, "info")
         self.risk_events.append(
             RiskEvent(
                 timestamp=pd.Timestamp.now(tz="UTC"),
                 event_type=event_type,
                 message=message,
                 details=details,
+                severity=event_severity,
             )
         )
 
@@ -122,6 +148,7 @@ class RiskManager:
             quantity=quantity,
         )
         self.ticker_allocations[ticker] += entry_cost
+        self.ticker_mtm_metrics[ticker]["position_value"] += entry_cost
         self._record_event(
             "entry_registered",
             "Position opened",
@@ -163,6 +190,8 @@ class RiskManager:
                 0.0,
             )
             self.ticker_realized_pnl[position_ticker] += realized_pnl
+            metrics = self.ticker_mtm_metrics[position_ticker]
+            metrics["position_value"] = max(metrics.get("position_value", 0.0) - position.entry_cost, 0.0)
 
         self.realized_pnl += realized_pnl
         equity = self.current_equity
@@ -187,6 +216,7 @@ class RiskManager:
                     event_type="kill_switch",
                     message="Kill switch engaged: max drawdown breached",
                     details={"drawdown": drawdown, "trade_id": trade_id, "ticker": position_ticker},
+                    severity="error",
                 )
             )
 
@@ -202,6 +232,7 @@ class RiskManager:
                     event_type="kill_switch",
                     message="Kill switch engaged: intraday loss threshold breached",
                     details={"equity": equity, "threshold": threshold_equity, "trade_id": trade_id, "ticker": position_ticker},
+                    severity="error",
                 )
                 events.append(event)
 
@@ -213,6 +244,7 @@ class RiskManager:
                     event_type="risk_alert",
                     message="Single trade loss exceeded threshold",
                     details={"trade_id": trade_id, "loss_pct": loss_pct, "ticker": position_ticker},
+                    severity="warning",
                 )
                 events.append(event)
 
@@ -230,13 +262,93 @@ class RiskManager:
                 event_type="position_closed",
                 message="Position closed",
                 details=exit_event_details,
+                severity="info",
             )
         )
 
         for event in events:
-            self._record_event(event.event_type, event.message, event.details)
+            self._record_event(event.event_type, event.message, event.details, severity=event.severity)
 
         return events
+
+    def record_lifecycle_metrics(
+        self,
+        ticker: str,
+        delta_peak: float,
+        delta_drift: float,
+        theta_cumulative: float,
+        gamma_peak: float,
+        unrealized_drawdown: float,
+        assignment_risk: bool,
+        assignment_intrinsic: float,
+        assignment_dte_hours: float,
+        timestamp: pd.Timestamp,
+        trade_id: str,
+    ) -> None:
+        metrics = self.ticker_mtm_metrics[ticker]
+        metrics["delta_peak_abs"] = max(metrics.get("delta_peak_abs", 0.0), abs(delta_peak))
+        metrics["delta_drift"] = max(metrics.get("delta_drift", 0.0), abs(delta_drift))
+        metrics["theta_cumulative"] += theta_cumulative
+        metrics["gamma_peak_abs"] = max(metrics.get("gamma_peak_abs", 0.0), abs(gamma_peak))
+        metrics["max_unrealized_drawdown"] = min(metrics.get("max_unrealized_drawdown", 0.0), unrealized_drawdown)
+
+        delta_limit = self.initial_capital * max(self.config.max_position_size_per_trade, 0.05)
+        if metrics["delta_peak_abs"] > delta_limit:
+            self._record_event(
+                "mtm_delta_warning",
+                "Delta exposure exceeded soft limit",
+                {
+                    "trade_id": trade_id,
+                    "ticker": ticker,
+                    "delta_peak_abs": metrics["delta_peak_abs"],
+                    "threshold": delta_limit,
+                    "timestamp": timestamp.isoformat(),
+                },
+            )
+
+        theta_limit = -self.initial_capital * max(self.config.max_portfolio_allocation, 0.05)
+        if metrics["theta_cumulative"] < theta_limit:
+            self._record_event(
+                "theta_decay_warning",
+                "Cumulative theta below soft limit",
+                {
+                    "trade_id": trade_id,
+                    "ticker": ticker,
+                    "theta_cumulative": metrics["theta_cumulative"],
+                    "threshold": theta_limit,
+                    "timestamp": timestamp.isoformat(),
+                },
+            )
+
+        drawdown_floor = -abs(self.config.max_drawdown_pct or 0.25)
+        if metrics["max_unrealized_drawdown"] < drawdown_floor and not self.kill_switch_triggered:
+            self._record_event(
+                "mtm_drawdown_warning",
+                "Unrealized drawdown breached soft limit",
+                {
+                    "trade_id": trade_id,
+                    "ticker": ticker,
+                    "drawdown": metrics["max_unrealized_drawdown"],
+                    "threshold": drawdown_floor,
+                    "timestamp": timestamp.isoformat(),
+                },
+            )
+
+        assignment_cfg = self.config.assignment_risk
+        if assignment_cfg.enabled and assignment_risk:
+            self.ticker_assignment_flags[ticker] += 1
+            self._record_event(
+                "assignment_risk",
+                "Assignment risk detected near expiry",
+                {
+                    "trade_id": trade_id,
+                    "ticker": ticker,
+                    "intrinsic": assignment_intrinsic,
+                    "dte_hours": assignment_dte_hours,
+                    "threshold_hours": assignment_cfg.dte_hours_threshold,
+                    "timestamp": timestamp.isoformat(),
+                },
+            )
 
     def summary(self) -> Dict[str, object]:
         """
@@ -245,6 +357,9 @@ class RiskManager:
         portfolio_drawdown = 0.0
         if self.max_equity > 0:
             portfolio_drawdown = (self.min_equity - self.max_equity) / self.max_equity
+        severity_counts: Dict[str, int] = defaultdict(int)
+        for event in self.risk_events:
+            severity_counts[event.severity] += 1
         portfolio = {
             "initial_capital": self.initial_capital,
             "deployed_capital": self.deployed_capital,
@@ -257,7 +372,10 @@ class RiskManager:
             "kill_switch_triggered": self.kill_switch_triggered,
             "kill_switch_reason": self.kill_switch_reason,
             "kill_switch_timestamp": self.kill_switch_timestamp.isoformat() if self.kill_switch_timestamp else None,
-            "risk_events": len(self.risk_events),
+            "risk_events": {
+                "total": len(self.risk_events),
+                "by_severity": dict(severity_counts),
+            },
         }
 
         ticker_keys = set(self.ticker_allocations.keys()) | set(self.ticker_realized_pnl.keys())
@@ -268,9 +386,27 @@ class RiskManager:
                 "open_capital": float(self.ticker_allocations.get(ticker, 0.0)),
                 "open_positions": sum(1 for position in self.open_positions.values() if position.ticker == ticker),
                 "realized_pnl": float(self.ticker_realized_pnl.get(ticker, 0.0)),
+                "mtm_metrics": dict(self.ticker_mtm_metrics.get(ticker, {})),
+                "assignment_risk_count": int(self.ticker_assignment_flags.get(ticker, 0)),
             }
 
         return {
             "portfolio": portfolio,
             "per_ticker": per_ticker,
         }
+
+    def log_kill_switch_status(self) -> None:
+        if self.kill_switch_status_logged:
+            return
+        details = {
+            "kill_switch_triggered": self.kill_switch_triggered,
+            "reason": self.kill_switch_reason,
+        }
+        severity = "error" if self.kill_switch_triggered else "info"
+        self._record_event(
+            "kill_switch_status",
+            "Kill switch drill status recorded",
+            details,
+            severity=severity,
+        )
+        self.kill_switch_status_logged = True
