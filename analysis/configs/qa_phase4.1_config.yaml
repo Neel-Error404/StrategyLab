@@ -1,0 +1,145 @@
+# ============================================================
+# Example Analysis Configuration - MSE Strategy
+# ============================================================
+# This is a ready-to-use configuration for running the complete
+# analysis workflow from generic analysis through portfolio construction.
+#
+# Usage:
+#   python analysis/run.py --config analysis/configs/example_mse_config.yaml --targets generic,portfolio
+# ============================================================
+
+# ------------------------------------------------------------
+# RUN METADATA
+# ------------------------------------------------------------
+run:
+  run_id: "20251024_095707"                  # Latest backtest run (2025-04-23_to_2025-10-23)
+  strategy: "mse"                            # Strategy name
+  date_range: "2025-04-23_to_2025-10-23"     # Date range from backtest
+  trade_source: "strategy_trades"            # strategy_trades | risk_approved_trades
+  label: "qa_phase4.1_generic_analysis"      # QA test label
+
+# ------------------------------------------------------------
+# DATA SOURCES
+# ------------------------------------------------------------
+data_sources:
+  strategy_trades_dir: "outputs/20251024_095707/mse/2025-04-23_to_2025-10-23/data/strategy_trades"
+  base_data_dir: "outputs/20251024_095707/mse/2025-04-23_to_2025-10-23/data/base_data"
+  merged_trades_dir: null  # Auto-generated if null
+
+# ------------------------------------------------------------
+# MERGE OPTIONS
+# ------------------------------------------------------------
+merge:
+  auto_generate: true                    # Auto-run merge if merged file missing
+  trade_source: "strategy_trades"        # Which trade source to merge
+  output_filename: "all_trades_merged.csv"
+
+# ------------------------------------------------------------
+# OUTPUT ROUTING
+# ------------------------------------------------------------
+output:
+  root_dir: "analysis/output"            # Base directory for CSV / JSON artifacts
+  reports_root_dir: "analysis/reports"   # Base directory for Markdown / PDF reports
+  run_logs_dir: "analysis/run_logs"      # Where run summaries are stored
+  merged_filename: "all_trades_merged.csv"  # Name of merged trades file
+
+# ------------------------------------------------------------
+# ANALYSIS MODULE REGISTRY
+# ------------------------------------------------------------
+analysis:
+  # --------------------------------------------
+  # 1. GENERIC ANALYSIS (strategy-agnostic)
+  # --------------------------------------------
+  generic:
+    enabled: true
+    modules:
+      basic_eda:
+        enabled: true
+        config:
+          include_ticker_breakdown: true
+          include_time_of_day_stats: true
+
+      cascade_analysis:
+        enabled: true
+        config:
+          min_time_gap_minutes: 30
+          max_same_day_gap: 1440
+
+      ticker_ranking:
+        enabled: true
+        config:
+          top_n: 50
+          min_trades: 20
+          weighting_scheme:
+            profit_factor: 0.4
+            win_rate: 0.3
+            avg_return: 0.3
+
+      validation_check:
+        enabled: true
+        config:
+          min_trades: 1000
+          warn_on_zero_win_rate: true
+
+  # --------------------------------------------
+  # 2. PORTFOLIO CONSTRUCTION
+  # --------------------------------------------
+  portfolio:
+    enabled: true
+    modules:
+      # Foundation: Cascade vs Anti-Cascade Analysis
+      ticker_ranking:
+        enabled: true
+        config:
+          min_trades_per_ticker: 10
+
+      # Filter 1: Anti-Cascading Subset Creation
+      anti_cascade_filter:
+        enabled: true
+        config:
+          price_threshold: 2000  # Maximum price for affordable tickers (INR)
+
+      # Sector & Correlation Analysis
+      sector_classification:
+        enabled: true
+        config:
+          min_trades_for_correlation: 10
+
+      # Combination Generation with Diversification Filters
+      combination_generator:
+        enabled: true
+        config:
+          portfolio_sizes: [5]  # Start with 5-ticker portfolios
+          max_sector_concentration: 0.6  # Maximum 60% weight in one sector
+          max_correlation: 0.75  # Maximum average correlation
+          min_trades_per_ticker: 200  # Minimum trades for inclusion
+
+      # Portfolio Optimization Engine - Evaluate all combinations
+      portfolio_optimizer:
+        enabled: true
+        config:
+          top_n: 50  # Number of top portfolios to save
+          max_portfolios: null  # For testing, can limit (null = evaluate all)
+
+      # PyPortfolioOpt - Optimal Weight Allocation
+      pypfopt_weights:
+        enabled: true
+        config:
+          portfolio_sizes: [5]  # Which sizes to optimize
+          top_n: 10  # Optimize top 10 portfolios per size
+          l2_regularization: 0.1  # L2 penalty
+          target_volatility: 0.15  # Target volatility for efficient risk
+
+      # Equity Curve Generator - Visualizations
+      equity_curves:
+        enabled: true
+        config:
+          portfolio_sizes: [5]  # Which sizes to visualize
+          top_n: 5  # Visualize top 5 portfolios per size
+
+# ------------------------------------------------------------
+# INTEGRATION (Indicator Context)
+# ------------------------------------------------------------
+integration:
+  enhance_trades: false              # If true, scripts can request enhanced data
+  sample_size: null                  # Optional: sample trades before enhancement
