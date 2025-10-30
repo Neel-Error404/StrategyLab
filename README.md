@@ -88,6 +88,26 @@ Key flags: `--dry-run`, `--validate-only`, `--no-backup` (use with caution).
 
 ---
 
+## 🪙 Cryptocurrency Examples
+
+**StrategyLab supports 35+ cryptocurrencies through Binance (no API key required for backtesting):**
+
+```bash
+# Fetch Bitcoin data (last 90 days)
+python src/runners/unified_runner.py --mode fetch --tickers BTC ETH --timeframes 1h --days 90
+
+# Backtest crypto portfolio (24/7 trading)
+python src/runners/unified_runner.py --mode backtest --template aggressive --date-ranges 2024-01-01_to_2024-12-31 --tickers BTCUSDT ETHUSDT
+
+# Multi-crypto analysis
+python src/runners/unified_runner.py --mode analyze --date-ranges 2024-Q1 --tickers BTC ETH BNB SOL
+```
+
+**Supported Cryptocurrencies**: BTC, ETH, XRP, BNB, SOL, DOGE, ADA, AVAX, SHIB, TRX, UNI, LINK, AAVE, and 20+ more
+📖 **Full Documentation**: [docs/BROKER_SETUP.md - Binance Section](docs/BROKER_SETUP.md#-binance-cryptocurrency)
+
+---
+
 ## Validation Tooling
 
 | Module | Description |
