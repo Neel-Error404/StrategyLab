@@ -264,7 +264,6 @@ model_performance/
 
 # Keep these files (explicitly not ignored)
 !README.md
-!CLAUDE.md
 !requirements.txt
 !config/config.py
 !config/unified_config.py
@@ -293,14 +292,6 @@ docs/TASKS.md
 # Keep Claude Code configuration
 !.claude/
 !.claude/**
-
-# ==========================================
-# GITHUB INTEGRATION
-# ==========================================
-
-# Keep GitHub workflows and templates
-!.github/
-!.github/**
 
 # ==========================================
 # NOTES
