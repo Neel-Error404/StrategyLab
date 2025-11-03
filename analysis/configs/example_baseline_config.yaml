@@ -1,0 +1,80 @@
+# Example Analysis Configuration - Open Source Baseline Strategy
+#
+# Usage:
+#   python analysis/run.py --config analysis/configs/example_baseline_config.yaml --targets generic,portfolio
+
+run:
+  run_id: "20251103_173248"
+  strategy: "open_source_baseline"
+  date_range: "2022-01-01_to_2025-08-31"
+  label: "baseline_open_source_demo"
+  trade_source: "strategy_trades"
+
+data_sources:
+  strategy_trades_dir: "outputs/20251103_173248/open_source_baseline/2022-01-01_to_2025-08-31/data/strategy_trades"
+  base_data_dir: "outputs/20251103_173248/open_source_baseline/2022-01-01_to_2025-08-31/data/base_data"
+  merged_trades_dir: null
+
+merge:
+  auto_generate: true
+  trade_source: "strategy_trades"
+  output_filename: "all_trades_merged.csv"
+
+output:
+  root_dir: "analysis/output"
+  reports_root_dir: "analysis/reports"
+  run_logs_dir: "analysis/run_logs"
+  merged_filename: "all_trades_merged.csv"
+  data_dir: "{root}/{strategy}/{run_id}/data"
+  dir_pattern: "{root}/{strategy}/{run_id}/{category}/{module}"
+  report_pattern: "{reports_root}/{strategy}/{run_id}/{category}/{module}"
+  filename_template: "{module}_{artifact}"
+
+analysis:
+  generic:
+    enabled: true
+    defaults:
+      output_dir: "{root}/{strategy}/{run_id}/generic/{module}"
+      report_dir: "{reports_root}/{strategy}/{run_id}/generic/{module}"
+    modules:
+      basic_eda:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "json"
+            artifact: "summary"
+          - type: "csv"
+            artifact: "ticker_performance"
+          - type: "markdown"
+            artifact: "report"
+        config:
+          include_ticker_breakdown: true
+          include_time_of_day_stats: true
+      trade_type_analysis:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "directional_breakdown"
+          - type: "markdown"
+            artifact: "directional_summary"
+        config:
+          metrics: ["win_rate", "avg_pnl", "avg_drawdown"]
+          min_trades_for_bias: 50
+      cascade_analysis:
+        enabled: true
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "markdown"
+            artifact: "cascade_insights"
+      stop_loss_simulation:
+        enabled: false
+        inputs: ["merged_trades"]
+        outputs:
+          - type: "csv"
+            artifact: "stop_loss_scenarios"
+
+  portfolio:
+    enabled: true
+    defaults:
+      output_dir: "{root}/{strategy}/{run_id}/portfolio/{module}"

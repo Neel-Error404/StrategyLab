@@ -254,6 +254,8 @@ def load_config_from_args(args) -> BacktestConfig:
             config = get_conservative_config()
         elif args.template == 'aggressive':
             config = get_aggressive_config()
+        elif args.template == 'minimal':
+            config = get_minimal_config()
         elif args.template == 'debug':
             config = get_debug_config()
         else:
@@ -282,6 +284,7 @@ def load_config_from_args(args) -> BacktestConfig:
     
     if args.strategies:
         config.strategy.names = args.strategies
+        config.strategy.name = args.strategies[0]
     
     if args.mode:
         config.mode = args.mode

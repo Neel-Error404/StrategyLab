@@ -19,10 +19,14 @@ data:
   timezone: "Asia/Kolkata"
 
 strategy:
-  name: "mse"
-  parameters: {}
+  name: "open_source_baseline"
+  parameters:
+    short_window: 8
+    long_window: 26
+    momentum_window: 14
+    momentum_exit_buffer: 0.0
   enabled: true
-  description: "Conservative MSE strategy"
+  description: "Conservative baseline strategy with smoother trend filter"
   risk_profile: "conservative"
 
 risk:

@@ -335,8 +335,9 @@ def ticker_directional_bias_analysis(df: pd.DataFrame, min_trades: int = 100) ->
     # Merge and calculate bias
     bias_analysis = buy_data[['Total_PnL', 'Trade_Count']].join(
         sell_data[['Total_PnL', 'Trade_Count']],
-        suffixes=('_Buy', '_Sell'),
-        how='outer'
+        how='outer',
+        lsuffix='_Buy',
+        rsuffix='_Sell'
     ).fillna(0)
 
     bias_analysis['Total_Combined'] = bias_analysis['Total_PnL_Buy'] + bias_analysis['Total_PnL_Sell']
@@ -411,6 +412,11 @@ def save_detailed_results(
         category=category,
         artifact_type='markdown'
     ))
+    try:
+        kpi_table = comparison_df.to_markdown()
+    except ImportError:
+        kpi_table = comparison_df.to_string()
+
     markdown_content = [
         "# Trade Type Analysis Summary",
         "",
@@ -421,7 +427,7 @@ def save_detailed_results(
         f"- **Sell Drawdown Advantage (%)**: {summary['key_takeaways']['sell_drawdown_advantage']:.2f}",
         "",
         "## KPI Table",
-        comparison_df.to_markdown(),
+        kpi_table,
     ]
     markdown_path.write_text("\n".join(markdown_content))
     print(f"📝 Saved Markdown summary → {markdown_path}")

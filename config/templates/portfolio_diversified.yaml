@@ -21,10 +21,13 @@ data:
   timezone: "Asia/Kolkata"
 
 strategy:
-  name: "mse"
-  parameters: {}
+  name: "open_source_baseline"
+  parameters:
+    short_window: 9
+    long_window: 28
+    momentum_window: 14
   enabled: true
-  description: "MSE strategy with portfolio diversification"
+  description: "Baseline strategy configured for diversified portfolios"
   risk_profile: "portfolio_diversified"
   initial_capital: 1000000.0
 

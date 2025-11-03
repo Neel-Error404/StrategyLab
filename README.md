@@ -2,6 +2,11 @@
 
 A production-ready, modular backtesting system for equities strategies with broker integration, incremental data management, and parity/precision validation tooling.
 
+### Included Open-Source Strategies
+- `open_source_baseline`: trend + momentum hybrid tuned for reproducible demos (default)
+- `sma_crossover`: introductory moving-average crossover example
+- `bollinger_bands`: volatility-channel strategy template
+
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Brokers](https://img.shields.io/badge/Brokers-Zerodha%20%7C%20Upstox%20%7C%20Binance-orange.svg)](docs/BROKER_SETUP.md)
@@ -76,7 +81,7 @@ Optional: copy `.env.example` to `.env` (create the file if it does not exist) a
 | `fetch` | Pull fresh market data | `python src/runners/unified_runner.py --mode fetch --date-ranges 2024-01-01_to_2024-01-05 --tickers RELIANCE` |
 | `update` | Incrementally extend an existing pool | `python src/runners/unified_runner.py --mode update --pool-path data/pools/2024-01-01_to_2024-06-30 --dry-run` |
 | `replay` | Run stored manifest through replay engine | `python src/runners/unified_runner.py --mode replay --manifest manifest.json` |
-| `optimize` | Strategy parameter search (WIP) | `python src/runners/unified_runner.py --mode optimize --strategy mse` |
+| `optimize` | Strategy parameter search (WIP) | `python src/runners/unified_runner.py --mode optimize --strategies open_source_baseline` |
 
 The `update` mode shares logic with `src/core/etl/data_fetcher.py`:
 

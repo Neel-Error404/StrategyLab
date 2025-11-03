@@ -39,10 +39,10 @@ class DataConfig:
 @dataclass
 class StrategyConfig:
     """Configuration for strategy parameters."""
-    name: str = "mse"
+    name: str = "open_source_baseline"
     parameters: Dict[str, Any] = field(default_factory=dict)
     enabled: bool = True
-    description: str = ""
+    description: str = "Open source baseline trend + momentum strategy"
     risk_profile: str = "moderate"  # conservative, moderate, aggressive
     initial_capital: float = 1000000.0  # Default 1M capital
     
@@ -424,7 +424,8 @@ class BacktestConfig:
         if 'risk' in data:
             config_kwargs['risk'] = RiskConfig(**data['risk'])
         if 'transaction' in data:
-            config_kwargs['transaction'] = TransactionConfig(**data['transaction'])\n        if 'validation' in data:
+            config_kwargs['transaction'] = TransactionConfig(**data['transaction'])
+        if 'validation' in data:
             config_kwargs['validation'] = ValidationConfig(**data['validation'])
         if 'optimization' in data:
             config_kwargs['optimization'] = OptimizationConfig(**data['optimization'])
@@ -498,7 +499,9 @@ class ConfigBuilder:
             take_profit_pct=0.15,    # 15%
             position_timeout_minutes=480
         )
-        return self\ndef with_validation_config(self, **kwargs) -> 'ConfigBuilder':
+        return self
+
+    def with_validation_config(self, **kwargs) -> 'ConfigBuilder':
         """Configure validation settings."""
         for key, value in kwargs.items():
             if hasattr(self.config.validation, key):

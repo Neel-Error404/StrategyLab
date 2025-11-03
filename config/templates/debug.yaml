@@ -22,8 +22,11 @@ data:
   timezone: "Asia/Kolkata"
 
 strategy:
-  name: "mse"
-  parameters: {}
+  name: "open_source_baseline"
+  parameters:
+    short_window: 6
+    long_window: 18
+    momentum_window: 8
   enabled: true
   description: "DEBUG MODE - Raw strategy signals with no risk management"
   risk_profile: "debug"

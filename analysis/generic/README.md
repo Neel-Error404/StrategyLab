@@ -28,8 +28,8 @@ cd analysis
 cp config_template.yaml config.yaml
 
 # Edit config.yaml with your backtest details
-# run_id: "20251006_024924"
-# strategy: "mse"
+# run_id: "20251103_173248"
+# strategy: "open_source_baseline"
 # date_range: "2022-01-01_to_2025-08-31"
 ```
 

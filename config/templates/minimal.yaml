@@ -1,79 +1,37 @@
-# Minimal risk template - Ultra-safe learning configuration
-# Perfect for beginners and testing new strategies
-
-data:
-  data_pool_dir: "data/pools"
-  timeframe_folders:
-    1minute: "1minute"
-    5minute: "5minute"  
-    15minute: "15minute"
-    1hour: "1hour"
-    1day: "1day"
-  default_timeframe: "1minute"
-  required_columns:
-    - "timestamp"
-    - "open"
-    - "high"
-    - "low"
-    - "close"
-    - "volume"
-  date_format: "%Y-%m-%d"
-  timezone: "Asia/Kolkata"
+# No Risk Management Configuration
+# All trades accepted, no risk filtering
 
 strategy:
-  name: "mse"
-  parameters: {}
-  enabled: true
-  description: "Minimal risk MSE strategy for learning"
-  risk_profile: "minimal"
-  initial_capital: 100000.0
+  name: "open_source_baseline"
+  parameters:
+    short_window: 7
+    long_window: 21
+    momentum_window: 10
 
 risk:
-  enabled: true
-  bypass_mode: false
-  max_position_size: 0.05        # Only 5% max position
-  max_daily_loss: 0.01           # 1% daily loss limit  
-  max_drawdown: 0.10             # 10% maximum drawdown
-  max_concentration: 0.20        # 20% max concentration per ticker
-  stop_loss_pct: 0.02            # 2% stop loss
-  take_profit_pct: 0.04          # 4% take profit
-  position_timeout_minutes: 120  # 2 hours timeout
-  enable_stop_loss: true
-  enable_take_profit: true
-  enable_timeout: true
+  enabled: false              # Disable risk management
+  bypass_mode: true           # Bypass all risk checks
+  max_position_size: 1.0      # Allow 100%
+  max_daily_loss: 1.0         # No daily loss limit
+  max_drawdown: 1.0           # No drawdown limit
+  enable_stop_loss: false     # No stop loss
+  enable_take_profit: false   # No take profit
+  enable_timeout: false       # No timeout
 
 transaction:
-  enabled: true
-  model_type: "basic"
-  brokerage_rate: 0.0003         # 0.03% brokerage
-  fixed_cost: 0.0
-  slippage_rate: 0.0001          # 0.01% slippage
-  market_impact_factor: 0.05     # Lower impact for small positions
-  enable_market_impact: true
+  enabled: false              # No transaction costs
 
-broker:
-  default_provider: "upstox"
-  available_providers: ["upstox", "zerodha", "binance"]
-  token_refresh_enabled: false  # Manual token management for beginners
-  auto_refresh_minutes: 120
+validation:
+  enabled: true               # Keep validation for data quality
+  lookahead_bias_check: true
 
-# Audit compliance configuration (from analysis report)
-compliance:
-  warmup_minutes: 525        # Always 525 min (audit requirement)
-  use_previous_bar: true     # Always previous bar (audit requirement)  
-  enable_two_bar_rule: true  # Always two-bar rule (audit requirement)
-  cascade_prevention: true   # Default enabled
-  default_exit_threshold: 0.8  # 80% by default (conservative)
-  enforce_compliance: true   # Enforce all audit requirements
-
-# Execution configuration
 execution:
-  parallel_processing: false  # Single-threaded for stability
-  max_workers: 1
-  cache_enabled: true
-  cache_dir: "cache"
-  timeout_seconds: 1800       # 30 minutes timeout
+  parallel: true
+  max_workers: 8
+  batch_size: 100
 
-# Global settings
-base_dir: "."
-run_id: ""  # Will be auto-generated
+output:
+  save_trades: true
+  save_signals: false
+  save_metrics: true
+  save_visualizations: false

@@ -19,12 +19,14 @@ data:
   timezone: "Asia/Kolkata"
 
 strategy:
-  name: "mse"
+  name: "open_source_baseline"
   parameters:
-    lookback_period: 10
-    threshold: 0.02
+    short_window: 5
+    long_window: 20
+    momentum_window: 10
+    momentum_exit_buffer: -0.01
   enabled: true
-  description: "Aggressive MSE strategy with higher risk tolerance"
+  description: "Aggressive baseline trend + momentum configuration"
   risk_profile: "aggressive"
 
 risk:

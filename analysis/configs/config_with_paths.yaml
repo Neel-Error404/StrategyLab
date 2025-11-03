@@ -1,12 +1,12 @@
 run:
   run_id: '20251024_095707'
-  strategy: mse
+  strategy: open_source_baseline
   date_range: 2025-04-23_to_2025-10-23
   trade_source: strategy_trades
   label: qa_phase4.1_generic_analysis
 data_sources:
-  strategy_trades_dir: outputs/20251024_095707/mse/2025-04-23_to_2025-10-23/data/strategy_trades
-  base_data_dir: outputs/20251024_095707/mse/2025-04-23_to_2025-10-23/data/base_data
+  strategy_trades_dir: outputs/20251024_095707/open_source_baseline/2025-04-23_to_2025-10-23/data/strategy_trades
+  base_data_dir: outputs/20251024_095707/open_source_baseline/2025-04-23_to_2025-10-23/data/base_data
   merged_trades_dir: null
 merge:
   auto_generate: true
@@ -91,9 +91,9 @@ integration:
   enhance_trades: false
   sample_size: null
 paths:
-  merged_trades_file: analysis/output/mse/20251024_095707/data/all_trades_merged.csv
-  base_data_dir: outputs/20251024_095707/mse/2025-04-23_to_2025-10-23/data/base_data
-  outputs_base: outputs/20251024_095707/mse/2025-04-23_to_2025-10-23
+  merged_trades_file: analysis/output/open_source_baseline/20251024_095707/data/all_trades_merged.csv
+  base_data_dir: outputs/20251024_095707/open_source_baseline/2025-04-23_to_2025-10-23/data/base_data
+  outputs_base: outputs/20251024_095707/open_source_baseline/2025-04-23_to_2025-10-23
 merge_info:
   merged_at: '2025-10-24T10:02:00.637296'
-  merged_file: analysis/output/mse/20251024_095707/data/all_trades_merged.csv
+  merged_file: analysis/output/open_source_baseline/20251024_095707/data/all_trades_merged.csv

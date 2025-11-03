@@ -4,6 +4,39 @@ Complete version history and release notes for the StrategyLab Backtesting Syste
 
 ---
 
+## Version 2.2 (Open Source Baseline) - November 2025
+
+**Release Date**: November 3, 2025  
+**Codename**: "Baseline"  
+**Git Tag**: `v2.2.0-baseline`
+
+### Overview
+Final OSS readiness pass replacing proprietary MSE implementations with a public baseline strategy, refreshing configuration defaults, and cleaning the repository for public consumption.
+
+### 🚀 Major Enhancements
+
+1. **Open-Source Baseline Strategy**
+   - New trend + momentum hybrid (`open_source_baseline`) registered by default.
+   - Updated templates (`minimal`, `conservative`, `aggressive`, `portfolio_diversified`, `unified`) with tuned parameters.
+   - README overview of included public strategies.
+
+2. **Repo Sanitisation**
+   - Removed tracked MSE strategy files, analysis logs, and options helpers.
+   - Expanded `.gitignore` to cover proprietary outputs, options stack, and experimental analysis directories.
+   - Added `docs/OSS_RELEASE_REPORT.md` summarizing Understand→Report evidence.
+
+3. **Tooling Hardening**
+   - `analysis/run.py` now enforces UTF-8 output and adds module paths automatically.
+   - Analysis scripts updated for pandas 2.3 compatibility (join suffix fix, markdown fallback).
+   - Added dedicated unit tests for the baseline strategy (`pytest tests/test_open_source_baseline_strategy.py`).
+
+### ✅ Validation Snapshot
+- `python src/runners/unified_runner.py --mode backtest --strategies open_source_baseline --tickers RELIANCE --date-ranges 2022-01-01_to_2025-08-31 --skip-visualization`
+- `python analysis/run.py --config analysis/configs/example_baseline_config.yaml --targets generic,portfolio`
+- `pytest tests/test_open_source_baseline_strategy.py -q`
+
+---
+
 ## Version 2.1 (Documentation & Analysis Enhancement) - October 2025
 
 **Release Date**: October 30, 2025

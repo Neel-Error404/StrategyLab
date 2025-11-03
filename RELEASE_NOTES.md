@@ -1,5 +1,28 @@
 # Strategy Lab - Release Notes
 
+## v2.2 (November 2025) - Open Source Baseline Release 🚀
+
+**Release Date**: November 3, 2025  
+**Codename**: "Baseline"
+
+### ✨ Headline Features
+
+- **Open-Source Baseline Strategy**: Introduced a vendor-neutral trend + momentum strategy that ships with the public repo and replaces the proprietary MSE stack. Fully registered in the factory, templates, and CLI defaults.
+- **Configuration & Template Refresh**: Conservative, aggressive, minimal, portfolio, and unified template bundles now target the baseline strategy with tuned parameters and descriptions.
+- **Analysis Runner Hardening**: `analysis/run.py` now enforces UTF-8 output and injects module paths automatically, resolving prior Windows encoding/import issues.
+- **Repository Sanitisation**: Removed tracked MSE guides, run logs, and strategy files; expanded `.gitignore` to cover proprietary directories, outputs, and options stack folders.
+- **Test Coverage**: Added `tests/test_open_source_baseline_strategy.py` exercising indicator preparation, signal generation, and factory registration without external data pools.
+
+### 🧪 Validation Summary
+
+- `python src/runners/unified_runner.py --mode backtest --strategies open_source_baseline --tickers RELIANCE --date-ranges 2022-01-01_to_2025-08-31 --skip-visualization`
+- `python analysis/run.py --config analysis/configs/example_baseline_config.yaml --targets generic,portfolio`
+- `pytest tests/test_open_source_baseline_strategy.py -q`
+
+All workflows produced the expected artifacts prior to cleanup, confirming readiness for tagging the OSS release.
+
+---
+
 ## v2.1 (October 2025) - Documentation & Analysis Enhancement 📚
 
 **The Complete Documentation Release**

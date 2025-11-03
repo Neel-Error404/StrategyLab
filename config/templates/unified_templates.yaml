@@ -3,12 +3,14 @@
 
 conservative_unified:
   strategy:
-    name: "mse"
+    name: "open_source_baseline"
     risk_profile: "conservative"
     initial_capital: 100000
     parameters:
-      lookback: 12
-      threshold: 0.015
+      short_window: 8
+      long_window: 26
+      momentum_window: 14
+      momentum_exit_buffer: 0.0
   risk:
     enabled: true
     max_position_size: 0.10
@@ -32,12 +34,14 @@ conservative_unified:
 
 aggressive_unified:
   strategy:
-    name: "mse"
+    name: "open_source_baseline"
     risk_profile: "aggressive"
     initial_capital: 100000
     parameters:
-      lookback: 8
-      threshold: 0.020
+      short_window: 5
+      long_window: 18
+      momentum_window: 10
+      momentum_exit_buffer: -0.01
   risk:
     enabled: true
     max_position_size: 0.25
@@ -61,12 +65,14 @@ aggressive_unified:
 
 development_unified:
   strategy:
-    name: "mse"
+    name: "open_source_baseline"
     risk_profile: "conservative"
     initial_capital: 50000
     parameters:
-      lookback: 15
-      threshold: 0.010
+      short_window: 10
+      long_window: 30
+      momentum_window: 12
+      momentum_exit_buffer: 0.0
   risk:
     enabled: true
     max_position_size: 0.05

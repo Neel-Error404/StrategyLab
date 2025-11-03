@@ -12,7 +12,7 @@
 # ------------------------------------------------------------
 run:
   run_id: "20251006_024924"                  # Required: unique identifier per run
-  strategy: "mse"                            # Required: strategy name
+  strategy: "open_source_baseline"           # Required: strategy name
   date_range: "2022-01-01_to_2025-08-31"     # Optional but recommended
   label: "baseline_review"                   # Optional friendly tag (used in reports)
 

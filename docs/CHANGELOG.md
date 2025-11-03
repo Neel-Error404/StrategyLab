@@ -2,6 +2,21 @@
 
 All notable changes to the Trading Backtester System.
 
+
+## [2.0.0] - 2025-11-03
+
+### 🌍 Open Source Baseline Release
+
+- **ADDED**: `open_source_baseline` strategy (trend + momentum hybrid) as the default public strategy replacing proprietary MSE variants.
+- **ADDED**: New configuration defaults, templates, and CLI defaults aligned to the baseline strategy.
+- **ADDED**: Lightweight `pytest` coverage for the baseline strategy (`tests/test_open_source_baseline_strategy.py`).
+- **UPDATED**: Analysis runner (`analysis/run.py`) to be UTF-8 safe with explicit `PYTHONPATH` management for module imports.
+- **UPDATED**: Documentation (README, templates, configs) to reflect the OSS scope and new validation workflow.
+- **REMOVED**: Legacy MSE strategy implementations, options stack placeholders, and tracked analysis outputs from the public tree.
+- **REMOVED**: Outdated MSE-specific configs/logs (`analysis/MSE_STRATEGY_GUIDE.md`, `analysis/run_logs/mse/*`, etc.).
+
+---
+
 ## [1.0.0] - 2025-09-12
 
 ### 🚨 CRITICAL FIXES

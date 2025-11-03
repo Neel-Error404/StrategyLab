@@ -108,6 +108,7 @@ data/cache/
 data/temp/
 data/*.zip
 data/**/*.zip
+data/options/
 
 # Output and Results
 outputs/**
@@ -119,6 +120,7 @@ backtests/
 reports/
 # Allow source analysis modules
 !src/analysis/**
+!analysis/**
 
 # Logs and Monitoring
 logs/
@@ -234,6 +236,16 @@ test_*.json
 docs/_build/
 docs/build/
 site/
+
+# Repository local-only artifacts
+analysis/portfolio_experiments/
+analysis/output/
+analysis/run_logs/
+analysis/reports/
+src/core/options/
+tests/options/
+scripts/options_*.py
+src/strategies/*mse*.py
 
 # ==========================================
 # OPTIMIZATION AND ANALYSIS

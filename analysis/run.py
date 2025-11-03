@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -216,7 +217,22 @@ def ensure_merge_file(config_path: Path, config: Dict[str, Any], paths: Dict[str
 def run_module_script(script_path: Path, config_path: Path) -> Tuple[int, str, str, float]:
     start = dt.datetime.now()
     cmd = [sys.executable, str(script_path), "--config", str(config_path)]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    env = os.environ.copy()
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    env.setdefault("PYTHONUTF8", "1")
+    module_root = script_path.parent.parent  # e.g., analysis/generic
+    python_path_parts = []
+    if module_root.exists():
+        python_path_parts.append(str(module_root))
+    if script_path.parent.exists():
+        python_path_parts.append(str(script_path.parent))
+    if python_path_parts:
+        existing = env.get("PYTHONPATH", "")
+        combined = os.pathsep.join(
+            [p for p in python_path_parts if p] + ([existing] if existing else [])
+        )
+        env["PYTHONPATH"] = combined
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     duration = (dt.datetime.now() - start).total_seconds()
     if result.stdout:
         print(result.stdout)

@@ -2,7 +2,7 @@
 
 Comprehensive feature list for the StrategyLab Backtesting System
 
-**Current Version**: V2 (Equities Release - October 2025)
+**Current Version**: V2.2 (Open Source Baseline - November 2025)
 
 ---
 
@@ -26,16 +26,11 @@ Comprehensive feature list for the StrategyLab Backtesting System
 - **Strategy Factory**: Automated strategy instantiation with validation
 
 #### Built-in Strategies
-- **MSE (Mean Squared Error)**: Production-grade multi-timeframe strategy
-  - 4-indicator entry system (5m + 15m MACD + EMA alignment)
-  - 80% peak/valley exits based on MACD extremes
-  - EOD risk management (automatic closure at 15:15 IST)
-  - Single position enforcement per direction per day
-  - 525-minute warmup for MACD stability
-- **SMA (Simple Moving Average)**: Classic trend-following strategy
-- **SMA Crossover**: Dual moving average crossover system
-- **Bollinger Bands**: Mean reversion strategy
-- **Custom Strategies**: Template-based development framework
+- **Open Source Baseline**: Trend + momentum hybrid with SMA + momentum overlay, volume filters, and deterministic signal lifecycle.
+- **SMA (Simple Moving Average)**: Classic trend-following strategy.
+- **SMA Crossover**: Dual moving average crossover system.
+- **Bollinger Bands**: Mean reversion strategy.
+- **Custom Strategies**: Template-based development framework.
 
 ### Risk Management
 - **Position Sizing**: Configurable limits (5%-20% of capital)
