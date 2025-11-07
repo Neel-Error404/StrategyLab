@@ -124,6 +124,9 @@ python src/runners/unified_runner.py --check-data RELIANCE
 ```
 ✗ Upstox API authentication failed
 Error: Invalid client ID or secret
+
+✗ Binance API authentication failed
+Error: Invalid API key
 ```
 
 **Cause**: Broker API credentials not configured or incorrect
@@ -132,13 +135,21 @@ Error: Invalid client ID or secret
 1. Check `.env` file exists: `ls .env`
 2. Open `.env` and verify credentials:
    ```bash
+   # For Upstox
    UPSTOX_CLIENT_ID=your_actual_client_id  # NOT "your_client_id_here"
    UPSTOX_CLIENT_SECRET=your_actual_secret
+
+   # For Binance (crypto - FREE but requires registration)
+   BINANCE_API_KEY=your_binance_api_key
+   BINANCE_API_SECRET=your_binance_secret
    ```
 3. Get credentials from:
-   - Upstox: https://developer.upstox.com/
-   - Zerodha: https://kite.trade/
+   - **Binance** (easiest - FREE): https://www.binance.com/en/my/settings/api-management
+   - **Upstox**: https://developer.upstox.com/
+   - **Zerodha**: https://kite.trade/
 4. Save `.env` and retry fetch
+
+**Important**: ALL brokers require API keys, even Binance for crypto. Binance is free (no subscription), but you still need to register and generate API keys.
 
 **Detailed guide**: [docs/BROKER_SETUP.md](BROKER_SETUP.md)
 

@@ -18,10 +18,13 @@ Before starting, verify you have:
   ```
 
 - **Broker API Access** - You'll need ONE of:
-  - Upstox API credentials (recommended for beginners)
-  - Zerodha Kite API credentials
+  - **Upstox API** (recommended for Indian equities - free tier available)
+  - **Zerodha Kite API** (Indian equities - paid subscription)
+  - **Binance API** (crypto only - FREE, just requires registration)
 
-  Don't have API access? See [docs/BROKER_SETUP.md](docs/BROKER_SETUP.md) for free tier options.
+  **Getting Started**: See [docs/BROKER_SETUP.md](docs/BROKER_SETUP.md) for step-by-step setup guides.
+
+  **Easiest Option**: Binance for crypto (free, 5-minute setup, no subscription fees)
 
 ## Step 1: Clone and Setup (2 minutes)
 
@@ -152,7 +155,9 @@ python src/runners/unified_runner.py --mode fetch \
   --tickers RELIANCE TCS HDFCBANK \
   --date-ranges 2024-01-01_to_2024-06-30
 
-# Fetch crypto data (Binance - no API key needed!)
+# Fetch crypto data (Binance - FREE API, registration required)
+# Note: Binance API is free but you need to register and get API keys
+# See docs/BROKER_SETUP.md for Binance setup (takes 5 minutes)
 python src/runners/unified_runner.py --mode fetch \
   --tickers BTCUSDT ETHUSDT \
   --date-ranges 2024-01-01_to_2024-03-31

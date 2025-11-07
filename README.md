@@ -40,7 +40,10 @@ CONTEXT:
 - I'm in directory: backtester/
 - Operating System: [Windows/Linux/Mac]
 - Python installed: [Yes/No/Don't know]
-- Broker API access: [Have Upstox/Have Zerodha/Need to get/Want to use Binance crypto]
+- Broker API: [Have Upstox/Have Zerodha/Will register Binance (free)/Need help choosing]
+
+NOTE: ALL brokers require API keys (even free ones like Binance for crypto).
+Binance is easiest - free, 5-minute registration, no subscription fees.
 
 COMPLETE WORKFLOW NEEDED:
 1. **Environment Setup**: Python 3.9+ check, virtual environment, dependencies
