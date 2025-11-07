@@ -73,8 +73,8 @@ Examples:
     parser.add_argument(
         '--strategies',
         nargs='+',
-        default=['mse'],
-        help="List of strategy names (default: ['mse'])"
+        default=['open_source_baseline'],
+        help="List of strategy names (default: ['open_source_baseline'])"
     )
     
     parser.add_argument(
@@ -139,5 +139,38 @@ Examples:
         default='INFO',
         help="Logging level"
     )
-    
+
+    # New helper commands for better UX (Week 2 improvements)
+    parser.add_argument(
+        '--list-strategies',
+        action='store_true',
+        help="List all registered strategies and exit"
+    )
+
+    parser.add_argument(
+        '--verify-config',
+        action='store_true',
+        help="Verify YAML configuration template and exit"
+    )
+
+    parser.add_argument(
+        '--check-data',
+        type=str,
+        metavar='TICKER',
+        help="Check data availability for a specific ticker and exit"
+    )
+
+    parser.add_argument(
+        '--describe-template',
+        type=str,
+        metavar='TEMPLATE_NAME',
+        help="Show details of a risk template and exit"
+    )
+
+    parser.add_argument(
+        '--max-workers',
+        type=int,
+        help="Maximum number of parallel workers (used with --parallel)"
+    )
+
     return parser

@@ -221,15 +221,22 @@ class UnifiedBacktesterRunner:
                 json.dump(self.execution_log, f, indent=2, default=str)
 
             # Create summary log file
-            # Handle both dict and list formats for tasks_generated
-            task_entries = self.execution_log.get('tasks_generated') or []
-            if isinstance(task_entries, dict):
-                task_entries = task_entries.get('task_breakdown', {}).get('combinations', [])
-
+            tasks_info = self.execution_log.get('tasks_generated') or []
+            if isinstance(tasks_info, dict):
+                total_tasks = (
+                    tasks_info.get('total_tasks')
+                    or tasks_info.get('task_breakdown', {}).get('combinations', 0)
+                    or 0
+                )
+            elif isinstance(tasks_info, list):
+                total_tasks = len(tasks_info)
+            else:
+                total_tasks = 0
+        
             summary = {
                 'session_id': self.execution_log['session_id'],
                 'execution_time_seconds': self.execution_log['total_execution_time'],
-                'total_tasks': len(task_entries),
+                'total_tasks': total_tasks,
                 'files_created_count': len(self.execution_log['files_created']),
                 'files_failed_count': len(self.execution_log['files_failed']),
                 'errors_count': len(self.execution_log['errors']),
@@ -368,11 +375,13 @@ class UnifiedBacktesterRunner:
             }
         
         # Generate tasks for all combinations
+        strategy_parameters = getattr(self.config.strategy, 'parameters', {})
+
         for strategy in strategies:
             for date_range in date_ranges:
                 for ticker in tickers:
-                    optimization_params = {}  # TODO: Extract from config if needed
-                    tasks.append((ticker, date_range, strategy, optimization_params))
+                    params_copy = strategy_parameters.copy() if isinstance(strategy_parameters, dict) else {}
+                    tasks.append((ticker, date_range, strategy, params_copy))
 
         # Log comprehensive task generation details
         self._log_task_generation(tasks, discovery_info)
@@ -485,12 +494,14 @@ class UnifiedBacktesterRunner:
                     raise RuntimeError("No tasks generated from configuration")
                 
                 # Execute the workflow based on mode
+                skip_viz_flag = getattr(self.config.output, 'skip_visualization', False)
+
                 if mode == 'backtest':
                     # Full workflow
                     results = self.workflow_manager.execute_full_workflow(
                         tasks=tasks,
                         use_parallel=True,
-                        skip_visualization=False
+                        skip_visualization=skip_viz_flag
                     )
                 elif mode == 'analyze':
                     # Analysis workflow
@@ -687,9 +698,46 @@ def create_config_from_args() -> BacktestConfig:
     return cli_handler.load_config(args)
 
 
+def handle_helper_commands_if_present():
+    """Check for and handle helper commands before running main workflow"""
+    from src.runners.cli.argument_parser import create_argument_parser
+    from src.runners.cli.helper_commands import (
+        handle_list_strategies,
+        handle_verify_config,
+        handle_check_data,
+        handle_describe_template
+    )
+
+    parser = create_argument_parser()
+    args = parser.parse_args()
+
+    # Check each helper command and execute if present
+    if hasattr(args, 'list_strategies') and args.list_strategies:
+        handle_list_strategies()
+        return True
+
+    if hasattr(args, 'verify_config') and args.verify_config:
+        handle_verify_config(args)
+        return True
+
+    if hasattr(args, 'check_data') and args.check_data:
+        handle_check_data(args.check_data)
+        return True
+
+    if hasattr(args, 'describe_template') and args.describe_template:
+        handle_describe_template(args.describe_template)
+        return True
+
+    return False
+
+
 def main():
     """Main entry point for the unified backtester."""
     try:
+        # Handle helper commands first (--list-strategies, --verify-config, etc.)
+        if handle_helper_commands_if_present():
+            sys.exit(0)
+
         # Parse command line arguments and create config
         config = create_config_from_args()
 
