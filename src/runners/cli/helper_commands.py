@@ -33,11 +33,11 @@ def handle_list_strategies():
         strategies = StrategyFactory.list_strategies()
 
         if not strategies:
-            print("✗ No strategies registered")
+            print("[X] No strategies registered")
             print("\nCheck: src/strategies/register_strategies.py")
             return
 
-        print(f"✓ Found {len(strategies)} registered strateg{'y' if len(strategies) == 1 else 'ies'}:\n")
+        print(f"[OK] Found {len(strategies)} registered strateg{'y' if len(strategies) == 1 else 'ies'}:\n")
 
         # Strategy descriptions
         descriptions = {
@@ -52,16 +52,17 @@ def handle_list_strategies():
             print(f"  {i}. {strategy}")
             print(f"     {description}\n")
 
-        print("Usage:")
-        print(f"  python src/runners/unified_runner.py --mode backtest --strategies {strategies[0]} ...")
+        if strategies:
+            print("Usage:")
+            print(f"  python src/runners/unified_runner.py --mode backtest --strategies {strategies[0]} ...")
 
     except ImportError as e:
-        print(f"✗ Error importing strategies: {e}")
+        print(f"[X] Error importing strategies: {e}")
         print("\nTroubleshooting:")
         print("  1. Check: src/strategies/register_strategies.py exists")
         print("  2. Run: python scripts/verify_setup.py")
     except Exception as e:
-        print(f"✗ Error listing strategies: {e}")
+        print(f"[X] Error listing strategies: {e}")
 
 
 def handle_verify_config(args):
@@ -78,7 +79,7 @@ def handle_verify_config(args):
         # Verify custom config file
         config_file = Path(config_path)
         if not config_file.exists():
-            print(f"✗ Config file not found: {config_path}")
+            print(f"[X] Config file not found: {config_path}")
             return
 
         print(f"Verifying: {config_path}\n")
@@ -87,37 +88,37 @@ def handle_verify_config(args):
             with open(config_file, 'r') as f:
                 config = yaml.safe_load(f)
 
-            print("✓ YAML syntax is valid")
+            print("[OK] YAML syntax is valid")
 
             # Basic validation
             if 'strategy' in config:
-                print(f"✓ Strategy configured: {config.get('strategy', {}).get('name', 'N/A')}")
+                print(f"[OK] Strategy configured: {config.get('strategy', {}).get('name', 'N/A')}")
             else:
-                print("⚠ Warning: No strategy section found")
+                print("[!] Warning: No strategy section found")
 
             if 'risk' in config:
-                print("✓ Risk management configured")
+                print("[OK] Risk management configured")
                 risk = config['risk']
                 if 'max_position_size' in risk:
                     print(f"  - Max position size: {risk['max_position_size']*100}%")
                 if 'stop_loss_pct' in risk:
                     print(f"  - Stop loss: {risk['stop_loss_pct']*100}%")
             else:
-                print("⚠ Warning: No risk section found")
+                print("[!] Warning: No risk section found")
 
-            print("\n✓ Configuration file is valid")
+            print("\n[OK] Configuration file is valid")
 
         except yaml.YAMLError as e:
-            print(f"✗ YAML syntax error: {e}")
+            print(f"[X] YAML syntax error: {e}")
         except Exception as e:
-            print(f"✗ Error reading config: {e}")
+            print(f"[X] Error reading config: {e}")
 
     else:
         # Verify template
         template_path = Path(f'config/templates/{template_name}.yaml')
 
         if not template_path.exists():
-            print(f"✗ Template not found: {template_path}")
+            print(f"[X] Template not found: {template_path}")
             print("\nAvailable templates:")
             templates_dir = Path('config/templates')
             if templates_dir.exists():
@@ -131,8 +132,8 @@ def handle_verify_config(args):
             with open(template_path, 'r') as f:
                 config = yaml.safe_load(f)
 
-            print("✓ Template YAML syntax is valid")
-            print(f"✓ Template file: {template_path}")
+            print("[OK] Template YAML syntax is valid")
+            print(f"[OK] Template file: {template_path}")
 
             # Display key settings
             if 'risk' in config:
@@ -145,12 +146,12 @@ def handle_verify_config(args):
                 if 'portfolio_risk' in risk:
                     print(f"  - Portfolio risk limit: {risk['portfolio_risk']*100}%")
 
-            print("\n✓ Template is valid and ready to use")
+            print("\n[OK] Template is valid and ready to use")
 
         except yaml.YAMLError as e:
-            print(f"✗ YAML syntax error: {e}")
+            print(f"[X] YAML syntax error: {e}")
         except Exception as e:
-            print(f"✗ Error reading template: {e}")
+            print(f"[X] Error reading template: {e}")
 
 
 def handle_check_data(ticker: str):
@@ -162,7 +163,7 @@ def handle_check_data(ticker: str):
     data_pools_dir = Path('data/pools')
 
     if not data_pools_dir.exists():
-        print("✗ Data pools directory not found")
+        print("[X] Data pools directory not found")
         print(f"  Expected: {data_pools_dir}")
         print("\nAction needed:")
         print("  1. Fetch data: python src/runners/unified_runner.py --mode fetch --tickers", ticker)
@@ -183,7 +184,7 @@ def handle_check_data(ticker: str):
                 found_files.extend([(pool_dir.name, f) for f in ticker_files])
 
     if found_files:
-        print(f"✓ Data found for {ticker_upper}\n")
+        print(f"[OK] Data found for {ticker_upper}\n")
         print("Data pools containing this ticker:")
         for pool_name, file_path in found_files:
             rel_path = file_path.relative_to(data_pools_dir)
@@ -196,9 +197,9 @@ def handle_check_data(ticker: str):
                 print(f"    Size: {size_mb:.2f} MB")
             except:
                 pass
-        print(f"\n✓ {ticker_upper} is ready for backtesting")
+        print(f"\n[OK] {ticker_upper} is ready for backtesting")
     else:
-        print(f"✗ No data found for {ticker_upper}\n")
+        print(f"[X] No data found for {ticker_upper}\n")
         print("Data pools searched:")
         pools_found = [d.name for d in data_pools_dir.iterdir() if d.is_dir()]
         if pools_found:
@@ -220,7 +221,7 @@ def handle_describe_template(template_name: str):
     template_path = Path(f'config/templates/{template_name}.yaml')
 
     if not template_path.exists():
-        print(f"✗ Template not found: {template_name}")
+        print(f"[X] Template not found: {template_name}")
         print("\nAvailable templates:")
         templates_dir = Path('config/templates')
         if templates_dir.exists():
@@ -287,6 +288,6 @@ def handle_describe_template(template_name: str):
         print(f"  python src/runners/unified_runner.py --mode backtest --template {template_name} ...")
 
     except yaml.YAMLError as e:
-        print(f"✗ YAML syntax error: {e}")
+        print(f"[X] YAML syntax error: {e}")
     except Exception as e:
-        print(f"✗ Error reading template: {e}")
+        print(f"[X] Error reading template: {e}")
