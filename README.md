@@ -13,38 +13,84 @@ A production-ready, modular backtesting system for equities strategies with brok
 
 ---
 
-## Quick Start (AI Assistant Prompt)
+## 🚀 New Users - Start Here!
 
-Use the prompt below with your preferred LLM for guided setup:
+**First time setting up? Follow these steps:**
 
+1. **📖 Read the Quick Start**: [QUICKSTART.md](QUICKSTART.md) - Get from zero to your first backtest in 15 minutes
+2. **⚙️ Run automated setup**: `python setup.py` - One command to install everything
+3. **✅ Verify installation**: `python scripts/verify_setup.py` - Check that everything works
+4. **🎯 Run first backtest**: `python scripts/quickstart.py` - Interactive guided backtest
+
+**Having issues?** See [docs/ERROR_REFERENCE.md](docs/ERROR_REFERENCE.md) for common problems and solutions.
+
+**For LLMs/AI Assistants**: The [QUICKSTART.md](QUICKSTART.md) provides a complete, linear setup path. Start there for guiding users through installation and first use.
+
+---
+
+## 🤖 AI-Assisted Setup (Copy-Paste Prompt for Claude/ChatGPT/Cursor)
+
+**New users**: Copy the prompt below and paste it into your AI coding assistant (Claude Code, Cursor, ChatGPT, etc.). The AI will guide you through the complete setup process.
+
+```markdown
+I've just cloned the StrategyLab Backtester repository and need help setting it up from scratch to run my first backtest.
+
+CONTEXT:
+- Repository: https://github.com/Neel-Error404/StrategyLab
+- I'm in directory: backtester/
+- Operating System: [Windows/Linux/Mac]
+- Python installed: [Yes/No/Don't know]
+- Broker API: [Have Upstox/Have Zerodha/Will register Binance (free)/Need help choosing]
+
+NOTE: ALL brokers require API keys (even free ones like Binance for crypto).
+Binance is easiest - free, 5-minute registration, no subscription fees.
+
+COMPLETE WORKFLOW NEEDED:
+1. **Environment Setup**: Python 3.9+ check, virtual environment, dependencies
+2. **Configuration**: Broker API credentials setup (.env file)
+3. **Verification**: Validate installation, check strategies registered
+4. **Data Fetching**: Download market data (critical step - explain how!)
+5. **First Backtest**: Run a simple backtest to verify everything works
+6. **Results**: Understand what the output means
+
+CRITICAL REQUIREMENTS:
+- Show me EXACT commands to run (PowerShell for Windows, bash for Linux/Mac)
+- Explain WHEN and WHY to run each command
+- Handle the DATA FETCHING step explicitly (many users miss this!)
+- Tell me what to do if something fails
+- Verify each step before moving to the next
+
+AVAILABLE DOCUMENTATION (read these as needed):
+- QUICKSTART.md - Complete 5-step setup guide
+- docs/BROKER_SETUP.md - API credential setup
+- docs/ERROR_REFERENCE.md - Common errors and solutions
+- docs/SETUP_GUIDE.md - Detailed installation guide
+- docs/STRATEGY_GUIDE.md - Creating custom strategies
+- docs/CLI_REFERENCE.md - All CLI commands
+
+KEY FEATURES:
+- Automated setup: `python setup.py`
+- Installation verification: `python scripts/verify_setup.py`
+- Interactive first backtest: `python scripts/quickstart.py`
+- Helper commands: `--list-strategies`, `--check-data`, `--verify-config`
+
+START BY:
+1. Reading QUICKSTART.md to understand the 5-step process
+2. Checking if I have Python 3.9+ installed
+3. Walking me through setup.py execution
+4. Helping me configure broker API (critical!)
+5. Guiding me through data fetching (MOST COMMON ISSUE!)
+6. Running first backtest and explaining results
+
+Please start by checking my Python version and then guide me through each step with clear explanations of what's happening and why.
 ```
-I'm setting up an algorithmic trading backtester. Please help me configure it based on my requirements.
 
-SYSTEM INFO:
-- Repository: https://github.com/yourusername/StrategyLab (Fork before use)
-- Language: Python 3.10+
-- Supported Brokers: Zerodha Kite API, Upstox API, Binance API
-- Architecture: Modular, production-ready with real-time data
-
-MY REQUIREMENTS:
-[Describe trading style, risk tolerance, preferred broker, strategies of interest]
-
-AVAILABLE DOCUMENTATION:
-- Setup Guide: docs/SETUP_GUIDE.md (installation, dependencies, environment)
-- Broker Setup: docs/BROKER_SETUP.md (API keys, authentication, data fetching)
-- Strategy Guide: docs/STRATEGY_GUIDE.md (custom strategy development)
-- Template Guide: docs/TEMPLATE_GUIDE.md (risk templates, YAML configuration)
-- CLI Reference: docs/CLI_REFERENCE.md (all command-line options)
-- Output Guide: docs/OUTPUT_GUIDE.md (understanding results, visualisations)
-
-CONFIGURATION TEMPLATES:
-- minimal.yaml: Ultra-safe learning (5% max position)
-- conservative.yaml: Low-risk trading (15% max position)
-- aggressive.yaml: High-risk trading (20% max position)
-- portfolio_diversified.yaml: Multi-ticker portfolio
-
-Please provide step-by-step setup instructions, recommend appropriate templates, and suggest CLI commands based on my requirements.
-```
+**After setup, you can ask your AI:**
+- "How do I fetch data for RELIANCE stock?"
+- "Explain the difference between conservative and aggressive templates"
+- "How do I create a custom strategy?"
+- "What do the backtest results mean?"
+- "How do I run multiple tickers in parallel?"
 
 ---
 
