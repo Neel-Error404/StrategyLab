@@ -1,1 +1,0 @@
-# Analysis module for backtesting system
