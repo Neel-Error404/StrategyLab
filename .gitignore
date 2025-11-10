@@ -237,7 +237,7 @@ docs/_build/
 docs/build/
 site/
 
-# Repository local-only artifacts
+# Repository local-only artifacts (PRIVATE REPO ONLY)
 analysis/portfolio_experiments/
 analysis/output/
 analysis/run_logs/
@@ -246,6 +246,18 @@ src/core/options/
 tests/options/
 scripts/options_*.py
 src/strategies/*mse*.py
+
+# Archive and historical data (keep in private repo only)
+archive/
+hist_data/
+candles/
+temp_cov/
+
+# Temp and output files
+temp_*.csv
+temp_*.py
+run_output*.txt
+data/equity_trades_*.csv
 
 # ==========================================
 # OPTIMIZATION AND ANALYSIS
