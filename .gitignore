@@ -259,6 +259,13 @@ temp_*.py
 run_output*.txt
 data/equity_trades_*.csv
 
+# Data directories and test results (EXCLUDE FROM ALL REPOS)
+analysis/portfolio_construction/data/
+analysis/strategy_optimization/checkpoints/
+analysis/generic/modules/__pycache__/
+analysis/strategy_optimization/modules/__pycache__/
+analysis/strategy_optimization/scripts/__pycache__/
+
 # ==========================================
 # OPTIMIZATION AND ANALYSIS
 # ==========================================
