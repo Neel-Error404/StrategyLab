@@ -738,6 +738,7 @@ def main():
         if handle_helper_commands_if_present():
             sys.exit(0)
 
+        # If we get here, no helper command was used, so --mode is required
         # Parse command line arguments and create config
         config = create_config_from_args()
 

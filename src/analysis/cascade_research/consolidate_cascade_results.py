@@ -12,7 +12,7 @@ def consolidate_cascade_results():
     """Consolidate all CASCADE PREVENTION strategy trades into one file"""
     
     # Path to the strategy trades folder
-    strategy_trades_path = "/mnt/batch/tasks/shared/LS_root/mounts/clusters/basic-config/code/Users/back_tester/backtester/results_subset_cascade_test/20250829_230157/mse/2022-01-01_to_2025-07-07/data/strategy_trades/"
+    strategy_trades_path = "/path/to/outputs/20250829_230157/open_source_baseline/2022-01-01_to_2025-07-07/data/strategy_trades/"
     
     # Get all CSV files
     csv_files = glob.glob(os.path.join(strategy_trades_path, "*.csv"))

@@ -1,0 +1,189 @@
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+
+================================================================================
+[RUN] Running portfolio:ticker_ranking
+================================================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+🚀 STARTING COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS
+================================================================================
+📁 Config: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+📊 Strategy: mse_strategy_backtesting
+📅 Date Range: 2022-01-01_to_2025-08-31
+================================================================================
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+🔄 COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS
+======================================================================
+🎯 Objective: Compare Top 50 performers across trade categories
+======================================================================
+
+📊 STEP 1: TAGGING TRADES WITH CASCADE PATTERNS
+==================================================
+✅ Loaded 347,867 total trades
+✅ Date range: 2022-01-03 to 2025-10-31
+✅ Unique tickers: 96
+🏷️  Tagging trades with cascade characteristics...
+
+📊 TRADE TAGGING RESULTS:
+   CONSECUTIVE_SAME_DIRECTION     |  204,529 ( 58.8%) | 🔄 CASCADING
+   FIRST_TRADE_OF_DAY             |   89,274 ( 25.7%) | ✅ ANTI-CASCADING
+   CONSECUTIVE_OPPOSITE_DIRECTION |   53,968 ( 15.5%) | ✅ ANTI-CASCADING
+   FIRST_TRADE_FOR_TICKER         |       95 (  0.0%) | ✅ ANTI-CASCADING
+   FIRST_TRADE_OVERALL            |        1 (  0.0%) | ✅ ANTI-CASCADING
+
+📈 STEP 2A: CALCULATING PERFORMANCE - ALL TRADES
+============================================================
+📊 Analyzing 347,867 trades in ALL category
+✅ Calculated performance for 96 tickers
+   Top 3: MAXHEALTH, KOTAKBANK, BRITANNIA
+
+📈 STEP 2B: CALCULATING PERFORMANCE - CASCADING TRADES
+============================================================
+📊 Analyzing 204,529 trades in CASCADING category
+✅ Calculated performance for 96 tickers
+   Top 3: TITAN, NESTLEIND, TECHM
+
+📈 STEP 2C: CALCULATING PERFORMANCE - ANTI_CASCADING TRADES
+============================================================
+📊 Analyzing 143,338 trades in ANTI_CASCADING category
+✅ Calculated performance for 96 tickers
+   Top 3: EICHERMOT, AXISBANK, BRITANNIA
+
+🔍 STEP 3: COMPARING TOP 50 PERFORMERS ACROSS CATEGORIES
+============================================================
+📊 OVERLAP ANALYSIS:
+   All vs Cascading: 41/50 (82.0%)
+   All vs Anti-Cascading: 38/50 (76.0%)
+   Cascading vs Anti-Cascading: 29/50 (58.0%)
+
+   Tickers unique to Anti-Cascading Top 50: 12
+   Tickers unique to All Trades Top 50: 12
+
+💾 STEP 4: SAVING COMPREHENSIVE RESULTS
+==================================================
+✅ All performance rankings saved to: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\ticker_ranking
+✅ Top 50 lists saved for each category
+✅ Comparison summary saved: cascade_comparison_summary.md
+
+🎯 CRITICAL QUESTION ANSWERED:
+❌ Current Top 50 basis is FLAWED! Only 76.0% overlap with Anti-Cascading Top 50
+✅ MUST use Anti-Cascading Top 50 for portfolio construction
+
+🏆 COMPREHENSIVE ANALYSIS COMPLETED!
+📂 Results saved to: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\ticker_ranking
+
+
+================================================================================
+[RUN] Running portfolio:anti_cascade_filter
+================================================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+🚀 STARTING ANTI-CASCADING SUBSET CREATION
+================================================================================
+📁 Config: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+📊 Strategy: mse_strategy_backtesting
+📅 Date Range: 2022-01-01_to_2025-08-31
+================================================================================
+🔧 LOADING ANTI-CASCADING TOP 50 FROM FOUNDATION ANALYSIS
+===========================================================================
+✅ Loaded Anti-Cascading Top 50 list
+✅ Top 10 performers: EICHERMOT, AXISBANK, BRITANNIA, LALPATHLAB, KOTAKBANK, MAXHEALTH, INDHOTEL, TVSMOTOR, ESCORTS, POCL
+📁 Source: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\ticker_ranking\TOP50_ANTICASCADING_TRADES.csv
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+
+📊 FILTERING TRADES FOR TOP 50 TICKERS
+==================================================
+✅ Original dataset: 347,867 total trades
+✅ Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:15:00+05:30
+✅ Filtered to 180,958 trades from Top 50 tickers
+
+🔍 IDENTIFYING AFFORDABLE TICKERS (Under ₹2,000)
+============================================================
+📊 PRICE ANALYSIS RESULTS:
+   Total Top 50 tickers: 96
+   Tickers under ₹2,000: 30 (31.2%)
+
+📋 AFFORDABLE TICKERS:
+   Ticker       | Price    | Rank | PF    | Sharpe | Category       
+   ----------------------------------------------------------------------
+   MSUMI        | ₹ 47.09 |   44 |  1.01 |  0.004 | Under ₹500
+   NMDC         | ₹ 75.80 |   12 |  1.07 |  0.020 | Under ₹500
+   ABFRL        | ₹ 82.14 |   30 |  1.02 |  0.006 | Under ₹500
+   IRFC         | ₹123.20 |   35 |  1.06 |  0.016 | Under ₹500
+   PNB          | ₹123.30 |   13 |  1.09 |  0.026 | Under ₹500
+   HERCULES     | ₹181.00 |   15 |  1.07 |  0.020 | Under ₹500
+   TATASTEEL    | ₹182.72 |   41 |  1.00 |  0.001 | Under ₹500
+   FEDERALBNK   | ₹236.90 |   26 |  1.02 |  0.006 | Under ₹500
+   PETRONET     | ₹281.20 |   37 |  1.01 |  0.002 | Under ₹500
+   POWERGRID    | ₹288.00 |   33 |  1.00 |  0.001 | Under ₹500
+   NTPC         | ₹338.70 |   20 |  1.05 |  0.014 | Under ₹500
+   PFC          | ₹402.95 |   50 |  1.00 | -0.001 | Under ₹500
+   TATAMOTORS   | ₹409.65 |   49 |  0.99 | -0.003 | Under ₹500
+   ITC          | ₹420.15 |   18 |  1.04 |  0.013 | Under ₹500
+   DELHIVERY    | ₹466.85 |   24 |  1.02 |  0.005 | Under ₹500
+   DABUR        | ₹489.35 |   36 |  1.00 |  0.001 | Under ₹500
+   GRAPHITE     | ₹622.00 |   47 |  1.01 |  0.003 | Under ₹1000
+   VIMTALABS    | ₹720.25 |   38 |  1.03 |  0.008 | Under ₹1000
+   INDHOTEL     | ₹742.55 |    7 |  1.10 |  0.031 | Under ₹1000
+   PSUBANK      | ₹823.74 |   19 |  1.04 |  0.012 | Under ₹1000
+   RAMCOCEM     | ₹1046.45 |   45 |  0.99 | -0.003 | Under ₹2000
+   JINDALSTEL   | ₹1068.00 |   25 |  1.02 |  0.005 | Under ₹2000
+   MAXHEALTH    | ₹1159.50 |    6 |  1.09 |  0.028 | Under ₹2000
+   AXISBANK     | ₹1233.60 |    2 |  1.14 |  0.043 | Under ₹2000
+   IPCALAB      | ₹1272.10 |   29 |  1.01 |  0.004 | Under ₹2000
+   POCL         | ₹1370.50 |   10 |  1.10 |  0.030 | Under ₹2000
+   PIDILITIND   | ₹1446.40 |   21 |  1.03 |  0.009 | Under ₹2000
+   INFY         | ₹1482.20 |   31 |  1.01 |  0.004 | Under ₹2000
+   SUNPHARMA    | ₹1689.10 |   28 |  1.01 |  0.003 | Under ₹2000
+   UBL          | ₹1796.90 |   14 |  1.04 |  0.013 | Under ₹2000
+
+🎯 APPLYING ANTI-CASCADING FILTER
+============================================================
+📊 Working with 108,643 trades from 30 affordable tickers
+🔍 Categorizing trades for cascade detection...
+
+📊 TRADE CATEGORIZATION RESULTS:
+   CONSECUTIVE_SAME_DIRECTION     |   63,987 ( 58.9%) | ❌ EXCLUDE
+   FIRST_TRADE_OF_DAY             |   27,629 ( 25.4%) | ✅ INCLUDE
+   CONSECUTIVE_OPPOSITE_DIRECTION |   16,997 ( 15.6%) | ✅ INCLUDE
+   FIRST_TRADE_FOR_TICKER         |       29 (  0.0%) | ✅ INCLUDE
+   FIRST_TRADE_OVERALL            |        1 (  0.0%) | ✅ INCLUDE
+
+🎯 ANTI-CASCADING FILTER RESULTS:
+   Original trades: 108,643
+   Excluded (cascading): 63,987 (58.9%)
+   Remaining (anti-cascading): 44,656 (41.1%)
+
+💾 SAVING FILTERED DATASET
+==================================================
+✅ Filtered trades saved: anti_cascading_trades_filtered.csv
+✅ Ticker metadata saved: affordable_tickers_metadata.csv
+✅ Summary report saved: anti_cascade_filter_summary.md
+📁 Location: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\anti_cascade_filter
+
+🔍 VERIFICATION:
+   File size: 44,656 trades
+   Memory usage: 34.1 MB
+
+🏆 ANTI-CASCADING SUBSET CREATION COMPLETED!
+📊 Filtered dataset: 44,656 trades
+🎯 Next step: Sector classification and correlation analysis

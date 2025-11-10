@@ -297,9 +297,10 @@ class UpstoxDataProvider(DataProvider):
     
     def _fetch_chunk_with_retry(self, historical_base: str, instrument_id: str, 
                                unit: str, interval: str, start_str: str, end_str: str, 
-                               symbol: str, max_retries: int = 3) -> list:
+                               symbol: str, max_retries: int = 5) -> list:
         """
         Fetch data chunk with retry logic and exponential backoff.
+        Special handling for HTTP 429 (rate limit) errors with longer waits.
         
         Args:
             historical_base: Base API URL
@@ -309,7 +310,7 @@ class UpstoxDataProvider(DataProvider):
             start_str: Start date string
             end_str: End date string
             symbol: Symbol name for logging
-            max_retries: Maximum retry attempts
+            max_retries: Maximum retry attempts (increased from 3 to 5 for better 429 handling)
             
         Returns:
             List of candle data or empty list on failure
@@ -352,13 +353,21 @@ class UpstoxDataProvider(DataProvider):
                             return []  # Don't retry for this specific error
                         else:
                             self.logger.warning(f"API error for {symbol} (attempt {attempt + 1}): {error_msg}")
+                elif response.status_code == 429:
+                    # Rate limit hit - use much longer exponential backoff
+                    if attempt < max_retries - 1:
+                        wait_time = 5 * (2 ** attempt)  # 5, 10, 20, 40 seconds for 429 errors
+                        self.logger.warning(f"HTTP 429 (Rate Limited) for {symbol} - waiting {wait_time}s before retry...")
+                        time.sleep(wait_time)
+                    else:
+                        self.logger.error(f"❌ Failed to fetch {symbol} for {start_str} to {end_str} after {max_retries} attempts (429 rate limit)")
+                        return []
                 else:
                     self.logger.warning(f"HTTP {response.status_code} for {symbol} (attempt {attempt + 1}): {response.text[:200]}")
-                
-                # Exponential backoff before retry
-                if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt  # 1, 2, 4 seconds
-                    time.sleep(wait_time)
+                    # Regular backoff for other HTTP errors
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+                        time.sleep(wait_time)
                     
             except Exception as e:
                 self.logger.error(f"Exception fetching {symbol} {start_str}-{end_str} (attempt {attempt + 1}): {e}")

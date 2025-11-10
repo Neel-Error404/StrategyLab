@@ -1,0 +1,12 @@
+strategy:
+  name: "mse_strategy_backtesting"
+  parameters:
+    exit_threshold: 0.20
+
+output:
+  save_plots: false
+  save_base_data: true
+  save_trades: true
+
+execution:
+  parallel_processing: true

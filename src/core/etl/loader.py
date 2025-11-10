@@ -153,6 +153,19 @@ def load_base_data(pull_date: str, ticker: str) -> Optional[pd.DataFrame]:
     Returns:
         DataFrame with historical price data or None if no data found
     """
+    preferred_timeframes = ["5m", "15m", "1m", "day"]
+    for timeframe in preferred_timeframes:
+        data = load_multi_timeframe_data(
+            pull_date=pull_date,
+            ticker=ticker,
+            required_timeframes=[timeframe],
+            use_ticker_first_storage=True,
+        )
+        df = data.get(timeframe) if data else None
+        if df is not None and not df.empty:
+            logging.info(f"Loaded {len(df)} rows for {ticker} using ticker-first {timeframe} parquet/CSV")
+            return df
+
     # Try multiple timeframes in order of preference
     timeframes_to_try = ["1m", "day", "5m", "15m", "1h"]
     csv_files = []

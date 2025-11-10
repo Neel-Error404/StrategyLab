@@ -1,0 +1,625 @@
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+
+================================================================================
+[RUN] Running generic:basic_eda
+================================================================================
+============================================================
+BASIC EDA - Exploratory Data Analysis
+============================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+
+🔍 Validating trade data...
+
+📊 OVERALL STATISTICS
+============================================================
+Total Trades: 347,867
+  Winning: 174,162 (50.1%)
+  Losing: 162,090 (49.9%)
+  Breakeven: 11,615
+
+Profitability:
+  Total P&L: ₹897,867.50
+  Average P&L: ₹2.58
+  Profit Factor: 1.87
+  Avg Win: ₹11.10
+  Avg Loss: ₹-6.39
+
+Duration:
+  Average: 32.2 minutes (0.5 hours)
+
+📊 TRADE TYPE DISTRIBUTION
+============================================================
+Buy Trades:
+  Count: 170,608 (49.0%)
+  Win Rate: 48.9%
+  Total Profit: ₹437,784.31
+  Avg Profit: ₹2.57
+
+Sell Trades:
+  Count: 177,259 (51.0%)
+  Win Rate: 51.2%
+  Total Profit: ₹460,083.22
+  Avg Profit: ₹2.60
+
+📊 TICKER-LEVEL PERFORMANCE
+============================================================
+
+Top 10 Tickers by Total Profit:
+            trade_count   total_profit  avg_profit  avg_duration   win_rate
+ticker                                                                     
+MRF                3683  319307.906250   86.699997     32.150002  53.814825
+SHREECEM           3841   81156.960938   21.129999     31.450001  51.444936
+BANKNIFTY          3360   72990.539062   21.719999     32.360001  53.095238
+NIFTY              3357   27927.849609    8.320000     32.060001  54.751266
+MARUTI             3616   25604.449219    7.080000     32.610001  51.023230
+MCX                3486   19571.650391    5.610000     32.660000  51.635112
+BAJAJ-AUTO         3529   18946.800781    5.370000     32.310001  51.969396
+POLYCAB            3741   17670.230469    4.720000     31.650000  50.761828
+SIEMENS            3672   16439.800781    4.480000     33.060001  52.342048
+APOLLOHOSP         3591   16053.650391    4.470000     32.049999  51.768310
+
+Bottom 5 Tickers by Total Profit:
+          trade_count  total_profit  avg_profit  avg_duration   win_rate
+ticker                                                                  
+NBCC             3569    325.100006        0.09     31.940001  47.828523
+GMRINFRA         3885    280.709991        0.07     30.110001  47.310167
+NMDC             3586    233.229996        0.07     32.709999  48.884551
+MSUMI            3270    115.650002        0.04     33.049999  44.892966
+YESBANK          3849     78.980003        0.02     29.530001  40.607950
+
+📅 TIME-OF-DAY PERFORMANCE
+============================================================
+Top 5 Hours by Win Rate:
+  15:00 → 57.3% win rate (₹2.14 avg)
+  14:00 → 50.2% win rate (₹2.45 avg)
+  10:00 → 50.1% win rate (₹2.12 avg)
+  12:00 → 49.8% win rate (₹2.16 avg)
+  09:00 → 49.7% win rate (₹3.20 avg)
+
+💾 Saved statistics to: analysis\output\mse_strategy_backtesting\20251107_154802\generic\basic_eda\basic_eda_summary.json
+💾 Saved ticker performance to: analysis\output\mse_strategy_backtesting\20251107_154802\generic\basic_eda\basic_eda_ticker_performance.csv
+
+📄 Report saved to: analysis\reports\mse_strategy_backtesting\20251107_154802\generic\basic_eda\basic_eda_report.md
+
+============================================================
+✅ BASIC EDA COMPLETE!
+============================================================
+
+
+================================================================================
+[RUN] Running generic:trade_type_analysis
+================================================================================
+🚀 Starting Comprehensive Buy vs Sell Analysis...
+==========================================================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+
+==========================================================================================
+🔄 COMPREHENSIVE BUY vs SELL TRADE ANALYSIS
+==========================================================================================
+📊 Dataset Split:
+  Buy Trades: 170,608 (49.0%)
+  Sell Trades: 177,259 (51.0%)
+
+==================================================
+METRIC                    BUY             SELL            WINNER    
+==================================================
+Win Rate                  48.9%           51.2%           SELL      
+Avg P&L/Trade             ₹2.57           ₹2.60           SELL      
+Avg Drawdown              0.16%           0.15%           BUY       
+
+==========================================================================================
+📈 INTRA-TRADE BEHAVIOR ANALYSIS (Peak/Valley Patterns)
+==========================================================================================
+
+🟢 BUY TRADE INTRA-ANALYSIS:
+  Total BUY trades analyzed: 170,608
+  Average potential profit: ₹9.01 (0.34%)
+  Average actual profit: ₹2.57 (0.09%)
+  Average profit capture: -62.7%
+  Average max adverse: ₹4.22 (0.16%)
+
+  📊 PROFITABLE BUY TRADES (83,400):
+    Avg potential profit: ₹16.31
+    Avg actual profit: ₹11.65
+    Avg profit capture: 71.0%
+    Trades capturing >80% of peak: 39,992 (48.0%)
+    Trades capturing >60% of peak: 55,369 (66.4%)
+
+  📉 LOSING BUY TRADES (81,804):
+    Avg potential profit given up: ₹2.12
+    Avg actual loss: ₹-6.53
+    Trades that were profitable at peak: 34,346 (42.0%)
+
+🔴 SELL TRADE INTRA-ANALYSIS:
+  Total SELL trades analyzed: 177,259
+  Average potential profit: ₹8.59 (0.33%)
+  Average actual profit: ₹2.60 (0.10%)
+  Average profit capture: -51.2%
+  Average max adverse: ₹3.81 (0.15%)
+
+  📊 PROFITABLE SELL TRADES (90,762):
+    Avg potential profit: ₹14.83
+    Avg actual profit: ₹10.60
+    Avg profit capture: 72.3%
+    Trades capturing >80% of valley: 45,320 (49.9%)
+    Trades capturing >60% of valley: 61,954 (68.3%)
+
+  📉 LOSING SELL TRADES (80,286):
+    Avg potential profit given up: ₹2.14
+    Avg actual loss: ₹-6.26
+    Trades that were profitable at valley: 34,117 (42.5%)
+
+==========================================================================================
+⏰ TIMING PATTERN ANALYSIS - BUY vs SELL
+==========================================================================================
+
+📅 BUY TRADE TIMING PATTERNS:
+  🕐 Top 5 Hours by Total P&L:
+    09:00 - ₹137,151 (47,969.0 trades, ₹2.86 avg)
+    14:00 - ₹69,471 (22,961.0 trades, ₹3.03 avg)
+    13:00 - ₹69,133 (21,845.0 trades, ₹3.16 avg)
+    12:00 - ₹57,148 (22,892.0 trades, ₹2.50 avg)
+    11:00 - ₹53,092 (21,903.0 trades, ₹2.42 avg)
+
+  📅 Day of Week Performance:
+    Monday: ₹92,523 (33,364.0 trades)
+    Tuesday: ₹75,757 (34,731.0 trades)
+    Wednesday: ₹107,979 (34,857.0 trades)
+    Thursday: ₹77,762 (33,780.0 trades)
+    Friday: ₹81,559 (33,298.0 trades)
+    Saturday: ₹2,204 (578.0 trades)
+
+📅 SELL TRADE TIMING PATTERNS:
+  🕐 Top 5 Hours by Total P&L:
+    09:00 - ₹154,870 (43,359.0 trades, ₹3.57 avg)
+    10:00 - ₹68,200 (26,497.0 trades, ₹2.57 avg)
+    11:00 - ₹61,543 (22,296.0 trades, ₹2.76 avg)
+    13:00 - ₹54,288 (25,663.0 trades, ₹2.12 avg)
+    14:00 - ₹53,130 (27,084.0 trades, ₹1.96 avg)
+
+  📅 Day of Week Performance:
+    Monday: ₹60,910 (34,027.0 trades)
+    Tuesday: ₹97,564 (34,765.0 trades)
+    Wednesday: ₹102,967 (34,647.0 trades)
+    Thursday: ₹80,138 (37,416.0 trades)
+    Friday: ₹116,361 (35,946.0 trades)
+    Saturday: ₹2,143 (458.0 trades)
+
+==========================================================================================
+🏢 TICKER DIRECTIONAL BIAS ANALYSIS
+==========================================================================================
+📊 Analyzing 96 tickers with ≥100 trades
+
+🟢 TOP 10 BUY-BIASED TICKERS (>70% profits from Buy trades):
+
+🔴 TOP 10 SELL-BIASED TICKERS (>70% profits from Sell trades):
+   1. HERCULES: ₹751 total (71.4% from SELL)
+
+⚖️ TOP 10 BALANCED TICKERS (40-60% split):
+   1. MRF: ₹319,308 total (Buy: 49.5%, Sell: 50.5%)
+   2. SHREECEM: ₹81,157 total (Buy: 47.4%, Sell: 52.6%)
+   3. BANKNIFTY: ₹72,991 total (Buy: 47.1%, Sell: 52.9%)
+   4. NIFTY: ₹27,928 total (Buy: 45.9%, Sell: 54.1%)
+   5. MARUTI: ₹25,604 total (Buy: 55.4%, Sell: 44.6%)
+   6. MCX: ₹19,572 total (Buy: 48.9%, Sell: 51.1%)
+   7. BAJAJ-AUTO: ₹18,947 total (Buy: 45.8%, Sell: 54.2%)
+   8. POLYCAB: ₹17,670 total (Buy: 50.7%, Sell: 49.3%)
+   9. SIEMENS: ₹16,440 total (Buy: 46.9%, Sell: 53.1%)
+  10. APOLLOHOSP: ₹16,054 total (Buy: 48.9%, Sell: 51.1%)
+💾 Saved directional comparison CSV → analysis\output\mse_strategy_backtesting\20251107_154802\generic\trade_type_analysis\trade_type_analysis_directional_breakdown.csv
+💾 Saved JSON summary → analysis\output\mse_strategy_backtesting\20251107_154802\generic\trade_type_analysis\trade_type_analysis_directional_breakdown.json
+📝 Saved Markdown summary → analysis\reports\mse_strategy_backtesting\20251107_154802\generic\trade_type_analysis\trade_type_analysis_directional_summary.md
+💾 Saved ticker bias breakdown → analysis\output\mse_strategy_backtesting\20251107_154802\generic\trade_type_analysis\trade_type_analysis_ticker_bias.csv
+
+==========================================================================================
+✅ COMPREHENSIVE BUY vs SELL ANALYSIS COMPLETE!
+==========================================================================================
+🎯 Key Findings:
+  • SELL trades have 2.3% higher win rate
+  • SELL trades capture -51.2% of valley potential
+  • BUY trades capture -62.7% of peak potential
+  • SELL trades have 0.01% lower drawdown
+
+
+================================================================================
+[RUN] Running generic:cascade_analysis
+================================================================================
+============================================================
+CASCADE ANALYSIS - YAML Config Driven
+============================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+
+🔍 Validating trade data...
+
+🏷️  TAGGING TRADES WITH CASCADE PATTERNS
+============================================================
+📊 Processing 347,867 trades...
+✅ Tagging complete!
+
+📊 CASCADE TAG DISTRIBUTION:
+cascade_tag
+WINNING_CASCADE_SAME_DIR    110098
+LOSING_CASCADE_SAME_DIR      94431
+FIRST_TRADE_OF_DAY           89274
+LOSING_CASCADE_OPP_DIR       38650
+WINNING_CASCADE_OPP_DIR      15318
+FIRST_TRADE_FOR_TICKER          95
+FIRST_TRADE_OVERALL              1
+
+📊 CASCADE PERFORMANCE ANALYSIS
+============================================================
+
+📈 PERFORMANCE BY CASCADE TAG:
+                           count   total_profit  avg_profit  profit_std  win_rate
+cascade_tag                                                                      
+FIRST_TRADE_FOR_TICKER        95    -228.009995      -2.400   52.730999      50.5
+FIRST_TRADE_OF_DAY         89274  315377.000000       3.533   65.097000      50.1
+FIRST_TRADE_OVERALL            1      -0.150000      -0.150         NaN       0.0
+LOSING_CASCADE_OPP_DIR     38650  142853.953125       3.696   49.394001      52.0
+LOSING_CASCADE_SAME_DIR    94431  175044.203125       1.854   37.292999      48.7
+WINNING_CASCADE_OPP_DIR    15318   50386.929688       3.289   56.523998      52.9
+WINNING_CASCADE_SAME_DIR  110098  214433.578125       1.948   44.765999      50.1
+
+🔍 CASCADE vs NON-CASCADE:
+   Cascade trades: 258,497 (50.1% WR)
+   Non-cascade trades: 89,370 (50.1% WR)
+   Difference: -0.0%
+
+🏆 TRADES AFTER WINNING:
+   Count: 174,162
+   Win Rate: 50.3%
+   Avg Profit: ₹2.46
+
+❌ TRADES AFTER LOSING:
+   Count: 162,089
+   Win Rate: 50.2%
+   Avg Profit: ₹2.84
+
+⏰ TIME GAP ANALYSIS:
+                    count  avg_profit  win_rate
+time_gap_category                              
+1-2_HOURS           45636       2.933      49.6
+15-30_MIN           19314       3.045      49.6
+2-4_HOURS           25874       3.107      51.9
+30-60_MIN           36780       2.848      49.1
+4+_HOURS             4190       4.113      57.5
+5-15_MIN           126703       1.481      49.9
+
+💾 Saved tagged trades to: analysis\output\mse_strategy_backtesting\20251107_154802\generic\cascade_analysis\cascade_analysis_cascade_tags.csv
+💾 Saved statistics to: analysis\output\mse_strategy_backtesting\20251107_154802\generic\cascade_analysis\cascade_analysis_cascade_metrics.json
+
+============================================================
+✅ CASCADE ANALYSIS COMPLETE!
+============================================================
+
+Outputs:
+  - Tagged Trades: analysis\output\mse_strategy_backtesting\20251107_154802\generic\cascade_analysis\cascade_analysis_cascade_tags.csv
+  - Statistics: analysis\output\mse_strategy_backtesting\20251107_154802\generic\cascade_analysis\cascade_analysis_cascade_metrics.json
+  - Report: analysis\reports\mse_strategy_backtesting\20251107_154802\generic\cascade_analysis\cascade_analysis_cascade_insights.md
+
+
+================================================================================
+[RUN] Running generic:ticker_ranking
+================================================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+📊 Loading trade data for ticker ranking analysis...
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+✅ Loaded 347,867 trades covering 96 tickers
+
+📊 Calculating ticker-level metrics...
+✅ Metrics computed for 96 tickers.
+
+🧮 Applied composite score weights:
+   • Profitability: 30%
+   • Risk Management: 25%
+   • Consistency: 20%
+   • Efficiency: 15%
+   • Frequency: 10%
+
+🏆 Tier distribution:
+   • Tier 1 - Excellent: 1 tickers (1.0%)
+   • Tier 2 - Good: 45 tickers (46.9%)
+   • Tier 3 - Average: 31 tickers (32.3%)
+   • Tier 4 - Poor: 19 tickers (19.8%)
+
+🥇 Top 50 tickers preview:
+    1. MRF | score 75.6 | P&L ₹319,308
+    2. NIFTY | score 68.9 | P&L ₹27,928
+    3. BANKNIFTY | score 66.2 | P&L ₹72,991
+    4. RELIANCE | score 63.7 | P&L ₹3,376
+    5. TATASTEEL | score 63.6 | P&L ₹457
+    6. SBIN | score 62.3 | P&L ₹2,078
+    7. LT | score 62.0 | P&L ₹8,148
+    8. MCX | score 60.5 | P&L ₹19,572
+    9. PNB | score 60.2 | P&L ₹381
+   10. TITAN | score 60.2 | P&L ₹8,207
+
+🔻 Bottom 50 tickers preview:
+   47. NTPC | score 54.9 | P&L ₹833
+   48. ZEEL | score 54.8 | P&L ₹1,055
+   49. LUPIN | score 54.7 | P&L ₹4,051
+   50. FEDERALBNK | score 54.7 | P&L ₹446
+   51. GRAPHITE | score 54.5 | P&L ₹2,182
+   52. MANAPPURAM | score 54.1 | P&L ₹638
+   53. GAIL | score 53.9 | P&L ₹577
+   54. NBCC | score 53.8 | P&L ₹325
+   55. PETRONET | score 53.8 | P&L ₹810
+   56. PIDILITIND | score 53.6 | P&L ₹3,200
+
+📊 Tier summary:
+                   total_pnl             ... composite_score       
+                       count       mean  ...             min    max
+tier                                     ...                       
+Tier 1 - Excellent         1  319307.91  ...           75.55  75.55
+Tier 2 - Good             45    8554.86  ...           55.34  68.92
+Tier 3 - Average          31    3911.62  ...           50.22  54.86
+Tier 4 - Poor             19    3806.87  ...           18.21  50.10
+
+[4 rows x 12 columns]
+
+💧 Liquidity analysis:
+                    Ticker_Count  ...  Avg_Composite_Score
+liquidity_category                ...                     
+Very Low                       0  ...                  NaN
+Low                            0  ...                  NaN
+Medium                         1  ...                57.69
+High                          95  ...                54.13
+Very High                      0  ...                  NaN
+
+[5 rows x 5 columns]
+
+💾 Saved ranking table → analysis\output\mse_strategy_backtesting\20251107_154802\generic\ticker_ranking\ticker_ranking_ticker_scores.csv
+💾 Saved summary JSON → analysis\output\mse_strategy_backtesting\20251107_154802\generic\ticker_ranking\ticker_analysis_summary.json
+
+✅ TICKER RANKING ANALYSIS COMPLETE
+   Total tickers analysed: 96
+   Top performer: MRF (score 75.6)
+   Results directory: analysis\output\mse_strategy_backtesting\20251107_154802\generic\ticker_ranking
+
+
+================================================================================
+[RUN] Running generic:validation_check
+================================================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+✅ All required columns present.
+
+📈 Overall stats: Trades=347,867, WinRate=50.07%, P&L=₹897,867.50
+
+📝 Validation report saved → analysis\reports\mse_strategy_backtesting\20251107_154802\generic\validation_check\validation_check_validation_report.md
+
+✅ Validation check complete.
+
+
+[INFO] Wrote run log -> analysis\run_logs\mse_strategy_backtesting\20251107_154802\generic_run.md
+
+================================================================================
+[RUN] Running portfolio:ticker_ranking
+================================================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+🚀 STARTING COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS
+================================================================================
+📁 Config: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+📊 Strategy: mse_strategy_backtesting
+📅 Date Range: 2022-01-01_to_2025-08-31
+================================================================================
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+🔄 COMPREHENSIVE CASCADE vs ANTI-CASCADE ANALYSIS
+======================================================================
+🎯 Objective: Compare Top 50 performers across trade categories
+======================================================================
+
+📊 STEP 1: TAGGING TRADES WITH CASCADE PATTERNS
+==================================================
+✅ Loaded 347,867 total trades
+✅ Date range: 2022-01-03 to 2025-10-31
+✅ Unique tickers: 96
+🏷️  Tagging trades with cascade characteristics...
+
+📊 TRADE TAGGING RESULTS:
+   CONSECUTIVE_SAME_DIRECTION     |  204,529 ( 58.8%) | 🔄 CASCADING
+   FIRST_TRADE_OF_DAY             |   89,274 ( 25.7%) | ✅ ANTI-CASCADING
+   CONSECUTIVE_OPPOSITE_DIRECTION |   53,968 ( 15.5%) | ✅ ANTI-CASCADING
+   FIRST_TRADE_FOR_TICKER         |       95 (  0.0%) | ✅ ANTI-CASCADING
+   FIRST_TRADE_OVERALL            |        1 (  0.0%) | ✅ ANTI-CASCADING
+
+📈 STEP 2A: CALCULATING PERFORMANCE - ALL TRADES
+============================================================
+📊 Analyzing 347,867 trades in ALL category
+✅ Calculated performance for 96 tickers
+   Top 3: MAXHEALTH, KOTAKBANK, BRITANNIA
+
+📈 STEP 2B: CALCULATING PERFORMANCE - CASCADING TRADES
+============================================================
+📊 Analyzing 204,529 trades in CASCADING category
+✅ Calculated performance for 96 tickers
+   Top 3: TITAN, NESTLEIND, TECHM
+
+📈 STEP 2C: CALCULATING PERFORMANCE - ANTI_CASCADING TRADES
+============================================================
+📊 Analyzing 143,338 trades in ANTI_CASCADING category
+✅ Calculated performance for 96 tickers
+   Top 3: EICHERMOT, AXISBANK, BRITANNIA
+
+🔍 STEP 3: COMPARING TOP 50 PERFORMERS ACROSS CATEGORIES
+============================================================
+📊 OVERLAP ANALYSIS:
+   All vs Cascading: 41/50 (82.0%)
+   All vs Anti-Cascading: 38/50 (76.0%)
+   Cascading vs Anti-Cascading: 29/50 (58.0%)
+
+   Tickers unique to Anti-Cascading Top 50: 12
+   Tickers unique to All Trades Top 50: 12
+
+💾 STEP 4: SAVING COMPREHENSIVE RESULTS
+==================================================
+✅ All performance rankings saved to: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\ticker_ranking
+✅ Top 50 lists saved for each category
+✅ Comparison summary saved: cascade_comparison_summary.md
+
+🎯 CRITICAL QUESTION ANSWERED:
+❌ Current Top 50 basis is FLAWED! Only 76.0% overlap with Anti-Cascading Top 50
+✅ MUST use Anti-Cascading Top 50 for portfolio construction
+
+🏆 COMPREHENSIVE ANALYSIS COMPLETED!
+📂 Results saved to: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\ticker_ranking
+
+
+================================================================================
+[RUN] Running portfolio:anti_cascade_filter
+================================================================================
+[OK] Loaded config from: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+   Run ID: 20251107_154802
+   Strategy: mse_strategy_backtesting
+   Date Range: 2022-01-01_to_2025-08-31
+   Strategy trades dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\strategy_trades
+   Base data dir: D:\Balcony\Trading\unified_trading_setup\backtester\outputs\mse_exit_drop_005_all\20251107_154802\mse_strategy_backtesting\2022-01-01_to_2025-08-31\data\base_data
+🚀 STARTING ANTI-CASCADING SUBSET CREATION
+================================================================================
+📁 Config: D:\Balcony\Trading\unified_trading_setup\backtester\analysis\configs\mse_exit_drop_005_all.yaml
+📊 Strategy: mse_strategy_backtesting
+📅 Date Range: 2022-01-01_to_2025-08-31
+================================================================================
+🔧 LOADING ANTI-CASCADING TOP 50 FROM FOUNDATION ANALYSIS
+===========================================================================
+✅ Loaded Anti-Cascading Top 50 list
+✅ Top 10 performers: EICHERMOT, AXISBANK, BRITANNIA, LALPATHLAB, KOTAKBANK, MAXHEALTH, INDHOTEL, TVSMOTOR, ESCORTS, POCL
+📁 Source: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\ticker_ranking\TOP50_ANTICASCADING_TRADES.csv
+📊 Loading trade data from: all_trades_merged.csv
+✅ Loaded 347,867 trades
+   Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:10:00+05:30
+   Tickers: 96
+
+📊 FILTERING TRADES FOR TOP 50 TICKERS
+==================================================
+✅ Original dataset: 347,867 total trades
+✅ Date range: 2022-01-03 09:35:00+05:30 to 2025-10-31 15:15:00+05:30
+✅ Filtered to 180,958 trades from Top 50 tickers
+
+🔍 IDENTIFYING AFFORDABLE TICKERS (Under ₹2,000)
+============================================================
+📊 PRICE ANALYSIS RESULTS:
+   Total Top 50 tickers: 96
+   Tickers under ₹2,000: 30 (31.2%)
+
+📋 AFFORDABLE TICKERS:
+   Ticker       | Price    | Rank | PF    | Sharpe | Category       
+   ----------------------------------------------------------------------
+   MSUMI        | ₹ 47.09 |   44 |  1.01 |  0.004 | Under ₹500
+   NMDC         | ₹ 75.80 |   12 |  1.07 |  0.020 | Under ₹500
+   ABFRL        | ₹ 82.14 |   30 |  1.02 |  0.006 | Under ₹500
+   IRFC         | ₹123.20 |   35 |  1.06 |  0.016 | Under ₹500
+   PNB          | ₹123.30 |   13 |  1.09 |  0.026 | Under ₹500
+   HERCULES     | ₹181.00 |   15 |  1.07 |  0.020 | Under ₹500
+   TATASTEEL    | ₹182.72 |   41 |  1.00 |  0.001 | Under ₹500
+   FEDERALBNK   | ₹236.90 |   26 |  1.02 |  0.006 | Under ₹500
+   PETRONET     | ₹281.20 |   37 |  1.01 |  0.002 | Under ₹500
+   POWERGRID    | ₹288.00 |   33 |  1.00 |  0.001 | Under ₹500
+   NTPC         | ₹338.70 |   20 |  1.05 |  0.014 | Under ₹500
+   PFC          | ₹402.95 |   50 |  1.00 | -0.001 | Under ₹500
+   TATAMOTORS   | ₹409.65 |   49 |  0.99 | -0.003 | Under ₹500
+   ITC          | ₹420.15 |   18 |  1.04 |  0.013 | Under ₹500
+   DELHIVERY    | ₹466.85 |   24 |  1.02 |  0.005 | Under ₹500
+   DABUR        | ₹489.35 |   36 |  1.00 |  0.001 | Under ₹500
+   GRAPHITE     | ₹622.00 |   47 |  1.01 |  0.003 | Under ₹1000
+   VIMTALABS    | ₹720.25 |   38 |  1.03 |  0.008 | Under ₹1000
+   INDHOTEL     | ₹742.55 |    7 |  1.10 |  0.031 | Under ₹1000
+   PSUBANK      | ₹823.74 |   19 |  1.04 |  0.012 | Under ₹1000
+   RAMCOCEM     | ₹1046.45 |   45 |  0.99 | -0.003 | Under ₹2000
+   JINDALSTEL   | ₹1068.00 |   25 |  1.02 |  0.005 | Under ₹2000
+   MAXHEALTH    | ₹1159.50 |    6 |  1.09 |  0.028 | Under ₹2000
+   AXISBANK     | ₹1233.60 |    2 |  1.14 |  0.043 | Under ₹2000
+   IPCALAB      | ₹1272.10 |   29 |  1.01 |  0.004 | Under ₹2000
+   POCL         | ₹1370.50 |   10 |  1.10 |  0.030 | Under ₹2000
+   PIDILITIND   | ₹1446.40 |   21 |  1.03 |  0.009 | Under ₹2000
+   INFY         | ₹1482.20 |   31 |  1.01 |  0.004 | Under ₹2000
+   SUNPHARMA    | ₹1689.10 |   28 |  1.01 |  0.003 | Under ₹2000
+   UBL          | ₹1796.90 |   14 |  1.04 |  0.013 | Under ₹2000
+
+🎯 APPLYING ANTI-CASCADING FILTER
+============================================================
+📊 Working with 108,643 trades from 30 affordable tickers
+🔍 Categorizing trades for cascade detection...
+
+📊 TRADE CATEGORIZATION RESULTS:
+   CONSECUTIVE_SAME_DIRECTION     |   63,987 ( 58.9%) | ❌ EXCLUDE
+   FIRST_TRADE_OF_DAY             |   27,629 ( 25.4%) | ✅ INCLUDE
+   CONSECUTIVE_OPPOSITE_DIRECTION |   16,997 ( 15.6%) | ✅ INCLUDE
+   FIRST_TRADE_FOR_TICKER         |       29 (  0.0%) | ✅ INCLUDE
+   FIRST_TRADE_OVERALL            |        1 (  0.0%) | ✅ INCLUDE
+
+🎯 ANTI-CASCADING FILTER RESULTS:
+   Original trades: 108,643
+   Excluded (cascading): 63,987 (58.9%)
+   Remaining (anti-cascading): 44,656 (41.1%)
+
+💾 SAVING FILTERED DATASET
+==================================================
+✅ Filtered trades saved: anti_cascading_trades_filtered.csv
+✅ Ticker metadata saved: affordable_tickers_metadata.csv
+✅ Summary report saved: anti_cascade_filter_summary.md
+📁 Location: analysis\output\mse_strategy_backtesting\20251107_154802\portfolio\anti_cascade_filter
+
+🔍 VERIFICATION:
+   File size: 44,656 trades
+   Memory usage: 34.1 MB
+
+🏆 ANTI-CASCADING SUBSET CREATION COMPLETED!
+📊 Filtered dataset: 44,656 trades
+🎯 Next step: Sector classification and correlation analysis

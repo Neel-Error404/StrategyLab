@@ -1,0 +1,250 @@
+# Unified Configuration Template
+# This demonstrates how the unified runner combines features from both systems
+
+# Conservative template with all advanced features
+conservative_unified:
+  strategy:
+    name: "mse"
+    risk_profile: "conservative"
+    initial_capital: 100000
+    parameters:
+      lookback: 12
+      threshold: 0.015
+      
+  risk:
+    enabled: true
+    max_position_size: 0.10
+    max_daily_loss: 0.05
+    stop_loss_pct: 0.03
+    max_drawdown_pct: 0.15
+    position_concentration_limit: 0.25
+    
+  transaction:
+    enabled: true
+    model_type: "advanced"
+    commission_pct: 0.001
+    slippage_pct: 0.0005
+    market_impact_enabled: true
+    
+  validation:
+    enabled: true
+    strict_mode: false
+    lookahead_bias_check: true
+    min_data_points: 100
+    max_missing_data_pct: 0.05
+    price_outlier_threshold: 3.0
+    
+  options:
+    enabled: false
+    synthetic_options: true
+    calculate_greeks: true
+    
+  execution:
+    max_workers: 4
+    parallel_enabled: true
+    batch_size: 10
+    
+  output:
+    output_dir: "Strat_out_unified"
+    save_trades: true
+    save_metrics: true
+    save_base_data: true
+    create_charts: true
+    trade_file_format: "csv"
+    metrics_file_format: "json"
+    base_file_format: "csv"
+    
+  logging:
+    level: "INFO"
+    console_enabled: true
+    file_enabled: true
+    log_dir: "logs"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+---
+
+# Aggressive template with optimization features
+aggressive_unified:
+  strategy:
+    name: "mse"
+    risk_profile: "aggressive"
+    initial_capital: 100000
+    parameters:
+      lookback: 8
+      threshold: 0.02
+      
+  risk:
+    enabled: true
+    max_position_size: 0.25
+    max_daily_loss: 0.10
+    stop_loss_pct: 0.05
+    max_drawdown_pct: 0.25
+    position_concentration_limit: 0.40
+    
+  transaction:
+    enabled: true
+    model_type: "advanced"
+    commission_pct: 0.0015
+    slippage_pct: 0.001
+    market_impact_enabled: true
+    
+  validation:
+    enabled: true
+    strict_mode: false
+    lookahead_bias_check: true
+    min_data_points: 50
+    max_missing_data_pct: 0.10
+    price_outlier_threshold: 4.0
+    
+  options:
+    enabled: false
+    synthetic_options: true
+    calculate_greeks: true
+    
+  execution:
+    max_workers: 8
+    parallel_enabled: true
+    batch_size: 20
+    
+  output:
+    output_dir: "Strat_out_unified"
+    save_trades: true
+    save_metrics: true
+    save_base_data: false  # Save space in aggressive mode
+    create_charts: true
+    trade_file_format: "csv"
+    metrics_file_format: "json"
+    base_file_format: "csv"
+    
+  logging:
+    level: "INFO"
+    console_enabled: true
+    file_enabled: true
+    log_dir: "logs"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+---
+
+# Options trading template with full feature set
+options_unified:
+  strategy:
+    name: "mse"  # Can be extended for options strategies
+    risk_profile: "moderate"
+    initial_capital: 500000  # Higher capital for options
+    parameters:
+      lookback: 10
+      threshold: 0.018
+      
+  risk:
+    enabled: true
+    max_position_size: 0.15
+    max_daily_loss: 0.07
+    stop_loss_pct: 0.04
+    max_drawdown_pct: 0.20
+    position_concentration_limit: 0.30
+    
+  transaction:
+    enabled: true
+    model_type: "advanced"
+    commission_pct: 0.002  # Higher for options
+    slippage_pct: 0.001
+    market_impact_enabled: true
+    
+  validation:
+    enabled: true
+    strict_mode: true  # Stricter for options
+    lookahead_bias_check: true
+    min_data_points: 200
+    max_missing_data_pct: 0.02
+    price_outlier_threshold: 2.5
+    
+  options:
+    enabled: true
+    synthetic_options: true
+    calculate_greeks: true
+    risk_free_rate: 0.05
+    volatility_model: "garch"
+    
+  execution:
+    max_workers: 6
+    parallel_enabled: true
+    batch_size: 15
+    
+  output:
+    output_dir: "Options_out_unified"
+    save_trades: true
+    save_metrics: true
+    save_base_data: true
+    create_charts: true
+    trade_file_format: "csv"
+    metrics_file_format: "json"
+    base_file_format: "csv"
+    
+  logging:
+    level: "DEBUG"  # More detailed logging for options
+    console_enabled: true
+    file_enabled: true
+    log_dir: "logs"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+---
+
+# Development/Testing template with all validation features
+development_unified:
+  strategy:
+    name: "mse"
+    risk_profile: "conservative"
+    initial_capital: 50000  # Smaller capital for testing
+    parameters:
+      lookback: 15
+      threshold: 0.01
+      
+  risk:
+    enabled: true
+    max_position_size: 0.05  # Very conservative for testing
+    max_daily_loss: 0.02
+    stop_loss_pct: 0.02
+    max_drawdown_pct: 0.10
+    position_concentration_limit: 0.15
+    
+  transaction:
+    enabled: true
+    model_type: "advanced"
+    commission_pct: 0.001
+    slippage_pct: 0.0003
+    market_impact_enabled: false  # Disable for testing
+    
+  validation:
+    enabled: true
+    strict_mode: true
+    lookahead_bias_check: true
+    min_data_points: 300
+    max_missing_data_pct: 0.01
+    price_outlier_threshold: 2.0
+    
+  options:
+    enabled: false
+    synthetic_options: false
+    calculate_greeks: false
+    
+  execution:
+    max_workers: 2  # Limited for development
+    parallel_enabled: false  # Sequential for debugging
+    batch_size: 5
+    
+  output:
+    output_dir: "Dev_out_unified"
+    save_trades: true
+    save_metrics: true
+    save_base_data: true
+    create_charts: true
+    trade_file_format: "csv"
+    metrics_file_format: "json"
+    base_file_format: "csv"
+    
+  logging:
+    level: "DEBUG"
+    console_enabled: true
+    file_enabled: true
+    log_dir: "logs"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s - [%(filename)s:%(lineno)d]"

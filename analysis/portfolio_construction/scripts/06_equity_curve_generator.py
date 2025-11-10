@@ -61,10 +61,9 @@ def load_anti_cascading_trades(config):
     trades_df['Entry Time'] = pd.to_datetime(trades_df['Entry Time'])
     trades_df['Exit Time'] = pd.to_datetime(trades_df['Exit Time'])
 
-    # Calculate percentage returns
-    trades_df['percentage_return'] = (
-        (trades_df['Exit Price'] / trades_df['Entry Price'] - 1) * 100
-    )
+    # Use the correct Profit (%) column from backtest data (handles SHORT trades correctly)
+    if 'Profit (%)' not in trades_df.columns:
+        raise ValueError("Missing 'Profit (%)' column in trades data")
 
     return trades_df
 
@@ -113,7 +112,7 @@ def calculate_equity_curve(trades_df, initial_capital=100000):
     daily_trades['Entry Date'] = daily_trades['Entry Time'].dt.date
 
     # Calculate daily portfolio returns (average across all trades that day)
-    daily_returns = daily_trades.groupby('Entry Date')['percentage_return'].mean() / 100
+    daily_returns = daily_trades.groupby('Entry Date')['Profit (%)'].mean() / 100
 
     # Calculate cumulative returns
     cumulative_returns = (1 + daily_returns).cumprod()
@@ -170,14 +169,14 @@ def plot_monthly_returns_heatmap(trades_df, title, output_dir, output_filename):
     """Create monthly returns heatmap"""
     # Calculate monthly returns
     trades_df['YearMonth'] = trades_df['Entry Time'].dt.to_period('M')
-    monthly_returns = trades_df.groupby('YearMonth')['percentage_return'].mean()
+    monthly_returns = trades_df.groupby('YearMonth')['Profit (%)'].mean()
 
     # Create year-month matrix
     monthly_returns_df = monthly_returns.reset_index()
     monthly_returns_df['Year'] = monthly_returns_df['YearMonth'].dt.year
     monthly_returns_df['Month'] = monthly_returns_df['YearMonth'].dt.month
 
-    pivot_table = monthly_returns_df.pivot(index='Year', columns='Month', values='percentage_return')
+    pivot_table = monthly_returns_df.pivot(index='Year', columns='Month', values='Profit (%)')
 
     # Plot heatmap
     fig, ax = plt.subplots(figsize=(14, 6))

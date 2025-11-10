@@ -38,6 +38,13 @@ from analysis.generic.modules import (
     resolve_artifact_path,
 )
 
+# Ensure stdout/stderr can emit UTF-8 even when Windows defaults to cp1252
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except AttributeError:  # pragma: no cover
+    pass
+
 
 # ---------------------------------------------------------------------------
 # Module registry
@@ -94,13 +101,13 @@ class ModuleExecutionResult:
 
     def status_icon(self) -> str:
         mapping = {
-            "success": "✅",
-            "skipped-disabled": "⚪",
-            "skipped-missing-script": "⚠️",
-            "skipped-dependency": "⛔",
-            "error": "❌",
+            "success": "[OK]",
+            "skipped-disabled": "[SKIP-disabled]",
+            "skipped-missing-script": "[SKIP-missing]",
+            "skipped-dependency": "[SKIP-dependency]",
+            "error": "[ERROR]",
         }
-        return mapping.get(self.status, "⚪")
+        return mapping.get(self.status, "[SKIP]")
 
 
 def parse_args() -> argparse.Namespace:
@@ -184,8 +191,8 @@ def topological_sort(modules: Dict[str, Dict[str, Any]], category: str) -> List[
         if visited.get(module) != "perm":
             dfs(module)
 
-    # Reverse to get correct order (dependencies first)
-    return list(reversed(order))
+    # `order` already appends nodes after their dependencies have been visited
+    return order
 
 
 def ensure_merge_file(config_path: Path, config: Dict[str, Any], paths: Dict[str, str], skip_merge: bool) -> None:
@@ -199,10 +206,10 @@ def ensure_merge_file(config_path: Path, config: Dict[str, Any], paths: Dict[str
         return
 
     if skip_merge:
-        print("⚠️  Skipping auto-merge because --skip-merge flag was provided.")
+        print("[WARN] Skipping auto-merge because --skip-merge flag was provided.")
         return
 
-    print(f"🔄 Merged trades file missing. Running merge script to create {merged_path} ...")
+    print(f"[INFO] Merged trades file missing. Running merge script to create {merged_path} ...")
     merge_script = ROOT / "utils" / "merge_trades.py"
     cmd = [sys.executable, str(merge_script), "--config", str(config_path)]
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -232,7 +239,14 @@ def run_module_script(script_path: Path, config_path: Path) -> Tuple[int, str, s
             [p for p in python_path_parts if p] + ([existing] if existing else [])
         )
         env["PYTHONPATH"] = combined
-    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+    )
     duration = (dt.datetime.now() - start).total_seconds()
     if result.stdout:
         print(result.stdout)
@@ -264,7 +278,7 @@ def execute_category(
 ) -> List[ModuleExecutionResult]:
     modules = list_enabled_modules(config, category)
     if not modules:
-        print(f"ℹ️  No modules enabled for category '{category}'.")
+        print(f"[INFO] No modules enabled for category '{category}'.")
         return []
 
     registry = MODULE_REGISTRY.get(category, {})
@@ -297,7 +311,7 @@ def execute_category(
             )
             results.append(result)
             global_results[category][module] = result
-            print(f"⛔ Skipping {category}:{module} → {reason}")
+            print(f"[SKIP] Skipping {category}:{module} -> {reason}")
             continue
 
         script_info = registry.get(module)
@@ -310,7 +324,7 @@ def execute_category(
             )
             results.append(result)
             global_results[category][module] = result
-            print(f"⚠️  No runner entry for {category}:{module}. Skipping.")
+            print(f"[WARN] No runner entry for {category}:{module}. Skipping.")
             continue
 
         script_path = ROOT / script_info['script']
@@ -323,11 +337,11 @@ def execute_category(
             )
             results.append(result)
             global_results[category][module] = result
-            print(f"⚠️  Script missing for {category}:{module} ({script_path}).")
+            print(f"[WARN] Script missing for {category}:{module} ({script_path}).")
             continue
 
         print(f"\n{'=' * 80}")
-        print(f"▶️  Running {category}:{module}")
+        print(f"[RUN] Running {category}:{module}")
         print(f"{'=' * 80}")
 
         returncode, stdout, stderr, duration = run_module_script(script_path, config_path)
@@ -378,8 +392,8 @@ def write_run_log(config: Dict[str, Any], category: str, results: List[ModuleExe
     log_lines.append("|---|---|---|---|---|")
 
     for result in results:
-        outputs = "<br>".join(result.outputs) if result.outputs else "—"
-        note = result.message or "—"
+        outputs = "<br>".join(result.outputs) if result.outputs else "-"
+        note = result.message or "-"
         log_lines.append(
             f"| `{result.module}` | {result.status_icon()} | {result.duration_seconds:.1f}s | {outputs} | {note} |"
         )
@@ -398,8 +412,8 @@ def write_run_log(config: Dict[str, Any], category: str, results: List[ModuleExe
             log_lines.append(result.stderr.strip())
             log_lines.append("```")
 
-    log_path.write_text("\n".join(log_lines))
-    print(f"\n📝 Wrote run log → {log_path}")
+    log_path.write_text("\n".join(log_lines), encoding="utf-8")
+    print(f"\n[INFO] Wrote run log -> {log_path}")
 
 
 def main() -> int:
@@ -407,7 +421,7 @@ def main() -> int:
     config_path = Path(args.config).resolve()
 
     if not config_path.exists():
-        print(f"❌ Config file not found: {config_path}")
+        print(f"[ERROR] Config file not found: {config_path}")
         return 1
 
     config = load_config(str(config_path))
@@ -416,7 +430,7 @@ def main() -> int:
     try:
         ensure_merge_file(config_path, config, paths, skip_merge=args.skip_merge)
     except RuntimeError as exc:
-        print(f"❌ {exc}")
+        print(f"[ERROR] {exc}")
         return 1
 
     available_categories = []
@@ -436,7 +450,7 @@ def main() -> int:
 
     for category in targets:
         if category not in available_categories:
-            print(f"⚠️  Target '{category}' not available or not enabled in config. Skipping.")
+            print(f"[WARN] Target '{category}' not available or not enabled in config. Skipping.")
             continue
 
         category_results = execute_category(config_path, config, category, execution_results)
@@ -452,7 +466,7 @@ def main() -> int:
         if any(result.status == "error" for result in category_results):
             exit_code = 1
 
-    print("\n✅ Run complete." if exit_code == 0 else "\n❌ Run completed with errors.")
+    print("\n[OK] Run complete." if exit_code == 0 else "\n[ERROR] Run completed with errors.")
     return exit_code
 
 

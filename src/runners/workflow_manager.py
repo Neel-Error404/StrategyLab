@@ -48,7 +48,7 @@ class WorkflowManager:
         
         try:
             # Run analysis using backtest results
-            self.analysis_engine.run_portfolio_analysis(results)
+            self.analysis_engine.run_portfolio_analysis(results, skip_visualization=skip_visualization)
             
             # Generate visualizations unless skipped
             if not skip_visualization:

@@ -75,50 +75,68 @@ def get_sector_mapping():
     """
     Define sector classification for NSE tickers
     Returns dictionary mapping ticker → sector
+
+    COMPLETE MAPPING FOR 38-TICKER POOL (≤₹2,000)
+    Updated: 2025-11-08
     """
 
     return {
-        # Banking & Financial Services
-        'KOTAKBANK': 'Banking & Financial Services',
+        # Banking & Financial Services (9 tickers)
         'AXISBANK': 'Banking & Financial Services',
+        'PNB': 'Banking & Financial Services',
         'UBL': 'Banking & Financial Services',
+        'SBICARD': 'Banking & Financial Services',
+        'FEDERALBNK': 'Banking & Financial Services',
+        'IRFC': 'Banking & Financial Services',
+        'PFC': 'Banking & Financial Services',
+        'PSUBANK': 'Banking & Financial Services',
+        'KOTAKBANK': 'Banking & Financial Services',
         'AUBANK': 'Banking & Financial Services',
         'AADHARHFC': 'Banking & Financial Services',
         'HDFCAMC': 'Banking & Financial Services',
         'SBIN': 'Banking & Financial Services',
-        'PNB': 'Banking & Financial Services',
         'INDUSINDBK': 'Banking & Financial Services',
         'CANBK': 'Banking & Financial Services',
         'UNIONBANK': 'Banking & Financial Services',
         'BANKINDIA': 'Banking & Financial Services',
         'BANDHANBNK': 'Banking & Financial Services',
         'LICHSGFIN': 'Banking & Financial Services',
-        'SBICARD': 'Banking & Financial Services',
         'OFSS': 'Banking & Financial Services',
         'RECLTD': 'Banking & Financial Services',
 
-        # Pharmaceuticals & Healthcare
+        # Pharmaceuticals & Healthcare (6 tickers)
+        'MAXHEALTH': 'Pharmaceuticals & Healthcare',
+        'SUNPHARMA': 'Pharmaceuticals & Healthcare',
+        'IPCALAB': 'Pharmaceuticals & Healthcare',
+        'VIMTALABS': 'Pharmaceuticals & Healthcare',
+        'CIPLA': 'Pharmaceuticals & Healthcare',
+        'LALPATHLAB': 'Pharmaceuticals & Healthcare',
         'HCG': 'Pharmaceuticals & Healthcare',
         'FORTIS': 'Pharmaceuticals & Healthcare',
-        'MAXHEALTH': 'Pharmaceuticals & Healthcare',
         'ARTEMISMED': 'Pharmaceuticals & Healthcare',
         'GLENMARK': 'Pharmaceuticals & Healthcare',
         'NH': 'Pharmaceuticals & Healthcare',
         'BIOCON': 'Pharmaceuticals & Healthcare',
         'APOLLOHOSP': 'Pharmaceuticals & Healthcare',
         'ABBOTINDIA': 'Pharmaceuticals & Healthcare',
-        'LALPATHLAB': 'Pharmaceuticals & Healthcare',
 
-        # Information Technology
-        'HCLTECH': 'Information Technology',
+        # Information Technology (4 tickers)
         'INFY': 'Information Technology',
+        'WIPRO': 'Information Technology',
+        'TECHM': 'Information Technology',
+        'TCS': 'Information Technology',
+        'HCLTECH': 'Information Technology',
         'NEWGEN': 'Information Technology',
         'INTELLECT': 'Information Technology',
         'CREATIVE': 'Information Technology',
-        'TCS': 'Information Technology',
         'TATAELXSI': 'Information Technology',
 
-        # Consumer Goods & FMCG
+        # Consumer Goods & FMCG (6 tickers)
+        'ITC': 'Consumer Goods & FMCG',
+        'ABFRL': 'Consumer Goods & FMCG',
+        'DABUR': 'Consumer Goods & FMCG',
+        'NESTLEIND': 'Consumer Goods & FMCG',
+        'VGUARD': 'Consumer Goods & FMCG',
         'EMAMILTD': 'Consumer Goods & FMCG',
         'VBL': 'Consumer Goods & FMCG',
         'WHIRLPOOL': 'Consumer Goods & FMCG',
@@ -126,10 +144,11 @@ def get_sector_mapping():
         'HINDUNILVR': 'Consumer Goods & FMCG',
         'ASIANPAINT': 'Consumer Goods & FMCG',
         'BRITANNIA': 'Consumer Goods & FMCG',
-        'ITC': 'Consumer Goods & FMCG',
         'JUBLFOOD': 'Consumer Goods & FMCG',
 
-        # Automotive & Auto Components
+        # Automotive & Auto Components (2 tickers)
+        'MSUMI': 'Automotive & Auto Components',
+        'TATAMOTORS': 'Automotive & Auto Components',
         'BHARATFORG': 'Automotive & Auto Components',
         'KIRLOSBROS': 'Automotive & Auto Components',
         'EICHERMOT': 'Automotive & Auto Components',
@@ -142,14 +161,17 @@ def get_sector_mapping():
         'ASHOKLEY': 'Automotive & Auto Components',
         'SONACOMS': 'Automotive & Auto Components',
 
-        # Chemicals & Materials
+        # Chemicals & Materials (5 tickers)
+        'PIDILITIND': 'Chemicals & Materials',
+        'TATACHEM': 'Chemicals & Materials',
+        'GRAPHITE': 'Chemicals & Materials',
+        'HERCULES': 'Chemicals & Materials',
+        'POCL': 'Chemicals & Materials',
         'BERGEPAINT': 'Chemicals & Materials',
         'CCL': 'Chemicals & Materials',
         'KAJARIACER': 'Chemicals & Materials',
-        'PIDILITIND': 'Chemicals & Materials',
         'SUPREMEIND': 'Chemicals & Materials',
         'COROMANDEL': 'Chemicals & Materials',
-        'TATACHEM': 'Chemicals & Materials',
         'ATUL': 'Chemicals & Materials',
         'DEEPAKNTR': 'Chemicals & Materials',
         'AARTIIND': 'Chemicals & Materials',
@@ -165,20 +187,48 @@ def get_sector_mapping():
         'LICI': 'Insurance',
         'NIACL': 'Insurance',
 
-        # Metals & Mining
-        'VEDL': 'Metals & Mining',
-
-        # Hotels & Hospitality
-        'EIHOTEL': 'Hotels & Hospitality',
-
-        # Textiles
-        'BHARTIHEXA': 'Textiles',
-
-        # Energy & Power
+        # Energy & Power (3 tickers)
+        'NTPC': 'Energy & Power',
+        'POWERGRID': 'Energy & Power',
+        'PETRONET': 'Energy & Power',
         'TATAPOWER': 'Energy & Power',
         'POWERINDIA': 'Energy & Power',
         'ADANIENT': 'Energy & Power',
         'RELIANCE': 'Energy & Power',
+
+        # Metals & Mining (4 tickers)
+        'NMDC': 'Metals & Mining',
+        'TATASTEEL': 'Metals & Mining',
+        'JINDALSTEL': 'Metals & Mining',
+        'SHYAMMETL': 'Metals & Mining',
+        'VEDL': 'Metals & Mining',
+
+        # Hotels & Hospitality (1 ticker)
+        'INDHOTEL': 'Hotels & Hospitality',
+        'EIHOTEL': 'Hotels & Hospitality',
+
+        # Cement (1 ticker)
+        'RAMCOCEM': 'Cement',
+        'ULTRACEMCO': 'Cement',
+        'SHREECEM': 'Cement',
+
+        # Transportation & Logistics (1 ticker)
+        'DELHIVERY': 'Transportation & Logistics',
+        'IRCTC': 'Transportation & Logistics',
+        'IEX': 'Transportation & Logistics',
+        'GMDCLTD': 'Transportation & Logistics',
+
+        # Infrastructure & Construction
+        'LT': 'Infrastructure & Construction',
+        'JSWSTEEL': 'Infrastructure & Construction',
+
+        # Insurance
+        'ICICIGI': 'Insurance',
+        'LICI': 'Insurance',
+        'NIACL': 'Insurance',
+
+        # Textiles
+        'BHARTIHEXA': 'Textiles',
 
         # Diversified
         'BAJAJHLDNG': 'Diversified',
@@ -189,18 +239,9 @@ def get_sector_mapping():
         '3MINDIA': 'Diversified',
         'HONAUT': 'Diversified',
 
-        # Cement
-        'ULTRACEMCO': 'Cement',
-        'SHREECEM': 'Cement',
-
         # Retail & E-commerce
         'PAYTM': 'Retail & E-commerce',
         'JUSTDIAL': 'Retail & E-commerce',
-
-        # Transportation
-        'IRCTC': 'Transportation',
-        'IEX': 'Transportation',
-        'GMDCLTD': 'Transportation',
 
         # Paper & Packaging
         'PAGEIND': 'Paper & Packaging',
@@ -224,11 +265,15 @@ def create_sector_mapping(affordable_tickers, sector_mapping_dict):
         ticker = ticker_row['ticker']
         sector = sector_mapping_dict.get(ticker, 'Unclassified')
 
+        anticascading_rank = ticker_row.get('anticascading_rank')
+        if pd.isna(anticascading_rank):
+            anticascading_rank = ticker_row.get('rank', 0)
+
         sector_data.append({
             'ticker': ticker,
             'current_price': ticker_row['current_price'],
-            'price_category': ticker_row['price_category'],
-            'anticascading_rank': ticker_row['anticascading_rank'],
+            'price_category': ticker_row.get('price_category', 'Unknown'),
+            'anticascading_rank': anticascading_rank,
             'composite_score': ticker_row['composite_score'],
             'profit_factor': ticker_row['profit_factor'],
             'sharpe_like_ratio': ticker_row['sharpe_like_ratio'],

@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Measure-Object)",
+      "Bash(Select-Object Count)",
+      "Read(//d/Balcony/Trading/**)",
+      "Read(//c/Users/neela/.claude/**)",
+      "Bash(powershell:*)",
+      "Bash(py test_end_to_end_multi.py)",
+      "Bash(dir:*)",
+      "Bash(Get-ChildItem -Path \"D:\\Balcony\\Trading\\backtester\" -Recurse -Directory)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(py:*)",
+      "Bash(Get-ChildItem -Path \"D:\\Balcony\\Trading\\unified_trading_setup\\backtester\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(git diff:*)",
+      "Bash(git checkout:*)",
+      "WebSearch",
+      "Bash(Get-ChildItem \"D:\\Balcony\\Trading\\unified_trading_setup\\backtester\\analysis\\portfolio_construction\\data\\classified\")",
+      "Bash(Select-Object Name, Length, LastWriteTime)",
+      "Bash(Get-ChildItem \"D:\\Balcony\\Trading\\unified_trading_setup\\backtester\\outputs\\20251031_230225\\mse\\2022-01-01_to_2025-08-31\\data\\strategy_trades\")",
+      "Bash(Get-ChildItem \"D:\\Balcony\\Trading\\unified_trading_setup\\backtester\\analysis\\portfolio_experiments\" -Recurse)",
+      "Bash(Select-Object Name, FullName, Length, LastWriteTime)",
+      "Bash(git fetch:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(nul)",
+      "Bash(..venvScriptspython.exe analysisrun.py --config analysisconfigsmse_exit_drop_005_all_full.yaml --targets portfolio --skip-merge)",
+      "Bash(measure-object)",
+      "Bash(select-object -expandproperty Count)",
+      "Bash(git rev-list:*)",
+      "Bash(Remove-Item -Path \"nul\" -Force -ErrorAction SilentlyContinue)",
+      "Bash(git rm:*)",
+      "Bash($null)",
+      "Bash(Remove-Item -Path \".worktrees\" -Recurse -Force -ErrorAction SilentlyContinue)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "D:\\Balcony\\Trading\\live_module_14-04"
+    ]
+  }
+}

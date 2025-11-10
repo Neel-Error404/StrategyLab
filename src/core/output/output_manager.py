@@ -540,17 +540,17 @@ if __name__ == "__main__":
     
     # Example: Create structure for a strategy run
     strategy_run_dir = output_mgr.create_strategy_run_structure(
-        strategy_name="mse",
+        strategy_name="open_source_baseline",
         date_range="2025-06-07_to_2025-06-14"
     )
     
     # Example metadata
     metadata = {
-        'strategy_name': 'mse',
+        'strategy_name': 'open_source_baseline',
         'date_range': '2025-06-07_to_2025-06-14',
         'tickers': ['INFY', 'TCS', 'RELIANCE'],
-        'parameters': {'lookback_period': 20, 'threshold': 0.02},
-        'configuration_file': 'config/mse_config.yaml'
+        'parameters': {'short_window': 10, 'long_window': 30, 'momentum_window': 12},
+        'configuration_file': 'config/templates/conservative.yaml'
     }
     
     output_mgr.save_run_metadata(strategy_run_dir, metadata)

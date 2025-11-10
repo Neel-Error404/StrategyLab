@@ -7,7 +7,7 @@ matches, unmatched with reasons, and summary JSONs.
 Usage example:
   python -m src.scripts.compare_broker_vs_strategy \
     --orders broker_trades.csv \
-    --run-dir outputs/20250908_052243/mse_80pct_no_cascade_live_matching/2025-05-29_to_2025-09-06 \
+    --run-dir outputs/20250908_052243/open_source_baseline_reference/2025-05-29_to-2025-09-06 \
     --start 2025-08-26 --end 2025-09-04 \
     --entry-tol 20 --exit-tol 20 --exit-enforce true
 """

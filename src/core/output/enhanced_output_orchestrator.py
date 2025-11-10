@@ -85,11 +85,17 @@ class EnhancedOutputOrchestrator:
             ))
         
         self.logger.info(f"Processing complete backtest results for {strategy_name} in {strategy_run_dir}")
-          # Initialize systems
+        
+        # Initialize systems
         three_file_system = ThreeFileOutputSystem(strategy_run_dir)
+        
+        # Visualizations share a single base directory to avoid duplicated folders at the root
+        visualization_base_dir = strategy_run_dir / "visualizations"
+        visualization_base_dir.mkdir(parents=True, exist_ok=True)
+        
         # Use 'auto' trade source to fallback from risk-approved to strategy trades when needed
-        self.portfolio_visualizer = PortfolioVisualizer(output_dir=strategy_run_dir, trade_source='auto')
-        self.strategy_visualizer = StrategyVisualizer(strategy_run_dir / "visualizations")
+        self.portfolio_visualizer = PortfolioVisualizer(output_dir=visualization_base_dir, trade_source='auto')
+        self.strategy_visualizer = StrategyVisualizer(visualization_base_dir)
         
         # Process results
         processing_results = {
