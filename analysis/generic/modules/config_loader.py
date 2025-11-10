@@ -143,7 +143,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
     config['_schema'] = schema
 
     run_cfg = config.get('run', {})
-    print(f"✅ Loaded config from: {config_path}")
+    print(f"[OK] Loaded config from: {config_path}")
     print(f"   Run ID: {run_cfg.get('run_id')}")
     print(f"   Strategy: {run_cfg.get('strategy')}")
     if run_cfg.get('date_range'):
@@ -212,7 +212,7 @@ def resolve_paths(config: Dict[str, Any]) -> Dict[str, str]:
 
         # Warn user about missing merged file if auto_generate disabled
         if not Path(paths['merged_trades_file']).exists():
-            print(f"\n⚠️  WARNING: Merged trades file not found!")
+            print("\n[WARN] Merged trades file not found!")
             print(f"   Expected: {paths['merged_trades_file']}")
             if merge_cfg.get('auto_generate', True):
                 print(f"   It will be created automatically when the runner executes merge_trades.\n")
@@ -246,10 +246,10 @@ def resolve_paths(config: Dict[str, Any]) -> Dict[str, str]:
 
     merged_file = Path(paths['merged_trades_file'])
     if not merged_file.exists():
-        print(f"\n⚠️  WARNING: Merged trades file not found!")
+        print("\n[WARN] Merged trades file not found!")
         print(f"   Expected: {merged_file}")
-        print(f"\n   Run merge script first:")
-        print(f"   python ../utils/merge_trades.py --config config.yaml\n")
+        print("\n   Run merge script first:")
+        print("   python ../utils/merge_trades.py --config config.yaml\n")
 
     return paths
 
@@ -273,7 +273,7 @@ def get_analysis_config(config: Dict[str, Any], module_name: str, category: str 
         return {}
 
     if not module_spec.get('enabled', True):
-        print(f"⚠️  Module '{category}:{module_name}' is disabled in config")
+        print(f"[WARN] Module '{category}:{module_name}' is disabled in config")
         return {}
 
     return module_spec.get('config', {})

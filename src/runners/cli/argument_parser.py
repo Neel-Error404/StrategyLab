@@ -33,11 +33,12 @@ Examples:
     parser.add_argument(
         '--mode',
         choices=['validate', 'backtest', 'analyze', 'visualize', 'fetch', 'replay', 'update', 'optimize'],
-        required=True,
+        required=False,  # Not required when using helper commands (--list-strategies, etc.)
         help="Mode to run: 'backtest' (full workflow), 'analyze' (analysis only), "
              "'visualize' (visualization only), 'validate' (data checks), "
              "'fetch' (download market data), 'replay' (manifest replay), "
-             "'update' (incremental pool maintenance), or 'optimize' (parameter sweeps)."
+             "'update' (incremental pool maintenance), or 'optimize' (parameter sweeps). "
+             "Not required when using helper commands like --list-strategies."
     )
     
     parser.add_argument(

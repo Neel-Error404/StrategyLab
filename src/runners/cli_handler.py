@@ -317,6 +317,12 @@ def load_config_from_args(args) -> BacktestConfig:
         # Store timeframes in config for fetch mode
         config.timeframes = args.timeframes
 
+    # Visualization toggle (stored on output config so workflow can honor it)
+    if hasattr(config.output, 'skip_visualization'):
+        config.output.skip_visualization = bool(args.skip_visualization)
+    else:
+        setattr(config.output, 'skip_visualization', bool(args.skip_visualization))
+
     # Validation toggle
     if hasattr(args, 'skip_validation') and args.skip_validation:
         config.validation.enabled = False

@@ -99,11 +99,9 @@ def create_returns_matrix(trades_df, tickers):
 
     trades_df = trades_df.sort_values('Entry Time')
 
-    # Calculate percentage returns if not already present
-    if 'percentage_return' not in trades_df.columns:
-        trades_df['percentage_return'] = (
-            (trades_df['Exit Price'] / trades_df['Entry Price'] - 1) * 100
-        )
+    # Use the correct Profit (%) column from backtest data (handles SHORT trades correctly)
+    if 'Profit (%)' not in trades_df.columns:
+        raise ValueError("Missing 'Profit (%)' column in trades data")
 
     # Create daily returns matrix
     returns_dict = {}
@@ -112,8 +110,8 @@ def create_returns_matrix(trades_df, tickers):
         ticker_trades = trades_df[trades_df['ticker'] == ticker].copy()
         ticker_trades = ticker_trades.set_index('Entry Time')
 
-        # Use percentage returns
-        ticker_returns = ticker_trades[['percentage_return']].copy()
+        # Use Profit (%) which correctly handles SHORT trades
+        ticker_returns = ticker_trades[['Profit (%)']].copy()
         ticker_returns.columns = [ticker]
 
         # Resample to daily frequency

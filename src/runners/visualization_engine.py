@@ -217,7 +217,7 @@ class VisualizationEngine:
             
             # Look for subdirectories with strategy names
             for strategy_dir in strategy_run_dir.parent.glob("**/"):
-                if any(strategy in strategy_dir.name for strategy in ['mse', 'strategy']):
+                if any(strategy in strategy_dir.name for strategy in ['open_source_baseline', 'strategy']):
                     potential_dirs.append(strategy_dir)
             
             # Use the first existing directory or the original

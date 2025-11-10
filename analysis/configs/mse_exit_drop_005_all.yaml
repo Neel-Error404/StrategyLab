@@ -1,0 +1,110 @@
+run:
+  run_id: "20251107_154802"
+  strategy: "mse_strategy_backtesting"
+  date_range: "2022-01-01_to_2025-08-31"
+  trade_source: "strategy_trades"
+  label: "drop005_all_analysis"
+
+data_sources:
+  strategy_trades_dir: "D:\\Balcony\\Trading\\unified_trading_setup\\backtester\\outputs\\mse_exit_drop_005_all\\20251107_154802\\mse_strategy_backtesting\\2022-01-01_to_2025-08-31\\data\\strategy_trades"
+  base_data_dir: "D:\\Balcony\\Trading\\unified_trading_setup\\backtester\\outputs\\mse_exit_drop_005_all\\20251107_154802\\mse_strategy_backtesting\\2022-01-01_to_2025-08-31\\data\\base_data"
+  merged_trades_dir: null
+
+merge:
+  auto_generate: true
+  trade_source: "strategy_trades"
+  output_filename: "all_trades_merged.csv"
+
+output:
+  root_dir: "analysis/output"
+  reports_root_dir: "analysis/reports"
+  run_logs_dir: "analysis/run_logs"
+  merged_filename: "all_trades_merged.csv"
+
+analysis:
+  generic:
+    enabled: true
+    modules:
+      basic_eda:
+        enabled: true
+        inputs: ["merged_trades"]
+        config:
+          include_ticker_breakdown: true
+          include_time_of_day_stats: true
+      trade_type_analysis:
+        enabled: true
+        inputs: ["merged_trades"]
+        config:
+          metrics: ["win_rate", "avg_pnl", "avg_drawdown"]
+          include_consecutive_patterns: true
+          min_trades_for_bias: 100
+      cascade_analysis:
+        enabled: true
+        inputs: ["merged_trades"]
+        config:
+          min_time_gap_minutes: 30
+          max_same_day_gap: 1440
+      ticker_ranking:
+        enabled: true
+        inputs: ["merged_trades"]
+        config:
+          top_n: 50
+          min_trades: 20
+          weighting_scheme:
+            profit_factor: 0.4
+            win_rate: 0.3
+            avg_return: 0.3
+      validation_check:
+        enabled: true
+        inputs: ["merged_trades"]
+        config:
+          min_trades: 1000
+          warn_on_zero_win_rate: true
+
+  portfolio:
+    enabled: true
+    modules:
+      ticker_ranking:
+        enabled: true
+        config:
+          min_trades_per_ticker: 10
+      anti_cascade_filter:
+        enabled: true
+        config:
+          price_threshold: 2000
+      sector_classification:
+        enabled: true
+        config:
+          min_trades_for_correlation: 10
+      combination_generator:
+        enabled: true
+        config:
+          portfolio_sizes: [5]
+          max_sector_concentration: 0.6
+          max_correlation: 0.75
+          min_trades_per_ticker: 200
+      portfolio_optimizer:
+        enabled: true
+        config:
+          top_n: 50
+      pypfopt_weights:
+        enabled: true
+        config:
+          portfolio_sizes: [5]
+          top_n: 10
+          l2_regularization: 0.1
+          target_volatility: 0.15
+      equity_curves:
+        enabled: true
+        config:
+          portfolio_sizes: [5]
+          top_n: 5
+
+integration:
+  enhance_trades: false
+  sample_size: null
+
+paths:
+  outputs_base: "D:\\Balcony\\Trading\\unified_trading_setup\\backtester\\outputs\\mse_exit_drop_005_all\\20251107_154802\\mse_strategy_backtesting\\2022-01-01_to_2025-08-31"
+  base_data_dir: "D:\\Balcony\\Trading\\unified_trading_setup\\backtester\\outputs\\mse_exit_drop_005_all\\20251107_154802\\mse_strategy_backtesting\\2022-01-01_to_2025-08-31\\data\\base_data"
+  merged_trades_file: "analysis/output/mse_strategy_backtesting/20251107_154802/data/all_trades_merged.csv"

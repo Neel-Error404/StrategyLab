@@ -128,11 +128,11 @@ def create_monolith_directory_structure(base_output_dir: str,
     Create directory structure following the monolith pattern.
     
     Pattern: {timestamp}/{strategy}/{date_range}
-    Example: 20250616_231605/mse/2024-12-12_to_2025-06-09
+    Example: 20250616_231605/open_source_baseline/2024-12-12_to_2025-06-09
     
     Args:
         base_output_dir: Base output directory path
-        strategy: Strategy name (e.g., 'mse')
+        strategy: Strategy name (e.g., 'open_source_baseline')
         date_range: Date range string (e.g., '2024-12-12_to_2025-06-09')
         timestamp: Optional timestamp, generated if not provided
         

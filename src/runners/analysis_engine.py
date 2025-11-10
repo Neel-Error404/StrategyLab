@@ -33,12 +33,13 @@ class AnalysisEngine:
         # Keep simple analyzer as fallback for compatibility
         self.portfolio_analyzer = PortfolioAnalyzer(config)
     
-    def run_portfolio_analysis(self, results: Dict[str, Any]) -> None:
+    def run_portfolio_analysis(self, results: Dict[str, Any], skip_visualization: bool = False) -> None:
         """
         Run comprehensive portfolio analysis using the enhanced output orchestrator.
         
         Args:
             results: Structured dictionary of backtest results
+            skip_visualization: Skip visualization generation for speed
         """
         self.logger.info("📊 Running comprehensive portfolio analysis")
         
@@ -59,7 +60,8 @@ class AnalysisEngine:
                 tickers=tickers,
                 results_data=results,
                 run_id=self.config.run_id,
-                strategy_run_dir=getattr(self.config, 'strategy_run_dir', None)
+                strategy_run_dir=getattr(self.config, 'strategy_run_dir', None),
+                skip_visualization=skip_visualization
             )
             
             self.logger.info(f"Enhanced analysis completed. Output directory: {output_results['strategy_run_dir']}")

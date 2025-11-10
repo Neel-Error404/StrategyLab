@@ -99,16 +99,16 @@ def calculate_portfolio_performance(ticker_list, trades_df):
     if len(portfolio_trades) < 10:
         return None
 
-    # Calculate percentage returns for each trade
-    portfolio_trades['percentage_return'] = (
-        (portfolio_trades['Exit Price'] / portfolio_trades['Entry Price'] - 1) * 100
-    )
+    # Use the correct Profit (%) column from backtest data (handles SHORT trades correctly)
+    # DO NOT recalculate - the backtest already computed this properly
+    if 'Profit (%)' not in portfolio_trades.columns:
+        raise ValueError("Missing 'Profit (%)' column in trades data")
 
     # Group by date to get daily portfolio returns
     portfolio_trades['trade_date'] = pd.to_datetime(portfolio_trades['Entry Time']).dt.date
 
     # Equal-weight portfolio: average returns across all tickers each day
-    daily_returns = portfolio_trades.groupby('trade_date')['percentage_return'].mean()
+    daily_returns = portfolio_trades.groupby('trade_date')['Profit (%)'].mean()
 
     if len(daily_returns) < 10 or daily_returns.std() == 0:
         return None
@@ -117,10 +117,11 @@ def calculate_portfolio_performance(ticker_list, trades_df):
     avg_daily_return = daily_returns.mean()
     daily_volatility = daily_returns.std()
 
-    # Portfolio Sharpe ratio (annualized)
+    # Portfolio Sharpe ratio (annualized with risk-free rate)
+    rf_rate = 0.065  # 6.5% annual risk-free rate (India)
     annual_return = avg_daily_return * 252
     annual_volatility = daily_volatility * np.sqrt(252)
-    portfolio_sharpe = annual_return / annual_volatility if annual_volatility > 0 else 0
+    portfolio_sharpe = (annual_return - rf_rate * 100) / annual_volatility if annual_volatility > 0 else 0
 
     # Portfolio profit factor
     winning_days = daily_returns[daily_returns > 0]

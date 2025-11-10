@@ -158,12 +158,13 @@ class TaskExecutor:
         Execute a single backtest task.
         """
         ticker, date_range, strategy_name, optimization_params = args_tuple
+        strategy_parameters = optimization_params or {}
         
         self.logger.info(f"Processing {ticker} with {strategy_name} for {date_range}")
         
         try:
             # Get strategy instance first to check timeframe requirements
-            strategy = StrategyFactory.get_strategy(strategy_name)
+            strategy = StrategyFactory.get_strategy(strategy_name, strategy_parameters)
             if strategy is None:
                 self.logger.error(f"Strategy '{strategy_name}' not found")
                 return {}

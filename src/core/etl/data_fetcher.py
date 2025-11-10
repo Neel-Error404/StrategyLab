@@ -147,7 +147,7 @@ class DataFetcher:
                     df = self.provider.fetch_historical_data(ticker, start_date, end_date, timeframe)
                     
                     if df.empty:
-                    logger.warning(f"   No data returned for {ticker} @ {timeframe}")
+                        self.logger.warning(f"   No data returned for {ticker} @ {timeframe}")
                         failed_combinations.append(f"{ticker}_{timeframe}_no_data")
                         continue
                     

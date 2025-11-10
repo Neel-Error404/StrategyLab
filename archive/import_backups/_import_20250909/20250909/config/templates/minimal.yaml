@@ -1,0 +1,97 @@
+# Minimal risk template - Ultra-safe learning configuration
+# Perfect for beginners and testing new strategies
+
+data:
+  data_pool_dir: "data/pools"
+  timeframe_folders:
+    1minute: "1minute"
+    5minute: "5minute"  
+    15minute: "15minute"
+    1hour: "1hour"
+    1day: "1day"
+  default_timeframe: "1minute"
+
+strategy:
+  name: "mse"
+  risk_profile: "minimal"
+  initial_capital: 100000
+  parameters:
+    lookback_period: 20
+    threshold: 0.015
+    volatility_adjustment: true
+    
+risk:
+  # Ultra-conservative settings for learning
+  max_position_size: 0.05        # Only 5% max position
+  max_daily_loss: 0.01           # 1% daily loss limit  
+  stop_loss_pct: 0.02            # 2% stop loss
+  take_profit_pct: 0.04          # 4% take profit
+  max_concurrent_positions: 2     # Very limited positions
+  
+  # Position sizing
+  position_sizing_method: "equal_weight"
+  capital_at_risk_pct: 0.01      # Only risk 1% per trade
+  
+  # Drawdown protection
+  max_portfolio_drawdown: 0.03   # 3% max drawdown
+  daily_loss_limit: 0.01         # 1% daily limit
+
+transaction_costs:
+  enabled: true
+  brokerage_pct: 0.0003          # 0.03% brokerage
+  slippage_pct: 0.0001           # 0.01% slippage
+  market_impact_pct: 0.0001      # 0.01% market impact
+
+validation:
+  enabled: true
+  strict_mode: true              # Strict validation for safety
+  data_quality_check: true
+  min_data_points: 100
+  
+  # Conservative bias detection
+  look_ahead_bias_check: true
+  survivorship_bias_check: true
+  data_mining_bias_check: true
+
+output:
+  save_trades: true
+  save_metrics: true
+  save_plots: true
+  output_dir: "outputs"
+  
+  # Detailed reporting for learning
+  detailed_logs: true
+  performance_attribution: true
+  risk_analysis: true
+
+# Ultra-safe execution settings  
+parallel_processing: false        # Single-threaded for stability
+max_workers: 1
+cache_enabled: true
+
+# Comprehensive logging for learning
+logging:
+  level: "INFO"
+  console_enabled: true
+  file_enabled: true
+  performance_logging: true
+  trade_logging: true
+
+# Learning-focused features
+analysis:
+  generate_plots: true
+  detailed_metrics: true
+  benchmark_comparison: true
+  rolling_metrics: true
+  monte_carlo_simulations: false  # Skip for simplicity
+  
+# No advanced features for minimal template
+options:
+  enabled: false
+  
+optimization:
+  enabled: false
+
+bias_detection:
+  enabled: true
+  strict_mode: true
