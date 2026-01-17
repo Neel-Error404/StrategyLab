@@ -1,0 +1,46 @@
+# RSI Oversold/Overbought Strategy Configuration
+# Mean reversion strategy based on RSI extreme levels
+
+strategy:
+  name: strategy_rsi_oversold
+  description: "RSI mean reversion strategy - buy oversold (<30), sell overbought (>70), exit at neutral (50)"
+  risk_profile: moderate
+  timeframes:
+    entry: [5m]
+
+  # Strategy parameters
+  parameters:
+    rsi_period: 14        # RSI calculation period
+    oversold: 30          # Buy threshold
+    overbought: 70        # Sell threshold
+    intraday_cutoff: "15:15"
+
+  # Technical indicators configuration
+  indicators:
+    entry:
+      - name: 5m_rsi_14
+        type: rsi
+        timeframe: 5m
+        params:
+          period: 14
+
+risk:
+  enabled: false
+  bypass_mode: true
+
+transaction:
+  enabled: false
+
+validation:
+  enabled: true
+  lookahead_bias_check: true
+
+execution:
+  parallel_processing: false
+  max_workers: 1
+
+output:
+  save_trades: true
+  save_signals: true
+  save_metrics: true
+  save_visualizations: false

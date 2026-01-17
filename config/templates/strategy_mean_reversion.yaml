@@ -1,0 +1,168 @@
+strategy:
+  name: strategy_mean_reversion
+  description: "TTM Squeeze Multi-Timeframe Momentum Strategy - Bollinger Band and Keltner Channel squeeze detection with RSI confirmation and volume filters"
+  risk_profile: moderate
+  timeframes:
+    entry: [5m]
+    confirmation: [15m]
+  parameters:
+    # Timeframes
+    entry_timeframe: 5m
+    confirmation_timeframe: 15m
+
+    # Bollinger Band parameters (20, 2.0) - market standard
+    bollinger_period: 20
+    bollinger_std_dev: 2.0
+
+    # Keltner Channel parameters (20, 1.5 x ATR) - TTM standard
+    keltner_period: 20
+    keltner_atr_multiplier: 1.5
+    keltner_atr_period: 14
+
+    # Squeeze detection parameters
+    squeeze_lookback: 100          # Bars to evaluate BandWidth percentile
+    squeeze_percentile: 0.20       # 20th percentile threshold for squeeze
+
+    # RSI confirmation parameters
+    rsi_period: 14
+    rsi_long_threshold: 50         # 15m RSI must be > 50 for longs
+    rsi_short_threshold: 50        # 15m RSI must be < 50 for shorts
+
+    # Volume confirmation
+    volume_multiplier: 1.5         # Breakout volume must be 1.5x average
+    volume_lookback: 10            # Average volume lookback period
+
+    # ATR-based exits
+    atr_period: 14
+    stop_loss_atr_multiplier: 1.5  # Stop loss at 1.5 x ATR
+    take_profit_atr_multiplier: 2.0 # Take profit at 2.0 x ATR
+
+    # Trading session controls
+    intraday_cutoff: "15:15"       # No entries after this time (IST)
+    enable_short: true             # Allow short positions
+    min_volume: 0                  # Minimum absolute volume filter
+
+    # Warmup periods
+    warmup_bars_5m: 105            # 525 minutes warmup for 5m
+    warmup_bars_15m: 35            # 525 minutes warmup for 15m
+
+    # Indicator column mappings
+    indicator_columns:
+      # 5m Bollinger Bands
+      bollinger_upper_5m: 5m_bollinger_upper
+      bollinger_middle_5m: 5m_bollinger_middle
+      bollinger_lower_5m: 5m_bollinger_lower
+      bbw_5m: 5m_bbw
+
+      # 5m Keltner Channels
+      keltner_upper_5m: 5m_keltner_upper
+      keltner_middle_5m: 5m_keltner_middle
+      keltner_lower_5m: 5m_keltner_lower
+
+      # 5m ATR
+      atr_5m: 5m_atr
+
+      # 15m Bollinger Bands
+      bollinger_upper_15m: 15m_bollinger_upper
+      bollinger_middle_15m: 15m_bollinger_middle
+      bollinger_lower_15m: 15m_bollinger_lower
+      bbw_15m: 15m_bbw
+
+      # 15m Keltner Channels
+      keltner_upper_15m: 15m_keltner_upper
+      keltner_middle_15m: 15m_keltner_middle
+      keltner_lower_15m: 15m_keltner_lower
+
+      # 15m RSI
+      rsi_15m: 15m_rsi
+
+  indicators:
+    entry:
+      # 5m Bollinger Bands
+      - name: 5m_bollinger
+        type: bollinger
+        timeframe: 5m
+        params:
+          period: 20
+          std_dev: 2.0
+
+      # 5m Bollinger Band Width
+      - name: 5m_bbw
+        type: bbw
+        timeframe: 5m
+
+      # 5m Keltner Channels (via library)
+      - name: 5m_keltner_upper
+        type: khc
+        timeframe: 5m
+
+      - name: 5m_keltner_middle
+        type: kmc
+        timeframe: 5m
+
+      - name: 5m_keltner_lower
+        type: klc
+        timeframe: 5m
+
+      # 5m ATR
+      - name: 5m_atr
+        type: atr
+        timeframe: 5m
+
+    confirmation:
+      # 15m Bollinger Bands
+      - name: 15m_bollinger
+        type: bollinger
+        timeframe: 15m
+        params:
+          period: 20
+          std_dev: 2.0
+
+      # 15m Bollinger Band Width
+      - name: 15m_bbw
+        type: bbw
+        timeframe: 15m
+
+      # 15m Keltner Channels
+      - name: 15m_keltner_upper
+        type: khc
+        timeframe: 15m
+
+      - name: 15m_keltner_middle
+        type: kmc
+        timeframe: 15m
+
+      - name: 15m_keltner_lower
+        type: klc
+        timeframe: 15m
+
+      # 15m RSI for trend filter
+      - name: 15m_rsi
+        type: rsi
+        timeframe: 15m
+        params:
+          period: 14
+
+  exit:
+    template_path: config/templates/exits/exit_stop_target_intraday.yaml
+
+risk:
+  enabled: false
+  bypass_mode: true
+
+transaction:
+  enabled: false
+
+validation:
+  enabled: true
+  lookahead_bias_check: true
+
+execution:
+  parallel_processing: false
+  max_workers: 1
+
+output:
+  save_trades: true
+  save_signals: true
+  save_metrics: true
+  save_visualizations: false

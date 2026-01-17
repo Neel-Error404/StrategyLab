@@ -1,0 +1,50 @@
+# SMA Crossover Strategy Configuration
+# Trend-following strategy based on Simple Moving Average crossovers
+
+strategy:
+  name: strategy_sma_crossover
+  description: "SMA Crossover trend-following strategy using fast and slow moving averages"
+  risk_profile: moderate
+  timeframes:
+    entry: [5m]
+
+  # Strategy parameters
+  parameters:
+    fast_period: 20    # Fast SMA period
+    slow_period: 50    # Slow SMA period
+    intraday_cutoff: "15:15"
+
+  # Technical indicators configuration
+  indicators:
+    entry:
+      - name: 5m_sma_20
+        type: sma
+        timeframe: 5m
+        params:
+          period: 20
+      - name: 5m_sma_50
+        type: sma
+        timeframe: 5m
+        params:
+          period: 50
+
+risk:
+  enabled: false
+  bypass_mode: true
+
+transaction:
+  enabled: false
+
+validation:
+  enabled: true
+  lookahead_bias_check: true
+
+execution:
+  parallel_processing: false
+  max_workers: 1
+
+output:
+  save_trades: true
+  save_signals: true
+  save_metrics: true
+  save_visualizations: false
