@@ -1,0 +1,15 @@
+exit:
+  mode: stop_target
+  stop_loss:
+    enabled: true
+    type: percent
+    value: 0.015
+  take_profit:
+    enabled: true
+    type: percent
+    value: 0.025
+  timeout:
+    enabled: false
+    max_minutes: 0
+  square_off:
+    mode: none

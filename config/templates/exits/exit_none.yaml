@@ -1,0 +1,16 @@
+exit:
+  mode: manual
+  stop_loss:
+    enabled: false
+    type: percent
+    value: 0.0
+  take_profit:
+    enabled: false
+    type: percent
+    value: 0.0
+  timeout:
+    enabled: false
+    max_minutes: 0
+    intraday_cutoff: "15:20"
+  square_off:
+    mode: none
