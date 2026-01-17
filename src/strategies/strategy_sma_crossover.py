@@ -17,7 +17,7 @@ import pandas as pd
 import numpy as np
 import logging
 from typing import Dict, Any, Optional
-from .strategy_base import StrategyBase
+from src.strategies.support.strategy_base import StrategyBase
 
 class SMAcrossoverStrategy(StrategyBase):
     """

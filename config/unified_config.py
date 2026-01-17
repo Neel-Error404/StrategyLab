@@ -1,4 +1,5 @@
 ﻿# config/unified_config.py
+from __future__ import annotations
 """
 Unified Configuration System for Backtester
 
@@ -17,6 +18,83 @@ from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
 from datetime import datetime, timedelta
 import json
+
+
+def _build_indicator_map(raw_spec: Optional[Dict[str, Any]]) -> Dict[str, List[IndicatorSpec]]:
+    indicator_map: Dict[str, List[IndicatorSpec]] = {"entry": [], "exit": []}
+    if not raw_spec:
+        return indicator_map
+    for role, specs in raw_spec.items():
+        cleaned = []
+        for spec in specs or []:
+            cleaned.append(spec if isinstance(spec, IndicatorSpec) else IndicatorSpec(**spec))
+        indicator_map[role] = cleaned
+    return indicator_map
+
+
+def _build_exit_config(raw_exit: Optional[Dict[str, Any]]) -> ExitConfig:
+    if not raw_exit:
+        return ExitConfig()
+    exit_dict = raw_exit.copy()
+    if 'stop_loss' in exit_dict:
+        exit_dict['stop_loss'] = ThresholdConfig(**exit_dict['stop_loss'])
+    if 'take_profit' in exit_dict:
+        exit_dict['take_profit'] = ThresholdConfig(**exit_dict['take_profit'])
+    if 'timeout' in exit_dict:
+        exit_dict['timeout'] = TimeoutConfig(**exit_dict['timeout'])
+    if 'square_off' in exit_dict:
+        exit_dict['square_off'] = SquareOffConfig(**exit_dict['square_off'])
+    return ExitConfig(**exit_dict)
+
+
+@dataclass
+class TimeframeConfig:
+    entry: List[str] = field(default_factory=lambda: ['1m'])
+    exit: List[str] = field(default_factory=list)
+    confirmation: List[str] = field(default_factory=list)
+
+
+@dataclass
+class IndicatorSpec:
+    name: str
+    type: str
+    timeframe: str = '1m'
+    role: str = 'entry'
+    params: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ThresholdConfig:
+    enabled: bool = False
+    type: str = 'percent'
+    value: float = 0.02
+    indicator: Optional[str] = None
+    operator: str = 'gte'
+    multiplier: float = 1.0
+    timeframe: Optional[str] = None
+
+
+@dataclass
+class TimeoutConfig:
+    enabled: bool = False
+    max_minutes: int = 0
+    intraday_cutoff: Optional[str] = None
+
+
+@dataclass
+class SquareOffConfig:
+    mode: str = 'none'
+    intraday_cutoff: str = '15:20'
+    delivery_horizon_days: int = 0
+
+
+@dataclass
+class ExitConfig:
+    mode: str = 'manual'
+    stop_loss: ThresholdConfig = field(default_factory=ThresholdConfig)
+    take_profit: ThresholdConfig = field(default_factory=lambda: ThresholdConfig(enabled=False, value=0.04))
+    timeout: TimeoutConfig = field(default_factory=TimeoutConfig)
+    square_off: SquareOffConfig = field(default_factory=SquareOffConfig)
 
 @dataclass
 class DataConfig:
@@ -38,13 +116,16 @@ class DataConfig:
     
 @dataclass
 class StrategyConfig:
-    """Configuration for strategy parameters."""
+    """Configuration for strategy parameters and declarative behavior."""
     name: str = "open_source_baseline"
     parameters: Dict[str, Any] = field(default_factory=dict)
     enabled: bool = True
     description: str = "Open source baseline trend + momentum strategy"
     risk_profile: str = "moderate"  # conservative, moderate, aggressive
     initial_capital: float = 1000000.0  # Default 1M capital
+    timeframes: TimeframeConfig = field(default_factory=TimeframeConfig)
+    indicators: Dict[str, List[IndicatorSpec]] = field(default_factory=lambda: {"entry": [], "exit": []})
+    exit: ExitConfig = field(default_factory=ExitConfig)
     
 @dataclass
 class RiskConfig:
@@ -101,7 +182,9 @@ class OutputConfig:
     save_trades: bool = True
     save_metrics: bool = True
     save_plots: bool = True
+    save_visualizations: bool = True  # Legacy alias for save_plots
     save_base_data: bool = True  # Save base data for analysis
+    save_signals: bool = False   # Legacy flag (no-op but retained for compatibility)
     output_dir: str = "outputs"
     trade_file_format: str = "csv"  # csv, parquet, json
     base_file_format: str = "csv"  # csv, parquet, json
@@ -130,6 +213,18 @@ class LoggingConfig:
     log_dir: str = "logs"
     max_file_size: str = "10MB"
     backup_count: int = 5
+    performance_logging: bool = False
+    trade_logging: bool = False
+
+
+@dataclass
+class FetchConfig:
+    """Configuration for broker data fetching."""
+    timeframes: List[str] = field(default_factory=lambda: ['1m'])
+    min_chunks_before_abort: int = 2
+    failure_threshold: float = 0.8  # proportion of failed chunks before aborting ticker
+    max_retries: int = 5
+    validate_symbols: bool = True
 
 @dataclass
 class BrokerConfig:
@@ -292,6 +387,12 @@ class BacktestConfig:
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    fetch: FetchConfig = field(default_factory=FetchConfig)
+    timeframes: List[str] = field(default_factory=lambda: ['1m'])
+    fetch_max_retries: int = 5
+    fetch_failure_threshold: float = 0.5
+    fetch_min_chunks_before_abort: int = 5
+    fetch_validate_symbols: bool = True
     replay_manifest: Optional[str] = None
     
     # Infrastructure configurations (absorbed from config.py)
@@ -303,6 +404,8 @@ class BacktestConfig:
     # Global settings
     base_dir: str = str(Path(__file__).resolve().parent.parent)
     run_id: str = field(default_factory=lambda: datetime.now().strftime("%Y%m%d_%H%M%S"))
+    run_label: Optional[str] = None
+    exit_template_path: Optional[str] = None
     
     # Legacy properties for backward compatibility
     @property
@@ -420,7 +523,16 @@ class BacktestConfig:
         if 'data' in data:
             config_kwargs['data'] = DataConfig(**data['data'])
         if 'strategy' in data:
-            config_kwargs['strategy'] = StrategyConfig(**data['strategy'])
+            strategy_data = data['strategy'].copy()
+            timeframes = strategy_data.pop('timeframes', None)
+            indicators = strategy_data.pop('indicators', None)
+            exit_plan = strategy_data.pop('exit', None)
+
+            strategy_data['timeframes'] = TimeframeConfig(**timeframes) if timeframes else TimeframeConfig()
+            strategy_data['indicators'] = _build_indicator_map(indicators)
+            strategy_data['exit'] = _build_exit_config(exit_plan)
+
+            config_kwargs['strategy'] = StrategyConfig(**strategy_data)
         if 'risk' in data:
             config_kwargs['risk'] = RiskConfig(**data['risk'])
         if 'transaction' in data:
@@ -435,6 +547,8 @@ class BacktestConfig:
             config_kwargs['output'] = OutputConfig(**data['output'])
         if 'logging' in data:
             config_kwargs['logging'] = LoggingConfig(**data['logging'])
+        if 'fetch' in data:
+            config_kwargs['fetch'] = FetchConfig(**data['fetch'])
         if 'broker' in data:
             config_kwargs['broker'] = BrokerConfig(**data['broker'])
         if 'compliance' in data:
@@ -443,7 +557,7 @@ class BacktestConfig:
         # Add any remaining top-level keys
         for key, value in data.items():
             if key not in ['data', 'strategy', 'risk', 'transaction', 'validation', 
-                          'optimization', 'execution', 'output', 'logging', 'broker', 'compliance']:
+                          'optimization', 'execution', 'output', 'logging', 'fetch', 'broker', 'compliance']:
                 config_kwargs[key] = value
                 
         return cls(**config_kwargs)
@@ -464,7 +578,16 @@ class ConfigBuilder:
     def with_strategy_config(self, **kwargs) -> 'ConfigBuilder':
         """Configure strategy settings."""
         for key, value in kwargs.items():
-            if hasattr(self.config.strategy, key):
+            if key == 'timeframes':
+                if isinstance(value, TimeframeConfig):
+                    self.config.strategy.timeframes = value
+                else:
+                    self.config.strategy.timeframes = TimeframeConfig(**value)
+            elif key == 'indicators':
+                self.config.strategy.indicators = _build_indicator_map(value)
+            elif key == 'exit':
+                self.config.strategy.exit = value if isinstance(value, ExitConfig) else _build_exit_config(value)
+            elif hasattr(self.config.strategy, key):
                 setattr(self.config.strategy, key, value)
         return self
     

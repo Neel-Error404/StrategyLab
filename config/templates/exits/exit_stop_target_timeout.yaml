@@ -1,0 +1,15 @@
+exit:
+  mode: hybrid
+  stop_loss:
+    enabled: true
+    type: percent
+    value: 0.020
+  take_profit:
+    enabled: true
+    type: percent
+    value: 0.040
+  timeout:
+    enabled: true
+    max_minutes: 90
+  square_off:
+    mode: none

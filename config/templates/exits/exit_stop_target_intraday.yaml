@@ -1,0 +1,16 @@
+exit:
+  mode: hybrid
+  stop_loss:
+    enabled: true
+    type: percent
+    value: 0.020
+  take_profit:
+    enabled: true
+    type: percent
+    value: 0.040
+  timeout:
+    enabled: false
+    max_minutes: 0
+  square_off:
+    mode: intraday
+    intraday_cutoff: "15:20"

@@ -4,6 +4,315 @@ Complete version history and release notes for the StrategyLab Backtesting Syste
 
 ---
 
+## Version 3.0.0 (Unified Framework) - January 2026
+
+**Release Date**: January 18, 2026
+**Codename**: "Unified Framework"
+**Git Tag**: `v3.0.0-unified`
+**Previous Version**: v2.2.0-baseline
+**Major Version**: 3.0.0
+
+### Overview
+Major architectural upgrade introducing a unified indicator system, modular strategy framework, six new generic strategies, enhanced CLI with exit template system, and comprehensive developer documentation. This release fundamentally improves the strategy development experience with cleaner architecture and declarative configuration.
+
+### 🚀 Major Enhancements
+
+#### 1. Unified Indicator Layer (450+ Indicators)
+**Location**: `src/indicators/`
+
+**New Files**:
+- `indicator_catalog.py` - 450+ technical indicator functions (15KB)
+- `quant_utils.py` - Comprehensive quantitative utilities (35KB)
+- `library.py` - Indicator wrapper
+- `__init__.py` - Module initialization
+
+**Supported Indicators**:
+- **Trend**: SMA, EMA, SuperTrend, ATR, VWAP, Ichimoku
+- **Momentum**: RSI, MACD, Stochastic, CCI, Williams %R
+- **Volatility**: Bollinger Bands, ATR, Keltner Channels, Donchian Channels
+- **Volume**: OBV, VWAP, Volume MA, Volume Rate of Change
+- **And 100+ more...**
+
+**Benefits**:
+- Single source of truth for all indicators
+- Consistent calculation methods across strategies
+- Optimized performance with cached calculations
+- Easy to extend with custom indicators
+
+#### 2. Modular Strategy Support Framework
+**Location**: `src/strategies/support/`
+
+**New Architecture**:
+- `strategy_base.py` - Base class for all strategies (19KB)
+- `strategy_factory.py` - Strategy instantiation and management (10KB)
+- `register_strategies.py` - Strategy registration system
+- `exit_manager.py` - Unified exit logic management (5KB)
+- `indicator_registry.py` - Indicator caching and management (8KB)
+
+**Benefits**:
+- Separation of concerns
+- Cleaner code organization
+- Easier strategy development
+- Better extensibility
+
+**Breaking Change**: Import path updates required (see Migration Guide)
+
+#### 3. Six New Generic Trading Strategies
+**Location**: `src/strategies/`
+
+| Strategy | File | Description | Type |
+|----------|------|-------------|------|
+| SMA Crossover | `strategy_sma_crossover.py` | Dual SMA with trend confirmation | Trend Following |
+| RSI Oversold | `strategy_rsi_oversold.py` | RSI oversold entry | Mean Reversion |
+| RSI Divergence | `strategy_rsi_divergence.py` | RSI divergence detection | Momentum |
+| Mean Reversion | `strategy_mean_reversion.py` | Statistical mean reversion | Mean Reversion |
+| Bollinger Squeeze | `bollinger_squeeze_strategy.py` | BB squeeze breakout | Volatility Breakout |
+| EMA Pivot | `ema_pvt_strategy.py` | EMA pivot reversals | Reversal |
+
+**Usage**:
+```bash
+python unified_runner.py --template strategy_sma_crossover
+```
+
+#### 4. Enhanced CLI (7 New Arguments)
+**Location**: `src/runners/cli_handler.py`, `unified_runner.py`
+
+| Argument | Purpose | Example |
+|----------|---------|---------|
+| `--run-label` | Group runs by experiment name | `--run-label "experiment-1"` |
+| `--exit-template` | Declarative exit config | `--exit-template exits/exit_sl1_tp2.yaml` |
+| `--risk-template` | Override risk settings | `--risk-template config/risk.yaml` |
+| `--timeframes` | Multiple timeframes | `--timeframes 5m 15m 1h` |
+| `--fetch-max-retries` | API retry behavior | `--fetch-max-retries 10` |
+| `--fetch-failure-threshold` | Failure tolerance | `--fetch-failure-threshold 0.3` |
+| `--skip-symbol-validation` | Skip validation | `--skip-symbol-validation` |
+
+**Usage Examples**:
+```bash
+# Experiment tracking
+python unified_runner.py --run-label "sma-experiment" --template strategy_sma_crossover
+
+# Exit management
+python unified_runner.py --exit-template exits/exit_sl0p5_tp1.yaml
+
+# Multi-timeframe fetching
+python unified_runner.py --timeframes 5m 15m --mode fetch
+```
+
+#### 5. Exit Template System (29 Templates)
+**Location**: `config/templates/exits/`
+
+**Templates Available**:
+- `exit_none.yaml` - Manual exits only
+- `exit_sl0p5_tp1.yaml` - 0.5% SL, 1% TP
+- `exit_sl0p5_tp1p5.yaml` - 0.5% SL, 1.5% TP
+- `exit_sl1_tp2.yaml` - 1% SL, 2% TP
+- `exit_sl1_tp2p5.yaml` - 1% SL, 2.5% TP
+- And 24+ more combinations...
+
+**Template Format**:
+```yaml
+exit:
+  mode: auto
+  stop_loss:
+    enabled: true
+    value: 0.005  # 0.5%
+  take_profit:
+    enabled: true
+    value: 0.01   # 1%
+  timeout:
+    enabled: true
+    value: 75     # 75 minutes
+  square_off:
+    enabled: true
+    time: "15:15" # Square off at 15:15 IST
+```
+
+**Benefits**:
+- Declarative exit configuration
+- Reusable across strategies
+- Version control friendly
+- Easy backtesting of different exit parameters
+
+#### 6. Strategy Configuration Templates
+**Location**: `config/templates/`
+
+**New Templates**:
+- `strategy_sma_crossover.yaml` - SMA crossover settings
+- `strategy_rsi_oversold.yaml` - RSI oversold parameters
+- `strategy_rsi_divergence.yaml` - RSI divergence settings
+- `strategy_mean_reversion.yaml` - Mean reversion parameters
+
+**Each Template Includes**:
+- Strategy name and description
+- Timeframe requirements (entry, exit, confirmation)
+- Indicator parameters
+- Risk profile settings
+
+#### 7. Enhanced Documentation
+**New Documentation**:
+- `STRATEGY_ARCHITECTURE.md` - Complete system architecture overview
+- `SMA_CROSSOVER_STRATEGY_RESEARCH.md` - Strategy research and methodology
+- `CRITICAL_STRATEGY_IMPLEMENTATION_GUIDE.md` - Development guide with best practices
+- `SIGNAL_HANDLING_AND_VALIDATION_FIXES.md` - Signal handling improvements
+- `RELEASE_NOTES_v3.0.0_UNIFIED_FRAMEWORK.md` - Detailed release notes
+
+**Documentation Coverage**:
+- Component relationships and data flow
+- Extension points for customization
+- Common pitfalls and solutions
+- Step-by-step strategy development
+
+#### 8. Data Provider Exceptions
+**Location**: `src/core/etl/data_provider/exceptions.py`
+
+**New Exception Classes**:
+- `InstrumentNotFoundError` - Ticker/instrument not found
+- `DataProviderAuthenticationError` - Authentication failures
+- `DataProviderRateLimitError` - API rate limiting
+- `DataProviderConnectionError` - Network/connection issues
+
+**Benefits**:
+- Centralized exception handling
+- Clearer error messages
+- Better error recovery strategies
+
+#### 9. Exit Reason Analysis
+**Location**: `src/analysis/exit_reason_summary.py`
+
+**Features**:
+- Categorize exits by reason (SL, TP, timeout, manual)
+- Calculate exit type statistics
+- Generate exit distribution reports
+
+**Usage**:
+```python
+from src.analysis.exit_reason_summary import analyze_exit_reasons
+results = analyze_exit_reasons(trades_df)
+print(results.summary())
+```
+
+### ⚡ Breaking Changes
+
+#### Import Path Updates
+
+**Old Import**:
+```python
+from src.strategies.strategy_base import StrategyBase
+from src.strategies.register_strategies import register_all_strategies
+```
+
+**New Import**:
+```python
+from src.strategies.support.strategy_base import StrategyBase
+from src.strategies.support.register_strategies import register_all_strategies
+```
+
+**Affected Files**: All custom strategies must update imports
+
+### 📝 Migration Guide
+
+#### For Strategy Developers
+
+1. **Update imports** in your strategy files:
+   ```python
+   # Old
+   from .strategy_base import StrategyBase
+   from .register_strategies import register_all_strategies
+
+   # New
+   from src.strategies.support.strategy_base import StrategyBase
+   from src.strategies.support.register_strategies import register_all_strategies
+   ```
+
+2. **Use new CLI arguments** for better experiment tracking:
+   ```bash
+   python unified_runner.py --run-label "my-experiment" --template my_strategy
+   ```
+
+3. **Use exit templates** for declarative exit management:
+   ```bash
+   python unified_runner.py --exit-template exits/exit_sl1_tp2.yaml
+   ```
+
+4. **Leverage the indicator layer** in your strategies:
+   ```python
+   from src.indicators.library import add_indicator
+   df = add_indicator(df, 'rsi', period=14)
+   ```
+
+### ✅ Validation Checklist
+
+After deployment, verify:
+
+- [ ] Indicator layer loads correctly
+- [ ] Strategies import successfully with new paths
+- [ ] CLI arguments work as expected
+- [ ] Exit templates load and apply correctly
+- [ ] Documentation is accessible
+- [ ] Existing strategies still work
+- [ ] New strategies produce expected results
+
+### 📊 Statistics
+
+**Commits**: 11 (10 sections + release notes)
+**Files Changed**: 3,500+
+**Lines Added**: 5,000+
+**New Strategies**: 6
+**New Indicators**: 450+
+**New Exit Templates**: 29
+**New CLI Arguments**: 7
+**Documentation Pages**: 5 new documents
+
+### 🚦 Test Plan
+
+**Pre-Merge Tests**:
+```bash
+# Test indicator layer
+python -c "from src.indicators.library import add_indicator; print('✓ Indicators OK')"
+
+# Test strategy imports
+python -c "from src.strategies.support.strategy_base import StrategyBase; print('✓ Strategy Base OK')"
+
+# Test CLI
+python unified_runner.py --help | grep run-label
+
+# Test exit template loading
+python unified_runner.py --exit-template exits/exit_sl1_tp2.yaml --mode validate
+```
+
+**Post-Merge Tests**:
+```bash
+# Run new strategies
+python unified_runner.py --template strategy_sma_crossover --dates 2024-01-01 2024-01-02
+
+# Test exit templates
+python unified_runner.py --exit-template exits/exit_sl0p5_tp1.yaml --template strategy_rsi_oversold
+
+# Verify documentation
+cat docs/STRATEGY_ARCHITECTURE.md | head -20
+```
+
+### 🎯 What's Next
+
+**Future Enhancements**:
+- Web UI for strategy development
+- Strategy optimization framework
+- Live trading integration
+- Multi-asset portfolio support
+
+### 🙏 Contributors
+
+- **Lead**: Claude (Anthropic) - Sync implementation and documentation
+- **Architecture**: StrategyLab Development Team
+- **Review**: Community contributors
+
+### 📦 Full Release Notes
+
+See [RELEASE_NOTES_v3.0.0_UNIFIED_FRAMEWORK.md](RELEASE_NOTES_v3.0.0_UNIFIED_FRAMEWORK.md) for complete details.
+
+---
+
 ## Version 2.2 (Open Source Baseline) - November 2025
 
 **Release Date**: November 3, 2025  

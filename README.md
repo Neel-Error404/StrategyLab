@@ -6,6 +6,7 @@ A production-ready, modular backtesting system for equities strategies with brok
 - `open_source_baseline`: trend + momentum hybrid tuned for reproducible demos (default)
 - `sma_crossover`: introductory moving-average crossover example
 - `bollinger_bands`: volatility-channel strategy template
+- `strategy_mac`: multi-timeframe MAC alignment (5m/15m) with indicator-registry integration
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -103,6 +104,18 @@ Please start by checking my Python version and then guide me through each step w
 
 ---
 
+## Component Capability Map
+
+| Component | Capabilities Snapshot | Primary Docs |
+| --- | --- | --- |
+| **Backtester Core** | Unified CLI (`validate`, `backtest`, `analyze`, `visualize`, `fetch`, `update`, `replay`, `optimize`), declarative YAML templates, strategy registry (SMA, Bollinger, Open Source Baseline, custom plug-ins), exit template overrides, run labels, JSON/markdown summaries, auto-organized outputs (`outputs/<run>/<strategy>/<range>`), data-pool discovery, broker + crypto fetchers. | This README, [FEATURES.md](FEATURES.md), [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md), [docs/OUTPUT_GUIDE.md](docs/OUTPUT_GUIDE.md) |
+| **Analysis Suite** | Config-driven runner (`analysis/run.py`), trade-merging/enhancement, generic EDA (9 scripts), portfolio construction modules, smoke + SOP workflows, portfolio experiment exporters, generated configs via `analysis/tools/generate_analysis_config.py`, universal pipeline + honest grid search entry points. | [analysis/README.md](analysis/README.md), [analysis/WORKFLOW_SOP.md](analysis/WORKFLOW_SOP.md), [analysis/portfolio_experiments/README.md](analysis/portfolio_experiments/README.md) |
+| **Options Stack** | Options engine scaffolding with pricing/replay modules, synthetic vs actual pricing validation, configurable strike/expiry logic, transaction-cost/slippage modeling, phased roadmap, quick-start commands for validation + replay runners. | [src/core/options/README.md](src/core/options/README.md), [src/core/options/config/options_config.yaml](src/core/options/config/options_config.yaml), [src/core/options/validation/validation_config.yaml](src/core/options/validation/validation_config.yaml) |
+
+Use this table as the jump point for LLM assistants: each README enumerates surface area, workflows, and commands so a user can quickly evaluate what to run next.
+
+---
+
 ## Installation
 
 ```bash
@@ -195,6 +208,45 @@ config = ConfigLoader.load_yaml('config/templates/conservative.yaml')
 ```
 
 Supported syntax: `${UPSTOX_CLIENT_ID}` or `${UPSTOX_CLIENT_ID:demo}` (default fallback).
+
+---
+
+## Remote Configuration (Private vs Public)
+
+This workspace now tracks **two** Git remotes:
+
+| Remote | URL | Purpose | Default? |
+| --- | --- | --- | --- |
+| `origin` | `https://github.com/Neel-Error404/Backtester.git` | Private, full-featured Backtester repo | ✅ Primary target for all pulls/pushes |
+| `public` | `https://github.com/Neel-Error404/StrategyLab.git` | Sanitized open-source mirror | ⛔ Push only when explicitly requested |
+
+Guidelines:
+
+- Always commit and push day-to-day work to `origin` (private).  
+  `git pull --rebase origin master` keeps you current.
+- Only interact with `public` when you are preparing an open-source drop. Use topic branches and `git push public <branch>` after sanitizing changes.
+- Never push to `public` by accident—double-check the remote when running `git push`.
+- If you add new collaborators, point them to the appropriate remote (private for internal work, public for OSS contributions).
+
+To verify the configuration at any time:
+
+```bash
+git remote -v
+```
+
+The output should show `origin` → Backtester and `public` → StrategyLab.
+
+---
+
+## Strategy YAML Enhancements
+
+Strategy templates can now declare required timeframes, indicator universes, and exit policies directly in YAML. See `config/templates/strategy_with_exit.yaml` for a full example. Highlights:
+
+- `strategy.timeframes.entry/exit/confirmation` drive the data bundle loaded for a backtest.
+- `strategy.indicators` defines each indicator (name, type, timeframe, params) so the new indicator registry can compute and cache them automatically.
+- `strategy.exit` configures stop-loss/take-profit percentages, timeout windows, and intraday or delivery square-offs, all enforced by the new exit manager.
+
+With these declarative controls you can spin up strategy variants by cloning a template—no code edits required—and the runner/validator will ensure the inputs are consistent before execution.
 
 ---
 
