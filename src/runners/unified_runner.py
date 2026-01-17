@@ -24,10 +24,10 @@ FEATURES:
 
 Usage:
     # Modern YAML-based approach
-    python unified_runner.py --mode backtest --template conservative --dates 2024-01-01 2024-01-02
+    python unified_runner.py --mode backtest --template conservative --date-ranges 2024-01-01_to_2024-01-02
     
     # Traditional CLI approach (backward compatible)
-    python unified_runner.py --mode backtest --strategies open_source_baseline --date-ranges 2024-01-01_to_2024-01-02
+    python unified_runner.py --mode backtest --strategies mse --date-ranges 2024-01-01_to_2024-01-02
 """
 
 import signal
@@ -39,6 +39,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import json
+from collections import Counter
 
 # Fix import paths
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -54,10 +55,9 @@ try:
     from src.runners.workflow_manager import WorkflowManager
     from src.runners.task_executor import TaskExecutor
     from src.runners.analysis_engine import AnalysisEngine
-    from src.runners.visualization_engine import VisualizationEngine
-    from src.runners.utils.naming import create_deterministic_name
+    from src.runners.utils.naming import create_deterministic_name, create_monolith_directory_structure, sanitize_name
     from src.runners.utils.helpers import configure_logging
-    from src.strategies.register_strategies import register_all_strategies
+    from src.strategies.support.register_strategies import register_all_strategies
 except ImportError as e:
     print(f"Import error: {e}")
     print("Please ensure all required modular components are available")
@@ -75,8 +75,7 @@ class UnifiedBacktesterRunner:
     responsibilities to specialized modules:
     - CLI Handler: Command-line parsing and configuration    - Workflow Manager: Mode-specific workflow orchestration
     - Task Executor: Parallel/sequential task execution
-    - Analysis Engine: Portfolio-level analysis and metrics
-    - Visualization Engine: Comprehensive visualization generation
+    - Analysis Engine: Portfolio-level analysis, reporting, and visualization
     """
     
     def __init__(self, config: BacktestConfig):
@@ -113,7 +112,6 @@ class UnifiedBacktesterRunner:
         self.workflow_manager = None
         self.task_executor = None
         self.analysis_engine = None
-        self.visualization_engine = None
 
         # Register signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -265,35 +263,41 @@ class UnifiedBacktesterRunner:
             
         # Set clean directory structure following monolith pattern
         # Format: {timestamp}/{strategy}/{date_range}
-        from src.runners.utils.naming import create_monolith_directory_structure
-        
         strategies = getattr(self.config.strategy, 'names', [self.config.strategy.name]) if hasattr(self.config.strategy, 'names') else [self.config.strategy.name]
+        if len(strategies) > 1:
+            self.logger.warning(f"Multiple strategies provided ({strategies}); only the first entry will be executed per system policy.")
+            strategies = strategies[:1]
         date_ranges = getattr(self.config.strategy, 'date_ranges', ['2025-06-06_to_2025-06-07']) if hasattr(self.config.strategy, 'date_ranges') else ['2025-06-06_to_2025-06-07']
         
         # Use first strategy and first date range for directory structure
-        strategy_name = strategies[0] if strategies else 'open_source_baseline'
+        strategy_name = strategies[0] if strategies else 'mse'
         date_range = date_ranges[0] if date_ranges else '2025-06-06_to_2025-06-07'
         
         # Create clean directory structure
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        label_prefix = ""
+        if getattr(self.config, 'run_label', None):
+            label_prefix = f"{sanitize_name(self.config.run_label)}_"
+        timestamp_label = f"{label_prefix}{timestamp}"
         strategy_run_dir = create_monolith_directory_structure(
             str(Path(self.config.base_dir) / self.config.output.output_dir),
             strategy_name,
             date_range,
-            timestamp
+            timestamp_label
         )
         
         # Set the clean directory as our run_id for consistency
-        self.config.run_id = f"{timestamp}/{strategy_name}/{date_range}"
-        setattr(self.config, 'strategy_run_dir', strategy_run_dir)  # Store full path for components to use
+        self.config.run_id = f"{timestamp_label}/{strategy_name}/{date_range}"
+        self.config.strategy_run_dir = strategy_run_dir  # Store full path for components to use
+        self.config.run_timestamp = timestamp
         
         self.logger.info(f"Using clean output directory structure: {strategy_run_dir}")
+        self._write_run_info(strategy_run_dir, strategy_name, date_range, timestamp_label)
         
         # Initialize modular components
         self.workflow_manager = WorkflowManager(self.config, self.logger)
         self.task_executor = TaskExecutor(self.config, self.logger)
         self.analysis_engine = AnalysisEngine(self.config, self.logger)
-        self.visualization_engine = VisualizationEngine(self.config, self.logger)
         
         self.logger.info(f"UnifiedBacktesterRunner initialized with {self.config.strategy.risk_profile} profile")
         self.logger.info("All modular components loaded successfully")
@@ -308,6 +312,34 @@ class UnifiedBacktesterRunner:
         
         # Force immediate exit without cleanup to prevent fallback behavior
         os._exit(1)
+
+    def _write_run_info(self, run_dir: Path, strategy_name: str, date_range: str, timestamp_label: str) -> None:
+        """Persist metadata about the run for downstream tooling."""
+        try:
+            run_dir = Path(run_dir)
+            run_dir.mkdir(parents=True, exist_ok=True)
+            path = run_dir / "run_info.json"
+            run_info = {
+                "run_label": getattr(self.config, 'run_label', None),
+                "timestamp": timestamp_label,
+                "strategy_run_dir": str(run_dir),
+                "strategy": strategy_name,
+                "date_range": date_range,
+                "strategies": getattr(self.config.strategy, 'names', []),
+                "tickers": getattr(self.config.strategy, 'tickers', []),
+                "timeframes": {
+                    "entry": getattr(getattr(self.config.strategy, 'timeframes', None), 'entry', []),
+                    "exit": getattr(getattr(self.config.strategy, 'timeframes', None), 'exit', []),
+                    "confirmation": getattr(getattr(self.config.strategy, 'timeframes', None), 'confirmation', []),
+                },
+                "exit_template": getattr(self.config, 'exit_template_path', None),
+                "output_root": str(Path(self.config.base_dir) / self.config.output.output_dir),
+                "run_id": self.config.run_id,
+            }
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(run_info, f, indent=2)
+        except Exception as exc:
+            self.logger.warning(f"Failed to write run_info.json: {exc}")
     
     def _auto_discover_tickers(self, date_ranges: List[str]) -> List[str]:
         """
@@ -320,9 +352,11 @@ class UnifiedBacktesterRunner:
             List of discovered ticker symbols
         """
         discovered_tickers = set()
+        data_config = getattr(self.config, 'data', None)
+        pool_root = Path(getattr(data_config, 'data_pool_dir', "data/pools"))
         
         for date_range in date_ranges:
-            date_pool_path = Path(f"data/pools/{date_range}")
+            date_pool_path = pool_root / date_range
             if date_pool_path.exists():
                 # New ticker-first structure: each ticker is a directory
                 for ticker_dir in date_pool_path.iterdir():
@@ -347,6 +381,9 @@ class UnifiedBacktesterRunner:
         """
         tasks = []
         strategies = getattr(self.config.strategy, 'names', [self.config.strategy.name]) if hasattr(self.config.strategy, 'names') else [self.config.strategy.name]
+        if len(strategies) > 1:
+            self.logger.warning(f"Multiple strategies provided ({strategies}); only the first entry will be executed per system policy.")
+            strategies = strategies[:1]
         date_ranges = getattr(self.config.strategy, 'date_ranges', []) if hasattr(self.config.strategy, 'date_ranges') else []
         tickers = getattr(self.config.strategy, 'tickers', []) if hasattr(self.config.strategy, 'tickers') else []        # Auto-discovery for all modes when no tickers provided
         mode = getattr(self.config, 'mode', 'backtest')
@@ -433,14 +470,11 @@ class UnifiedBacktesterRunner:
                     assert self.workflow_manager is not None, "Workflow manager should be initialized"
                     results = self.workflow_manager.execute_fetch_workflow(date_ranges, tickers)
             elif mode == 'validate':
-                # Validation only - no modular components needed
                 date_ranges = getattr(self.config.strategy, 'date_ranges', []) if hasattr(self.config, 'strategy') else []
                 tickers = getattr(self.config.strategy, 'tickers', []) if hasattr(self.config, 'strategy') else []
-                validation_passed = self.validate_data(date_ranges, tickers)
-                results = {
-                    'status': 'success' if validation_passed else 'error',
-                    'validation_passed': validation_passed
-                }
+                if self.workflow_manager is None:
+                    self.workflow_manager = WorkflowManager(self.config, self.logger)
+                results = self.workflow_manager.execute_validation_workflow(date_ranges, tickers)
             elif mode == 'replay':
                 manifest = getattr(self.config, 'replay_manifest', None)
                 if not manifest:
@@ -500,20 +534,20 @@ class UnifiedBacktesterRunner:
                     # Full workflow
                     results = self.workflow_manager.execute_full_workflow(
                         tasks=tasks,
-                        use_parallel=True,
+                        use_parallel=self.config.execution.parallel_processing,
                         skip_visualization=skip_viz_flag
                     )
                 elif mode == 'analyze':
                     # Analysis workflow
                     results = self.workflow_manager.execute_analysis_workflow(
                         tasks=tasks,
-                        use_parallel=True
+                        use_parallel=self.config.execution.parallel_processing
                     )
                 elif mode == 'visualize':
                     # Visualization workflow
                     results = self.workflow_manager.execute_visualization_workflow(
                         tasks=tasks,
-                        use_parallel=True
+                        use_parallel=self.config.execution.parallel_processing
                     )
                 else:
                     raise ValueError(f"Unknown mode: {mode}")
@@ -537,6 +571,9 @@ class UnifiedBacktesterRunner:
             log_file = self._save_execution_log(results.get('output_dir'))
             if log_file:
                 results['execution_log_file'] = log_file
+            run_log = self._write_run_summary_log(results)
+            if run_log:
+                results['run_log_file'] = str(run_log)
 
             return results
             
@@ -562,6 +599,93 @@ class UnifiedBacktesterRunner:
                 'execution_time': datetime.now() - self.start_time,
                 'execution_log': self.execution_log
             }
+    
+    def _write_run_summary_log(self, results: Dict[str, Any]) -> Optional[Path]:
+        """
+        Write a concise human-readable summary (run_log.txt) inside the run directory.
+        """
+        run_dir = results.get('strategy_run_dir') or getattr(self.config, 'strategy_run_dir', None)
+        if not run_dir:
+            return None
+        run_dir = Path(run_dir)
+        run_dir.mkdir(parents=True, exist_ok=True)
+        summary_path = run_dir / "run_log.txt"
+
+        strategies = getattr(self.config.strategy, 'names', [self.config.strategy.name]) \
+            if hasattr(self.config, 'strategy') else []
+        date_ranges = getattr(self.config.strategy, 'date_ranges', []) \
+            if hasattr(self.config, 'strategy') else []
+        tickers = getattr(self.config.strategy, 'tickers', []) \
+            if hasattr(self.config, 'strategy') else []
+
+        strategy_entries = {}
+        for strat in strategies:
+            payload = results.get(strat)
+            if isinstance(payload, dict):
+                strategy_entries[strat] = payload
+
+        total_strategy_trades = 0
+        total_risk_trades = 0
+        processed_tickers = set()
+        rejection_counter: Counter = Counter()
+
+        for strat_payload in strategy_entries.values():
+            for date_range, ticker_map in strat_payload.items():
+                if not isinstance(ticker_map, dict):
+                    continue
+                for ticker, payload in ticker_map.items():
+                    if not isinstance(payload, dict):
+                        continue
+                    processed_tickers.add(ticker)
+                    strategy_trades = payload.get('strategy_trades') or []
+                    approved_trades = payload.get('trades') or []
+                    total_strategy_trades += len(strategy_trades)
+                    total_risk_trades += len(approved_trades)
+                    risk_report = payload.get('risk_report') or {}
+                    rejection_counter.update(risk_report.get('rejection_reasons', {}))
+
+        lines = []
+        lines.append(f"Run Summary - Session {self.execution_log.get('session_id')}")
+        lines.append(f"Started: {self.start_time.isoformat()}")
+        lines.append(f"Completed: {datetime.now().isoformat()}")
+        lines.append(f"Mode: {getattr(self.config, 'mode', 'backtest')}")
+        lines.append("")
+        lines.append("Configuration")
+        lines.append(f"  Run Label: {getattr(self.config, 'run_label', '') or 'none'}")
+        lines.append(f"  Strategies: {', '.join(strategies) if strategies else 'n/a'}")
+        lines.append(f"  Date Ranges: {', '.join(date_ranges) if date_ranges else 'n/a'}")
+        lines.append(f"  Tickers: {', '.join(tickers) if tickers else 'auto-discovered'}")
+        lines.append(f"  Exit Template: {getattr(self.config, 'exit_template_path', 'default')}")
+        lines.append(f"  Risk Template: {getattr(self.config, 'risk_template_path', 'default')}")
+        lines.append("")
+        lines.append("Execution")
+        lines.append(f"  Total Tasks: {self.execution_log.get('tasks_generated', {}).get('total_tasks', 0) if isinstance(self.execution_log.get('tasks_generated'), dict) else len(self.execution_log.get('tasks_generated') or [])}")
+        lines.append(f"  Tickers Processed: {', '.join(sorted(processed_tickers)) or 'n/a'}")
+        lines.append(f"  Strategy Trades Generated: {total_strategy_trades}")
+        lines.append(f"  Risk-Approved Trades: {total_risk_trades}")
+        approval_rate = (total_risk_trades / total_strategy_trades * 100) if total_strategy_trades else 0
+        lines.append(f"  Risk Approval Rate: {approval_rate:.2f}%")
+        if rejection_counter:
+            lines.append("  Risk Rejection Reasons:")
+            for reason, count in rejection_counter.most_common():
+                lines.append(f"    - {reason}: {count}")
+        else:
+            lines.append("  Risk Rejection Reasons: none")
+        lines.append("")
+        lines.append("Files")
+        lines.append(f"  Strategy Directory: {run_dir}")
+        lines.append(f"  Execution Log: {results.get('execution_log_file', 'n/a')}")
+        lines.append(f"  Output Directory: {results.get('output_dir', 'n/a')}")
+        lines.append("")
+        lines.append("Status")
+        lines.append(f"  Workflow Status: {results.get('status', 'unknown')}")
+        if self.execution_log.get('errors'):
+            lines.append("  Errors:")
+            for err in self.execution_log['errors']:
+                lines.append(f"    - {err.get('error_message', 'unknown error')}")
+
+        summary_path.write_text("\n".join(lines))
+        return summary_path
     
     def _execute_replay_mode(self, manifest_path: str, output_dir: str) -> Dict[str, Any]:
         """Execute replay mode using BacktesterAdapter."""
@@ -709,7 +833,7 @@ def handle_helper_commands_if_present():
     )
 
     parser = create_argument_parser()
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
 
     # Check each helper command and execute if present
     if hasattr(args, 'list_strategies') and args.list_strategies:
