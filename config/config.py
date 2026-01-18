@@ -75,8 +75,9 @@ SYSTEM_INFO = {
 # === Upstox Configuration ===
 UPSTOX_CONFIG = {
     # API credentials - MUST be set via environment variables
-    'CLIENT_ID': os.getenv('UPSTOX_CLIENT_ID',"1696a0cd-5732-413f-85df-10ee95a49d5a"),
-    'CLIENT_SECRET': os.getenv('UPSTOX_CLIENT_SECRET',"v0wqj2ox2i"),
+    # SECURITY: Never hardcode credentials in this file. Use .env file or environment variables.
+    'CLIENT_ID': os.getenv('UPSTOX_CLIENT_ID'),
+    'CLIENT_SECRET': os.getenv('UPSTOX_CLIENT_SECRET'),
     'REDIRECT_URI': os.getenv('UPSTOX_REDIRECT_URI', "https://127.0.0.1:5000/"),
      'INSTRUMENTS_CSV': BASE_DIR / 'config' / 'complete.csv',
     

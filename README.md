@@ -14,6 +14,24 @@ A production-ready, modular backtesting system for equities strategies with brok
 
 ---
 
+## 🔒 Security Notice
+
+**IMPORTANT: Protect Your API Credentials**
+
+- ✅ **DO**: Copy `.env.example` to `.env` and add your credentials there
+- ✅ **DO**: Keep your `.env` file private and never share it
+- ❌ **DON'T**: Commit `.env` to git (it's in `.gitignore`)
+- ❌ **DON'T**: Paste credentials in issues, chats, or screenshots
+
+**If you accidentally commit credentials:**
+1. Immediately rotate them (change passwords/secrets)
+2. Remove from git history using `git filter-repo` or BFG Repo-Cleaner
+3. Force push the cleaned repository
+
+See [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for secure credential setup.
+
+---
+
 ## 🚀 New Users - Start Here!
 
 **First time setting up? Follow these steps:**
